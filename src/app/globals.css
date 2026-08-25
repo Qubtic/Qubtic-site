@@ -172,32 +172,34 @@ body {
 .cursor-ring,
 .cursor-ambient-glow {
   position: fixed;
+  top: 0;
+  left: 0;
   z-index: 2147483647;
   pointer-events: none;
-  translate: -50% -50%;
-  will-change: left, top, width, height, opacity;
+  will-change: transform;
 }
 
 .cursor-dot {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  box-shadow: 0 0 0 3px rgba(244, 239, 230, 0.5);
+  background-color: #164E33;
+  box-shadow: 0 0 0 2px rgba(244, 239, 230, 0.6);
 }
 
 .cursor-ring {
-  border: 1px solid #164E33;
+  border: 1.5px solid #164E33;
   border-radius: 999px;
-  box-shadow: 0 3px 14px rgba(22, 78, 51, 0.12);
+  box-shadow: 0 2px 8px rgba(22, 78, 51, 0.08);
 }
 
 .cursor-ambient-glow {
   z-index: 2147483646;
-  width: 340px;
-  height: 340px;
+  width: 260px;
+  height: 260px;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(22, 78, 51, 0.075) 0%, rgba(204, 255, 0, 0.025) 38%, transparent 72%);
-  transition: opacity 180ms ease;
+  background: radial-gradient(circle, rgba(22, 78, 51, 0.05) 0%, rgba(204, 255, 0, 0.015) 35%, transparent 70%);
+  transition: opacity 150ms ease;
 }
 
 @media (pointer: fine) {
