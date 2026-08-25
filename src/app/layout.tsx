@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Sora } from 'next/font/google';
+import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -12,9 +12,10 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
-const sora = Sora({
+const fontHeading = Plus_Jakarta_Sans({
   subsets: ['latin'],
   variable: '--font-sora',
+  weight: ['400', '500', '600', '700', '800'],
 });
 
 export const viewport: Viewport = {
@@ -213,7 +214,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className={`${inter.variable} ${sora.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${fontHeading.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.png?v=4" type="image/png" sizes="any" />
         <link rel="icon" href="/apple-icon.png?v=4" type="image/png" />
