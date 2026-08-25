@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "why-nextjs-is-best-for-business",
+    "title": "Why Next.js Is the Best Framework for Business Websites in 2026",
+    "excerpt": "Explore how React 19 server components, Turbopack, and edge runtime make Next.js the undisputed standard for modern web architecture.",
+    "date": "Jan 15, 2026",
+    "readingTime": "8 min read",
+    "category": "Web Engineering",
+    "author": "qubtic Solutions Team",
+    "content": "In today's hyper-competitive digital ecosystem, your technology choices dictate business agility, customer acquisition efficiency, and long-term operating costs. Next.js 16 and React 19 deliver unmatched speed, server rendering efficiency, and developer productivity."
+  },
+  {
+    "slug": "how-to-build-successful-saas",
+    "title": "How to Build a Scalable SaaS Product: From MVP to Enterprise",
+    "excerpt": "A practical architectural breakdown covering multi-tenant schema design, Stripe billing meters, and automated CI/CD deployment.",
+    "date": "Feb 3, 2026",
+    "readingTime": "12 min read",
+    "category": "SaaS Strategy",
+    "author": "qubtic Engineering Team",
+    "content": "Building a SaaS platform requires balancing rapid iteration with robust architectural foundations. By implementing solid multi-tenant schemas and automated billing workflows, tech founders can scale effortlessly."
+  },
+  {
+    "slug": "top-10-shopify-apps",
+    "title": "Top Shopify Apps & Checkout Extensions Every Brand Needs",
+    "excerpt": "Boost merchant checkout conversion and automate inventory workflows with bespoke Shopify App Bridge extensions.",
+    "date": "Mar 20, 2026",
+    "readingTime": "6 min read",
+    "category": "Shopify Ecosystem",
+    "author": "E-commerce Architecture Lead",
+    "content": "Custom Shopify apps allow merchants to extend the checkout process, automate multi-warehouse inventory syncing, and create personalized customer experiences that drive repeat revenue."
+  },
+  {
+    "slug": "framer-vs-webflow",
+    "title": "Framer vs Webflow: Choosing the Right Visual Tool in 2026",
+    "excerpt": "An in-depth technical comparison of component flexibility, React code overrides, CMS scalability, and runtime performance.",
+    "date": "Apr 8, 2026",
+    "readingTime": "10 min read",
+    "category": "UI/UX Design",
+    "author": "Design Engineering Team",
+    "content": "Framer has redefined how visual sites are built by blending intuitive canvas controls with full React power. We compare key aspects of component extensibility and speed."
+  },
+  {
+    "slug": "web-performance-optimization-guide",
+    "title": "The Modern Guide to Web Performance & Core Web Vitals",
+    "excerpt": "Proven engineering strategies to achieve sub-second LCP, zero CLS layout shifts, and flawless 100/100 Google Lighthouse scores.",
+    "date": "May 15, 2026",
+    "readingTime": "15 min read",
+    "category": "Performance",
+    "author": "Performance Architect",
+    "content": "Web performance directly drives user conversion. Achieving top Core Web Vitals requires optimizing image pipelines, minimizing main-thread execution, and leveraging modern edge caching."
+  }
+]

@@ -1,0 +1,183 @@
+[
+  {
+    "slug": "web-development",
+    "title": "Custom Web Development",
+    "shortDescription": "High-performance, visually stunning websites built with Next.js, React, and TypeScript.",
+    "longDescription": "At qubtic, we engineer cutting-edge web applications tailored to your business goals. Utilizing industry-leading technologies like Next.js and React, we ensure that your digital presence is both incredibly fast and robust. Our approach focuses on seamless user experiences, responsive designs, and scalable architectures that grow alongside your business.",
+    "icon": "Globe",
+    "features": [
+      "Custom Next.js & React development",
+      "Mobile-first responsive design",
+      "Advanced SEO optimization",
+      "Lightning-fast page load speeds",
+      "Headless CMS integration",
+      "Web accessibility (a11y) compliance",
+      "Robust security protocols",
+      "Continuous maintenance & support"
+    ],
+    "process": [
+      {
+        "name": "Discovery",
+        "description": "Understanding your business needs, goals, and target audience."
+      },
+      {
+        "name": "Design",
+        "description": "Creating intuitive wireframes and stunning visual interfaces."
+      },
+      {
+        "name": "Development",
+        "description": "Building the site using the latest modern web frameworks."
+      },
+      {
+        "name": "Testing",
+        "description": "Rigorous QA testing across multiple devices and browsers."
+      },
+      {
+        "name": "Launch",
+        "description": "Smooth deployment to production and going live."
+      },
+      {
+        "name": "Support",
+        "description": "Ongoing monitoring, updates, and optimization."
+      }
+    ],
+    "techStack": [
+      "Next.js",
+      "React",
+      "TypeScript",
+      "Tailwind CSS",
+      "Vercel",
+      "Sanity CMS"
+    ],
+    "faq": [
+      {
+        "question": "How long does a typical web development project take?",
+        "answer": "Most web development projects take between 6 to 12 weeks, depending on the complexity."
+      },
+      {
+        "question": "Do you provide ongoing support after launch?",
+        "answer": "Yes, we offer comprehensive post-launch support and maintenance packages."
+      }
+    ]
+  },
+  {
+    "slug": "saas-development",
+    "title": "SaaS Product Development",
+    "shortDescription": "Scalable, secure, and feature-rich Software-as-a-Service platforms.",
+    "longDescription": "Transform your vision into a powerful, scalable SaaS product with qubtic. We specialize in building end-to-end cloud applications that solve real user problems while offering seamless subscription management and intuitive interfaces.",
+    "icon": "Layers",
+    "features": [
+      "Full-stack architecture design",
+      "Rapid MVP development",
+      "Multi-tenant database structure",
+      "Stripe subscription billing integration",
+      "Role-based access control (RBAC)",
+      "Real-time data processing"
+    ],
+    "process": [
+      {
+        "name": "Discovery",
+        "description": "Validating the core SaaS concept and target audience."
+      },
+      {
+        "name": "Design",
+        "description": "Crafting user flows and interfaces for retention."
+      },
+      {
+        "name": "Development",
+        "description": "Building scalable full-stack applications."
+      },
+      {
+        "name": "Launch",
+        "description": "Deploying cloud infrastructure and billing pipelines."
+      }
+    ],
+    "techStack": [
+      "Next.js",
+      "Node.js",
+      "PostgreSQL",
+      "Prisma",
+      "Stripe",
+      "AWS"
+    ],
+    "faq": [
+      {
+        "question": "What is your approach to building an MVP?",
+        "answer": "We focus on essential features first for fast market validation."
+      }
+    ]
+  },
+  {
+    "slug": "shopify-apps",
+    "title": "Shopify App Development",
+    "shortDescription": "Custom Shopify apps, themes, and integrations to supercharge your e-commerce store.",
+    "longDescription": "Unlock the full potential of your e-commerce business with bespoke Shopify app development. Whether you need to automate inventory or create unique storefront checkout experiences, qubtic delivers tailored solutions.",
+    "icon": "ShoppingBag",
+    "features": [
+      "Custom Shopify app development",
+      "Public & private app creation",
+      "ERP & CRM integrations",
+      "Custom checkout extensions",
+      "Automated inventory syncing"
+    ],
+    "process": [
+      {
+        "name": "Discovery",
+        "description": "Analyzing e-commerce bottlenecks."
+      },
+      {
+        "name": "Development",
+        "description": "Building apps with Shopify Polaris & App Bridge."
+      }
+    ],
+    "techStack": [
+      "Remix",
+      "React",
+      "Shopify Polaris",
+      "GraphQL",
+      "Node.js"
+    ],
+    "faq": [
+      {
+        "question": "Do you build public and private Shopify apps?",
+        "answer": "Yes, we build both custom private apps and public App Store applications."
+      }
+    ]
+  },
+  {
+    "slug": "framer-development",
+    "title": "Framer Websites & Plugins",
+    "shortDescription": "Breathtaking, highly animated websites built at the speed of thought on Framer.",
+    "longDescription": "Stand out from the competition with a visually stunning, highly interactive Framer website. Framer allows us to bridge the gap between design and development, delivering pixel-perfect, richly animated sites.",
+    "icon": "Palette",
+    "features": [
+      "Custom Framer website design",
+      "Complex scroll & reveal animations",
+      "Framer CMS setup & integration",
+      "Custom React code overrides"
+    ],
+    "process": [
+      {
+        "name": "Prototyping",
+        "description": "Building dynamic canvas interactive elements."
+      },
+      {
+        "name": "Custom Code",
+        "description": "Writing bespoke React overrides for special features."
+      }
+    ],
+    "techStack": [
+      "Framer",
+      "React",
+      "Framer Motion",
+      "CSS",
+      "Figma"
+    ],
+    "faq": [
+      {
+        "question": "Why choose Framer?",
+        "answer": "Framer delivers high-end animations and fast turnarounds."
+      }
+    ]
+  }
+]

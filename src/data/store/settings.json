@@ -1,0 +1,50 @@
+{
+  "heroBadge": "AGENCY & SOFTWARE STUDIO",
+  "heroTitle": "WE SHIP DIGITAL PRODUCTS THAT SCALE YOUR REVENUE",
+  "heroSubtitle": "qubtic is an elite software & design agency. We partner with fast-growing brands to build high-converting websites, SaaS platforms, and custom Shopify apps.",
+  "primaryCtaText": "Explore Our Work",
+  "contactEmail": "hello@qubtic.tech",
+  "contactPhone": "+1 (555) 234-5678",
+  "contactAddress": "100 Tech Plaza, Suite 400, San Francisco, CA 94105",
+  "adminPasswordHash": "admin123",
+  "testimonials": [
+    {
+      "quote": "The transformation of our digital storefront was nothing short of miraculous. The site is incredibly fast, and the impact on our bottom line was immediate.",
+      "author": "Sarah Mitchell",
+      "role": "CEO",
+      "company": "TechVentures",
+      "rating": 5
+    },
+    {
+      "quote": "qubtic took our complex data requirements and turned them into a beautiful, performant SaaS product that our enterprise clients love.",
+      "author": "David Park",
+      "role": "Founder",
+      "company": "DataFlow",
+      "rating": 5
+    },
+    {
+      "quote": "The custom app qubtic built has been a game-changer for our operations. It runs silently in the background and has completely eliminated inventory headaches.",
+      "author": "Maria Garcia",
+      "role": "E-commerce Director",
+      "company": "StyleHub",
+      "rating": 5
+    }
+  ],
+  "team": [
+    {
+      "name": "Alex Chen",
+      "role": "CEO & Founder",
+      "bio": "Alex brings over 15 years of experience in product development and agency leadership."
+    },
+    {
+      "name": "Marcus Rivera",
+      "role": "CTO",
+      "bio": "Marcus architects scalable and secure technical foundations for all client projects."
+    },
+    {
+      "name": "Sarah Kim",
+      "role": "Lead Designer",
+      "bio": "Sarah ensures every qubtic product is visually stunning and intuitive."
+    }
+  ]
+}

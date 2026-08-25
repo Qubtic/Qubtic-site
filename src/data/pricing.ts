@@ -1,0 +1,202 @@
+export const pricing = {
+  web: [
+    {
+      name: 'Starter',
+      price: { monthly: 999, annual: 799 },
+      description: 'Perfect for small businesses looking to establish a professional online presence.',
+      features: [
+        { name: 'Up to 5 Pages', included: true },
+        { name: 'Mobile Responsive Design', included: true },
+        { name: 'Basic SEO Setup', included: true },
+        { name: 'Contact Form Integration', included: true },
+        { name: 'CMS Integration', included: false },
+        { name: 'Custom Animations', included: false },
+        { name: 'Priority Support', included: false }
+      ],
+      popular: false,
+      cta: 'Get Started'
+    },
+    {
+      name: 'Professional',
+      price: { monthly: 2999, annual: 2399 },
+      description: 'Ideal for growing companies needing advanced functionality and CMS capabilities.',
+      features: [
+        { name: 'Up to 15 Pages', included: true },
+        { name: 'Mobile Responsive Design', included: true },
+        { name: 'Advanced SEO Setup', included: true },
+        { name: 'Custom Form Integrations', included: true },
+        { name: 'Sanity/Contentful CMS', included: true },
+        { name: 'Standard Animations', included: true },
+        { name: 'Priority Support', included: false }
+      ],
+      popular: true,
+      cta: 'Choose Professional'
+    },
+    {
+      name: 'Enterprise',
+      price: { monthly: 7999, annual: 6399 },
+      description: 'Complex web applications with highly custom requirements and integrations.',
+      features: [
+        { name: 'Unlimited Pages', included: true },
+        { name: 'High-Performance Edge Architecture', included: true },
+        { name: 'Comprehensive SEO Strategy', included: true },
+        { name: 'Complex 3rd-Party Integrations', included: true },
+        { name: 'Custom Headless CMS', included: true },
+        { name: 'Advanced WebGL/Framer Animations', included: true },
+        { name: '24/7 Dedicated Support', included: true }
+      ],
+      popular: false,
+      cta: 'Contact Sales'
+    }
+  ],
+  saas: [
+    {
+      name: 'MVP',
+      price: { monthly: 4999, annual: 3999 },
+      description: 'Rapidly launch your core product idea to validate the market.',
+      features: [
+        { name: 'Core Feature Set Development', included: true },
+        { name: 'Basic User Authentication', included: true },
+        { name: 'Database Setup', included: true },
+        { name: 'Simple Stripe Integration', included: true },
+        { name: 'Role-Based Access', included: false },
+        { name: 'Advanced Analytics Dashboard', included: false },
+        { name: 'SLA Guarantee', included: false }
+      ],
+      popular: false,
+      cta: 'Build MVP'
+    },
+    {
+      name: 'Growth',
+      price: { monthly: 14999, annual: 11999 },
+      description: 'Comprehensive SaaS platform designed to scale and handle complex workflows.',
+      features: [
+        { name: 'Full Feature Set Development', included: true },
+        { name: 'Advanced Auth (OAuth/SSO)', included: true },
+        { name: 'Scalable Cloud Architecture', included: true },
+        { name: 'Complex Billing & Subscriptions', included: true },
+        { name: 'Role-Based Access Control', included: true },
+        { name: 'Advanced Analytics Dashboard', included: true },
+        { name: 'SLA Guarantee', included: false }
+      ],
+      popular: true,
+      cta: 'Scale Your Product'
+    },
+    {
+      name: 'Scale',
+      price: { monthly: 29999, annual: 23999 },
+      description: 'Enterprise-grade SaaS development with maximum security and performance.',
+      features: [
+        { name: 'Multi-Tenant Architecture', included: true },
+        { name: 'Enterprise Security Compliance', included: true },
+        { name: 'High-Availability Infrastructure', included: true },
+        { name: 'Custom AI/ML Integrations', included: true },
+        { name: 'Granular Permissions System', included: true },
+        { name: 'Custom Data Pipelines', included: true },
+        { name: '24/7 SLA Guarantee', included: true }
+      ],
+      popular: false,
+      cta: 'Contact Sales'
+    }
+  ],
+  shopify: [
+    {
+      name: 'Basic',
+      price: { monthly: 1499, annual: 1199 },
+      description: 'Essential custom apps to streamline basic e-commerce operations.',
+      features: [
+        { name: 'Single Core Functionality', included: true },
+        { name: 'Shopify Admin Integration', included: true },
+        { name: 'Basic Data Sync', included: true },
+        { name: 'Standard Support', included: true },
+        { name: 'Custom Storefront UI', included: false },
+        { name: '3rd-Party ERP Integration', included: false },
+        { name: 'Dedicated Account Manager', included: false }
+      ],
+      popular: false,
+      cta: 'Get Started'
+    },
+    {
+      name: 'Advanced',
+      price: { monthly: 3999, annual: 3199 },
+      description: 'Powerful custom apps and integrations for growing merchants.',
+      features: [
+        { name: 'Multi-feature Functionality', included: true },
+        { name: 'Deep Admin & Storefront Integration', included: true },
+        { name: 'Real-time Data Syncing', included: true },
+        { name: 'Priority Support', included: true },
+        { name: 'Custom Storefront UI/Extensions', included: true },
+        { name: 'Standard 3rd-Party Integrations', included: true },
+        { name: 'Dedicated Account Manager', included: false }
+      ],
+      popular: true,
+      cta: 'Choose Advanced'
+    },
+    {
+      name: 'Premium',
+      price: { monthly: 8999, annual: 7199 },
+      description: 'Complex middleware, Headless builds, and ERP integrations.',
+      features: [
+        { name: 'Complex App Architecture', included: true },
+        { name: 'Headless Shopify Architecture', included: true },
+        { name: 'High-volume Data Processing', included: true },
+        { name: '24/7 Priority Support', included: true },
+        { name: 'Advanced Checkout UI Extensions', included: true },
+        { name: 'Complex ERP/CRM Integrations', included: true },
+        { name: 'Dedicated Account Manager', included: true }
+      ],
+      popular: false,
+      cta: 'Contact Sales'
+    }
+  ],
+  framer: [
+    {
+      name: 'Starter',
+      price: { monthly: 499, annual: 399 },
+      description: 'Beautiful, animated landing page to capture leads and showcase your brand.',
+      features: [
+        { name: '1-3 Page Website', included: true },
+        { name: 'Standard Animations', included: true },
+        { name: 'Responsive Layouts', included: true },
+        { name: 'Basic SEO Setup', included: true },
+        { name: 'Framer CMS Setup', included: false },
+        { name: 'Custom Code Overrides', included: false },
+        { name: 'Figma to Framer Migration', included: false }
+      ],
+      popular: false,
+      cta: 'Start Project'
+    },
+    {
+      name: 'Professional',
+      price: { monthly: 1499, annual: 1199 },
+      description: 'A complete multi-page marketing site with CMS and advanced interactions.',
+      features: [
+        { name: 'Up to 10 Pages', included: true },
+        { name: 'Complex Scroll Animations', included: true },
+        { name: 'Responsive Layouts', included: true },
+        { name: 'Advanced SEO Setup', included: true },
+        { name: 'Framer CMS Setup (Blog/Projects)', included: true },
+        { name: 'Basic Code Overrides', included: true },
+        { name: 'Figma to Framer Migration', included: false }
+      ],
+      popular: true,
+      cta: 'Choose Professional'
+    },
+    {
+      name: 'Enterprise',
+      price: { monthly: 3999, annual: 3199 },
+      description: 'Unrestricted design possibilities, custom integrations, and large-scale migrations.',
+      features: [
+        { name: 'Unlimited Pages', included: true },
+        { name: 'Bespoke 3D & Advanced Animations', included: true },
+        { name: 'Responsive Layouts', included: true },
+        { name: 'Comprehensive SEO & Analytics', included: true },
+        { name: 'Complex CMS Architectures', included: true },
+        { name: 'Advanced Custom React Components', included: true },
+        { name: 'Full Figma to Framer Migration', included: true }
+      ],
+      popular: false,
+      cta: 'Contact Sales'
+    }
+  ]
+};
