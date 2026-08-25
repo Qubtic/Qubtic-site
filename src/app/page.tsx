@@ -10,9 +10,12 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: 'qubtic - Digital IT Solutions & Product Studio',
+  title: 'Qubtic | Premier Digital Product Studio & Software Engineering',
   description:
-    'qubtic is a digital IT solutions and product studio building high-performance websites, custom SaaS platforms, Shopify applications, and Framer websites.',
+    'Qubtic is an engineering-first digital product studio building high-performance web applications, custom SaaS platforms, Shopify applications, and Framer digital experiences.',
+  alternates: {
+    canonical: 'https://qubtic.tech',
+  },
 };
 
 export default async function Home() {

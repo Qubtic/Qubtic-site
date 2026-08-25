@@ -7,9 +7,12 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export const metadata = {
-  title: 'Insights & Engineering Blog - qubtic',
+  title: 'Insights & Technical Blog | Qubtic Digital Product Studio',
   description:
-    'Expert articles on Next.js 16, full-stack SaaS architecture, Shopify apps, and modern digital product design.',
+    'Deep dives and technical insights on full-stack SaaS architecture, Shopify apps, and modern web engineering by the Qubtic team.',
+  alternates: {
+    canonical: 'https://qubtic.tech/blog',
+  },
 };
 
 export default async function BlogPage() {

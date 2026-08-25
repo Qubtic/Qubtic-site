@@ -10,9 +10,12 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: 'Our Work - Portfolio & Case Studies',
+  title: 'Our Work & Case Studies | Qubtic Digital Product Studio',
   description:
-    'Explore featured case studies and digital products engineered by Qubtic across web apps, SaaS, Shopify, and Framer.',
+    'Explore featured case studies and production software engineered by Qubtic across full-stack web apps, scalable SaaS platforms, Shopify applications, and Framer sites.',
+  alternates: {
+    canonical: 'https://qubtic.tech/portfolio',
+  },
 };
 
 export default async function PortfolioPage() {

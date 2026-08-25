@@ -10,9 +10,12 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: 'Our Services - Custom Web & Software Development',
+  title: 'Digital Engineering Services | Qubtic Digital Product Studio',
   description:
-    'End-to-end digital solutions including Web Development, SaaS Product Engineering, Shopify Apps, and Framer Development.',
+    'End-to-end digital engineering solutions: High-performance Web Development, SaaS Product Engineering, Shopify Apps, and Framer interactive sites.',
+  alternates: {
+    canonical: 'https://qubtic.tech/services',
+  },
 };
 
 export default async function ServicesPage() {
@@ -24,7 +27,7 @@ export default async function ServicesPage() {
     itemListElement: services.map((s, index) => ({
       '@type': 'ListItem',
       position: index + 1,
-      url: `https://qubtic.com/services/${s.slug}`,
+      url: `https://qubtic.tech/services/${s.slug}`,
       name: s.title,
       description: s.shortDescription,
     })),
