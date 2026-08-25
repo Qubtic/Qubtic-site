@@ -9,7 +9,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   const reduceMotion = useReducedMotion();
 
   return (
-    <AnimatePresence mode="wait" initial>
+    <AnimatePresence mode="wait" initial={false}>
       <motion.main
         key={pathname}
         initial={reduceMotion ? false : { opacity: 0, y: 14, filter: 'blur(6px)' }}

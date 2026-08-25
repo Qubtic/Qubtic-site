@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     'IT Solutions',
     'qubtic',
   ],
-  authors: [{ name: 'qubtic' }],
+  authors: [{ name: 'Qubtic' }],
   metadataBase: new URL('https://qubtic.tech'),
   openGraph: {
     title: 'qubtic - Digital IT Solutions & Product Studio',
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
         url: '/images/hero-banner.jpg',
         width: 1200,
         height: 630,
-        alt: 'qubtic Digital Studio',
+        alt: 'Qubtic Digital Studio',
       },
     ],
     locale: 'en_US',
@@ -60,12 +60,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.png?v=3', type: 'image/png' },
-      { url: '/apple-icon.png?v=3', type: 'image/png' },
+      { url: '/favicon.png?v=4', type: 'image/png' },
+      { url: '/apple-icon.png?v=4', type: 'image/png' },
     ],
-    shortcut: ['/favicon.png?v=3'],
+    shortcut: ['/favicon.png?v=4'],
     apple: [
-      { url: '/apple-icon.png?v=3', type: 'image/png' },
+      { url: '/apple-icon.png?v=4', type: 'image/png' },
     ],
   },
 };
@@ -78,10 +78,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${sora.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/favicon.png?v=3" type="image/png" sizes="any" />
-        <link rel="icon" href="/apple-icon.png?v=3" type="image/png" />
-        <link rel="shortcut icon" href="/favicon.png?v=3" type="image/png" />
-        <link rel="apple-touch-icon" href="/apple-icon.png?v=3" />
+        <link rel="icon" href="/favicon.png?v=4" type="image/png" sizes="any" />
+        <link rel="icon" href="/apple-icon.png?v=4" type="image/png" />
+        <link rel="shortcut icon" href="/favicon.png?v=4" type="image/png" />
+        <link rel="apple-touch-icon" href="/apple-icon.png?v=4" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

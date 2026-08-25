@@ -55,7 +55,7 @@ export function Navbar() {
 
         <nav className="absolute left-1/2 z-10 hidden -translate-x-1/2 items-center gap-1 md:flex" aria-label="Main navigation">
           {navLinks.map((link) => {
-            const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+            const isActive = link.href === '/' ? pathname === '/' : (pathname === link.href || pathname?.startsWith(`${link.href}/`));
             return (
               <Link
                 key={link.name}

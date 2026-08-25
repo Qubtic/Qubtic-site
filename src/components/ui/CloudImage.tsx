@@ -18,8 +18,8 @@ export interface CloudImageProps extends Omit<CldImageProps, 'src' | 'alt' | 'wi
 
 /**
  * CloudImage renders images optimized via Cloudinary's `CldImage` component.
- * If the provided `src` is a local asset path (starts with '/'), it gracefully falls back to Next.js `<Image>`.
- * Handles `fill` properly without passing conflicting `width` and `height` properties.
+ * If the provided `src` is a local asset path (starts with '/'), an external URL (starts with 'http'),
+ * or if no Cloudinary cloud name is configured, it gracefully falls back to Next.js `<Image>`.
  */
 export function CloudImage({
   src = 'cld-sample-5',
@@ -35,22 +35,51 @@ export function CloudImage({
 }: CloudImageProps) {
   if (!src) return null;
 
-  const isLocalFile = src.startsWith('/');
+  const cloudName =
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
+    process.env.CLOUDINARY_CLOUD_NAME;
 
-  if (fill) {
-    if (isLocalFile) {
+  const isLocalFile = src.startsWith('/');
+  const isHttpUrl = src.startsWith('http://') || src.startsWith('https://');
+
+  // Fallback to Next.js <Image> if it's a local asset, direct HTTP URL, or Cloudinary cloud name is missing
+  if (isLocalFile || isHttpUrl || !cloudName) {
+    let resolvedSrc = src;
+    if (!isLocalFile && !isHttpUrl && cloudName) {
+      resolvedSrc = `https://res.cloudinary.com/${cloudName}/image/upload/${src}`;
+    }
+
+    if (fill) {
       return (
         <Image
-          src={src}
+          src={resolvedSrc}
           alt={alt}
           fill
           className={className}
-          sizes={sizes}
+          sizes={sizes || '100vw'}
           priority={priority}
         />
       );
     }
 
+    const defaultWidth = typeof width === 'string' ? parseInt(width, 10) || 500 : (width as number) || 500;
+    const defaultHeight = typeof height === 'string' ? parseInt(height, 10) || 500 : (height as number) || 500;
+
+    return (
+      <Image
+        src={resolvedSrc}
+        alt={alt}
+        width={defaultWidth}
+        height={defaultHeight}
+        className={className}
+        sizes={sizes}
+        priority={priority}
+      />
+    );
+  }
+
+  // Use CldImage when valid Cloudinary environment is available
+  if (fill) {
     return (
       <CldImage
         src={src}
@@ -68,24 +97,6 @@ export function CloudImage({
   const defaultWidth = width || 500;
   const defaultHeight = height || 500;
 
-  if (isLocalFile) {
-    const numericWidth = typeof defaultWidth === 'string' ? parseInt(defaultWidth, 10) || 500 : (defaultWidth as number) || 500;
-    const numericHeight = typeof defaultHeight === 'string' ? parseInt(defaultHeight, 10) || 500 : (defaultHeight as number) || 500;
-
-    return (
-      <Image
-        src={src}
-        alt={alt}
-        width={numericWidth}
-        height={numericHeight}
-        className={className}
-        sizes={sizes}
-        priority={priority}
-      />
-    );
-  }
-
-  // Cloudinary Public ID or Cloudinary URL
   return (
     <CldImage
       src={src}
