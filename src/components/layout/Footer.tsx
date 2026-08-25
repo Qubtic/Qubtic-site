@@ -130,13 +130,17 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-white/20 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/70">
           <p>&copy; {currentYear} QUIBTIC. All Rights Reserved.</p>
-          <div className="flex items-center gap-3">
-            <Link href="/terms-of-service" className="hover:text-white transition-colors">
-              Terms &amp; Conditions
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/terms" className="hover:text-white transition-colors">
+              Terms of Service
             </Link>
             <span>|</span>
             <Link href="/privacy-policy" className="hover:text-white transition-colors">
               Privacy Policy
+            </Link>
+            <span>|</span>
+            <Link href="/refund-policy" className="hover:text-white transition-colors">
+              Refund Policy
             </Link>
           </div>
         </div>

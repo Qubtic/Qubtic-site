@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://qubtic.com';
+  const baseUrl = 'https://qubtic.tech';
 
   const staticPages = [
     '',
@@ -10,8 +10,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/contact',
     '/blog',
     '/portfolio',
-    '/privacy-policy',
+    '/terms',
     '/terms-of-service',
+    '/privacy-policy',
+    '/refund-policy',
   ];
 
   const servicePages = [

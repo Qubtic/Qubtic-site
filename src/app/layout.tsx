@@ -33,12 +33,12 @@ export const metadata: Metadata = {
     'qubtic',
   ],
   authors: [{ name: 'qubtic' }],
-  metadataBase: new URL('https://qubtic.com'),
+  metadataBase: new URL('https://qubtic.tech'),
   openGraph: {
     title: 'qubtic - Digital IT Solutions & Product Studio',
     description:
       'We build and scale digital products: Websites, SaaS Platforms, Shopify Apps, and Framer Sites.',
-    url: 'https://qubtic.com',
+    url: 'https://qubtic.tech',
     siteName: 'qubtic',
     images: [
       {
@@ -76,7 +76,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${sora.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${sora.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.png?v=3" type="image/png" sizes="any" />
         <link rel="icon" href="/apple-icon.png?v=3" type="image/png" />

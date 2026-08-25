@@ -135,6 +135,7 @@ export function TechLoader({
                   alt="Qubtic Core"
                   fill
                   priority
+                  sizes="40px"
                   className="object-contain"
                 />
               </motion.div>

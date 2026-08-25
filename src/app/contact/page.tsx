@@ -129,8 +129,8 @@ export default function ContactPage() {
 
               <div className="relative z-10 w-full h-full">
                 <Image
-                  src="/images/contact.gif"
-                  alt="Contact Qubtic Team 3D Animation"
+                  src="/images/support-agent-with-headset-on-smartphone-customer-service-assistance.gif"
+                  alt="Customer Support & Assistance 3D Animation"
                   fill
                   unoptimized
                   priority
@@ -400,41 +400,73 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* Instant Calendar Booking Box */}
-            <div className="bg-white border border-[#E5E0D8] rounded-[28px] p-6 sm:p-7 shadow-xs flex flex-col gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#0C3823]/10 flex items-center justify-center text-[#0C3823] shrink-0">
-                  <Calendar className="w-5 h-5" />
+            {/* Instant Calendar Booking Box - Elevated Premium Card */}
+            <div className="relative overflow-hidden rounded-[28px] md:rounded-[32px] border border-[#E5E0D8] bg-gradient-to-br from-white via-[#FAF8F5] to-[#F4EFE6] p-7 md:p-8 shadow-md group transition-all duration-300 hover:shadow-xl hover:border-[#164E33]/30 flex flex-col gap-5">
+              {/* Subtle Ambient Radial Glow */}
+              <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-[#164E33]/10 blur-2xl group-hover:bg-[#CCFF00]/20 transition-all duration-500" />
+
+              <div className="flex items-start gap-4 relative z-10">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0C3823] text-[#CCFF00] shadow-[0_8px_20px_rgba(12,56,35,0.25)] shrink-0 transition-transform duration-300 group-hover:scale-105">
+                  <Calendar className="h-6 w-6" />
                 </div>
-                <div>
-                  <h4 className="text-sm font-bold text-[#141915] font-heading">
+                <div className="flex-1">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-[#0C3823]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#0C3823] mb-1.5 font-mono">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#164E33] opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#164E33]" />
+                    </span>
+                    <span>LIVE CALENDAR</span>
+                  </div>
+                  <h4 className="text-base sm:text-lg font-bold text-[#141915] font-heading tracking-tight">
                     Prefer an Instant Scoping Call?
                   </h4>
-                  <p className="text-xs text-[#666C64]">
-                    Book directly on our senior solutions architect&apos;s calendar.
+                  <p className="text-xs sm:text-sm text-[#666C64] leading-relaxed mt-1">
+                    Skip the email queue and reserve a slot directly with our Lead Solutions Architect.
                   </p>
                 </div>
               </div>
-              <Button
+
+              {/* Quick Pillars */}
+              <div className="grid grid-cols-3 gap-2 py-3 px-3.5 rounded-2xl bg-white/80 border border-[#E5E0D8]/70 text-[11px] font-semibold text-[#0C3823] relative z-10">
+                <span className="flex items-center gap-1.5 justify-center">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#164E33] shrink-0" />
+                  <span>20-Min Call</span>
+                </span>
+                <span className="flex items-center gap-1.5 justify-center border-x border-[#E5E0D8]/60">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#164E33] shrink-0" />
+                  <span>Zero Obligation</span>
+                </span>
+                <span className="flex items-center gap-1.5 justify-center">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#164E33] shrink-0" />
+                  <span>Direct Tech Lead</span>
+                </span>
+              </div>
+
+              {/* Action Button */}
+              <a
                 href="https://calendly.com"
                 target="_blank"
-                variant="outline"
-                size="sm"
-                className="w-full justify-center group"
+                rel="noreferrer"
+                className="group/btn relative z-10 inline-flex items-center justify-center gap-3 w-full rounded-full bg-[#164E33] hover:bg-[#0C3823] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_10px_25px_rgba(22,78,51,0.2)] hover:shadow-[0_14px_30px_rgba(22,78,51,0.3)] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
               >
                 <span>Schedule a 20-Minute Scoping Call</span>
-                <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-              </Button>
+                <ArrowUpRight className="w-4 h-4 text-[#CCFF00] group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
+              </a>
             </div>
 
             {/* SLA Badge */}
-            <div className="bg-[#F0EDE5] border border-[#E5E0D8] rounded-2xl p-6 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-[#0C3823] text-white flex items-center justify-center font-bold text-sm shrink-0">
+            <div className="bg-[#FAF8F5] border border-[#E5E0D8] rounded-[24px] p-5 sm:p-6 flex items-center gap-4 shadow-2xs">
+              <div className="w-11 h-11 rounded-2xl bg-[#0C3823] text-[#CCFF00] flex items-center justify-center font-heading font-black text-sm shrink-0 shadow-sm">
                 24h
               </div>
-              <p className="text-xs text-[#666C64] leading-relaxed">
-                <strong className="text-[#141915] block">Guaranteed Fast Response:</strong> All inquiries receive a dedicated scoping response within one business day.
-              </p>
+              <div>
+                <p className="text-xs sm:text-sm font-bold text-[#141915]">
+                  Guaranteed Fast Discovery Response
+                </p>
+                <p className="text-xs text-[#666C64] leading-relaxed mt-0.5">
+                  All submitted inquiries receive a comprehensive scoping roadmap within one business day.
+                </p>
+              </div>
             </div>
           </div>
         </div>
