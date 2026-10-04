@@ -145,6 +145,21 @@ export interface InquiryItem {
   createdAt: string;
 }
 
+export interface FeatureRequestItem {
+  id: string;
+  name: string;
+  email: string;
+  company?: string;
+  category: string;
+  useCase: string;
+  title: string;
+  description: string;
+  referenceUrl?: string;
+  priority: string;
+  status?: string;
+  createdAt: string;
+}
+
 export interface AdminUserItem {
   id: string;
   name: string;
@@ -885,3 +900,41 @@ export function addInquiryStore(inquiry: Omit<InquiryItem, 'id' | 'createdAt'>):
   writeJsonFile('inquiries.json', inquiries);
   return newItem;
 }
+
+export function getFeatureRequestsStore(): FeatureRequestItem[] {
+  return readJsonFile<FeatureRequestItem[]>('feature-requests.json', []);
+}
+
+export async function addFeatureRequestDb(
+  item: Omit<FeatureRequestItem, 'id' | 'createdAt' | 'status'>
+): Promise<FeatureRequestItem> {
+  const newItem: FeatureRequestItem = {
+    id: `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    ...item,
+    status: 'under-review',
+    createdAt: new Date().toISOString(),
+  };
+
+  // 1. Try to record in Supabase inquiries as fallback for unified admin visibility
+  try {
+    await supabase.from('inquiries').insert({
+      name: item.name,
+      email: item.email,
+      company: item.company || null,
+      service: `Frame Drop Request: [${item.category}] ${item.title}`,
+      budget: item.priority,
+      message: `[FEATURE REQUEST]\nCategory: ${item.category}\nUse Case: ${item.useCase}\nPriority: ${item.priority}\nReference: ${item.referenceUrl || 'None'}\n\nDetails:\n${item.description}`,
+      status: 'new',
+    });
+  } catch (err) {
+    console.error('Error adding feature request to Supabase inquiries:', err);
+  }
+
+  // 2. Also store in feature-requests.json
+  const current = getFeatureRequestsStore();
+  current.unshift(newItem);
+  writeJsonFile('feature-requests.json', current);
+
+  return newItem;
+}
+

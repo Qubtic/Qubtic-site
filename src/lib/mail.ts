@@ -129,3 +129,127 @@ export async function sendContactEmail(params: SendContactEmailParams) {
     return null;
   }
 }
+
+export interface SendFeatureRequestEmailParams {
+  name: string;
+  email: string;
+  company?: string;
+  category: string;
+  useCase: string;
+  title: string;
+  description: string;
+  referenceUrl?: string;
+  priority: string;
+}
+
+export async function sendFeatureRequestEmail(params: SendFeatureRequestEmailParams) {
+  const transporter = getTransporter();
+  const receiverEmail = process.env.CONTACT_RECEIVER_EMAIL || 'hello@qubtic.tech';
+  const fromEmail = process.env.SMTP_FROM_EMAIL || 'hello@qubtic.tech';
+  const fromName = process.env.SMTP_FROM_NAME || 'Frame Drop by Qubtic';
+
+  const formattedFrom = `"${fromName}" <${fromEmail}>`;
+
+  // 1. Email to Qubtic / Frame Drop Engineering Team
+  const adminMailOptions = {
+    from: formattedFrom,
+    to: receiverEmail,
+    replyTo: `"${params.name}" <${params.email}>`,
+    subject: `[Frame Drop Feature Request] ${params.category}: ${params.title} (${params.priority})`,
+    html: `
+      <div style="font-family: Arial, sans-serif; background-color: #f8f6f0; padding: 24px; color: #141915;">
+        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 32px; border-radius: 16px; border: 1px solid #e5e0d8;">
+          <div style="display: inline-block; padding: 4px 12px; background-color: #0c3823; color: #ccff00; font-size: 11px; font-weight: bold; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 14px;">
+            FRAME DROP &bull; FEATURE REQUEST
+          </div>
+          <h2 style="color: #0c3823; margin-top: 0; font-size: 22px;">New Component / Feature Request</h2>
+          <p style="font-size: 14px; color: #666c64;">A creator has submitted a feature wish for the Frame Drop Framer Plugin.</p>
+          
+          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <tr>
+              <td style="padding: 10px; font-weight: bold; width: 140px; background: #f0ede5; border-bottom: 1px solid #e5e0d8;">Feature Title</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e5e0d8; font-weight: bold; color: #0c3823;">${params.title}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; font-weight: bold; background: #f0ede5; border-bottom: 1px solid #e5e0d8;">Category</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e5e0d8; font-weight: 600;">${params.category}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; font-weight: bold; background: #f0ede5; border-bottom: 1px solid #e5e0d8;">Target Use Case</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e5e0d8;">${params.useCase}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; font-weight: bold; background: #f0ede5; border-bottom: 1px solid #e5e0d8;">Priority</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e5e0d8; color: #0c3823; font-weight: bold;">${params.priority}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; font-weight: bold; background: #f0ede5; border-bottom: 1px solid #e5e0d8;">Submitted By</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e5e0d8;">${params.name} (<a href="mailto:${params.email}">${params.email}</a>)</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; font-weight: bold; background: #f0ede5; border-bottom: 1px solid #e5e0d8;">Studio / Handle</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e5e0d8;">${params.company || 'N/A'}</td>
+            </tr>
+            ${params.referenceUrl ? `
+            <tr>
+              <td style="padding: 10px; font-weight: bold; background: #f0ede5; border-bottom: 1px solid #e5e0d8;">Reference Link</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e5e0d8;"><a href="${params.referenceUrl}" target="_blank" style="color: #0c3823; word-break: break-all;">${params.referenceUrl}</a></td>
+            </tr>
+            ` : ''}
+          </table>
+
+          <div style="margin-top: 24px; padding: 16px; background: #f8f7f2; border-left: 4px solid #0c3823; border-radius: 4px;">
+            <h3 style="margin: 0 0 8px 0; font-size: 14px; color: #0c3823;">Feature Details &amp; Requirements</h3>
+            <p style="margin: 0; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${params.description}</p>
+          </div>
+
+          <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e0d8; text-align: center; font-size: 12px; color: #666c64;">
+            Frame Drop by Qubtic &bull; Community Product Roadmap Pipeline
+          </div>
+        </div>
+      </div>
+    `,
+  };
+
+  // 2. Auto-Confirmation Email to Submitter
+  const clientConfirmationMailOptions = {
+    from: formattedFrom,
+    to: params.email,
+    subject: `We've received your Frame Drop request: "${params.title}"!`,
+    html: `
+      <div style="font-family: Arial, sans-serif; background-color: #f8f6f0; padding: 24px; color: #141915;">
+        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 32px; border-radius: 16px; border: 1px solid #e5e0d8;">
+          <h2 style="color: #0c3823; margin-top: 0; font-size: 22px;">Thank You for Contributing to Frame Drop</h2>
+          <p style="font-size: 15px; line-height: 1.6; color: #141915;">Hi ${params.name},</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #666c64;">
+            We've successfully logged your feature request for <strong>"${params.title}"</strong> under <strong>${params.category}</strong>.
+          </p>
+          <p style="font-size: 14px; line-height: 1.6; color: #666c64;">
+            Our core Framer engineering team reviews community submissions every week during our product backlog grooming. If your requested component is added to an upcoming release sprint, we'll notify you when it ships in a bi-weekly Frame Drop plugin update.
+          </p>
+          
+          <div style="margin: 24px 0; padding: 16px; background: #f0ede5; border-radius: 12px; font-size: 13px; color: #0c3823;">
+            <strong>Want to explore current components?</strong> Check out our 25+ production-ready sections in the <a href="https://qubtic.tech/framer/frame-drop/docs" style="color: #0c3823; font-weight: bold;">Frame Drop Component Catalog</a>.
+          </div>
+
+          <p style="font-size: 14px; color: #141915; margin-bottom: 4px;">Best regards,</p>
+          <p style="font-size: 14px; font-weight: bold; color: #0c3823; margin-top: 0;">The Frame Drop & Qubtic Team</p>
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    const adminResult = await transporter.sendMail(adminMailOptions);
+    try {
+      await transporter.sendMail(clientConfirmationMailOptions);
+    } catch (err) {
+      console.warn('Failed sending confirmation email to user:', err);
+    }
+    return adminResult;
+  } catch (error) {
+    console.warn('[Mail Warning] Direct SMTP delivery unavailable or failed:', error);
+    return null;
+  }
+}
+

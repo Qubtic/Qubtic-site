@@ -1,0 +1,16 @@
+[
+  {
+    "id": "req_1791128597619_wuie7",
+    "name": "Alex Morgan",
+    "email": "alex@studio.design",
+    "company": "",
+    "category": "Section Component",
+    "useCase": "SaaS & AI Tech Landing Pages",
+    "title": "3D Interactive Spline Bento Hero",
+    "description": "A native Framer hero component with an interactive 3D Spline canvas card embedded seamlessly into our liquid glass bento grid.",
+    "referenceUrl": "",
+    "priority": "Important",
+    "status": "under-review",
+    "createdAt": "2026-10-04T15:43:17.619Z"
+  }
+]
