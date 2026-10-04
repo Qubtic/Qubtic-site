@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import { 
   X, 
   ExternalLink, 
@@ -44,11 +45,25 @@ export function FrameDropInstallModal({ isOpen, onClose }: FrameDropInstallModal
 
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[#141915]/10 mb-6">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#CCFF00] animate-pulse" />
-            <span className="font-heading text-lg font-bold uppercase text-[#141915]">
-              Install Frame Drop
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-[#141915]/10 shadow-xs p-1">
+              <Image
+                src="/images/brand/frame-drop-icon-transparent.png"
+                alt="Frame Drop Logo"
+                width={24}
+                height={24}
+                className="h-6 w-6 object-contain"
+              />
+            </div>
+            <div>
+              <span className="font-heading text-lg font-bold uppercase text-[#141915] block leading-tight">
+                Install Frame Drop
+              </span>
+              <span className="text-[11px] font-mono text-[#0C3823] font-medium flex items-center gap-1.5 mt-0.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#CCFF00] animate-pulse" />
+                Framer Native Plugin · v0.2.0
+              </span>
+            </div>
           </div>
 
           <button

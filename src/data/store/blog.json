@@ -7,6 +7,7 @@
     "readingTime": "3 min read",
     "category": "Product Launch & Updates",
     "author": "Qubtic Technologies Team",
+    "image": "/images/framedrop-banner.png",
     "content": "At Qubtic Technologies, our mission has always been to bridge the gap between world-class product design and robust engineering infrastructure.\n\nWhen designing for the web in tools like Framer, teams often run into a recurring challenge: rebuilding standard UI patterns from scratch, maintaining consistent accessibility standards, and ensuring design token harmony across multiple breakpoints.\n\n### Why We Built Frame Drop\nWe built Frame Drop to give founders, freelancers, and enterprise design teams an unfair speed advantage:\n\n1. No generic templates: Instead of rigid full-site templates that take days to customize, Frame Drop provides modular, hyper-flexible sections that drop in cleanly alongside your existing canvas work.\n2. Engineered with accessibility first: Aesthetics shouldn't sacrifice usability. Frame Drop features an integrated preflight engine checking WCAG AA compliance, text contrasts, and touch targets in real time.\n3. True token harmony: Your brand isn't static. Custom font pickers, border radii, and color overrides propagate instantaneously to all inserted components.\n\n### Start Building with Frame Drop\nFrame Drop is available directly inside the Framer Plugin Marketplace. Start free with essential components or unlock Frame Drop Pro for unlimited access to the entire design kit."
   },
   {

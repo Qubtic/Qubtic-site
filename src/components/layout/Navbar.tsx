@@ -229,8 +229,14 @@ export function Navbar() {
                   className="group/product relative block overflow-hidden rounded-2xl border border-[#164E33]/10 bg-white p-4 transition-all duration-300 hover:border-[#164E33]/30 hover:shadow-md"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#0C3823] to-[#164E33] text-white shadow-sm transition-transform duration-300 group-hover/product:scale-105">
-                      <Sparkles className="h-6 w-6 text-[#CCFF00]" />
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#0C3823] to-[#164E33] shadow-sm transition-transform duration-300 group-hover/product:scale-105 p-2 border border-white/20">
+                      <Image
+                        src="/images/brand/frame-drop-icon-transparent.png"
+                        alt="Frame Drop Logo"
+                        width={28}
+                        height={28}
+                        className="h-7 w-7 object-contain brightness-0 invert drop-shadow-[0_2px_8px_rgba(204,255,0,0.5)]"
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
@@ -389,7 +395,13 @@ export function Navbar() {
                                   className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-[#141915] hover:bg-white/80"
                                 >
                                   <div className="flex items-center gap-2">
-                                    <Sparkles className="h-3.5 w-3.5 text-[#164E33]" />
+                                    <Image
+                                      src="/images/brand/frame-drop-icon-transparent.png"
+                                      alt="Frame Drop Logo"
+                                      width={16}
+                                      height={16}
+                                      className="h-4 w-4 object-contain"
+                                    />
                                     <span>Frame Drop Overview</span>
                                   </div>
                                   <span className="text-[10px] font-bold text-[#164E33] bg-[#CCFF00] px-1.5 py-0.5 rounded">v0.2.0</span>

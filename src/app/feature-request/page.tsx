@@ -133,8 +133,15 @@ export default function FeatureRequestPage() {
               Framer
             </Link>
             <span>/</span>
-            <Link href="/framer/frame-drop" className="hover:text-[#141915] transition-colors">
-              Frame Drop
+            <Link href="/framer/frame-drop" className="hover:text-[#141915] transition-colors inline-flex items-center gap-1.5">
+              <Image
+                src="/images/brand/frame-drop-icon-transparent.png"
+                alt="Frame Drop"
+                width={14}
+                height={14}
+                className="h-3.5 w-3.5 object-contain"
+              />
+              <span>Frame Drop</span>
             </Link>
             <span>/</span>
             <span className="text-[#0C3823] font-bold">Feature Request</span>
@@ -206,8 +213,14 @@ export default function FeatureRequestPage() {
                     <div className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
                     <div className="h-2.5 w-2.5 rounded-full bg-[#27C93F]" />
                   </div>
-                  <div className="flex items-center gap-1.5 text-[11px] font-mono font-medium text-[#141915]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#CCFF00]" />
+                  <div className="flex items-center gap-2 text-[11px] font-mono font-medium text-[#141915]">
+                    <Image
+                      src="/images/brand/frame-drop-icon-transparent.png"
+                      alt="Frame Drop"
+                      width={14}
+                      height={14}
+                      className="h-3.5 w-3.5 object-contain"
+                    />
                     <span>Frame Drop Studio</span>
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#0C3823] bg-[#0C3823]/10 px-2 py-0.5 rounded-full">
@@ -216,9 +229,9 @@ export default function FeatureRequestPage() {
                 </div>
 
                 {/* Promo Image */}
-                <div className="relative flex-1 w-full bg-[#0A0D0C] overflow-hidden">
+                <div className="relative flex-1 w-full bg-[#040D1A] overflow-hidden">
                   <Image
-                    src="/images/framedrop-promo.jpg"
+                    src="/images/framedrop-banner.png"
                     alt="Frame Drop Framer Plugin by Qubtic"
                     fill
                     priority

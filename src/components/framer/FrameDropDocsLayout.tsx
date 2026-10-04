@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { 
   BookOpen, 
@@ -21,7 +22,8 @@ import {
   X,
   Terminal,
   FileCode2,
-  Workflow
+  Workflow,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FrameDropCatalogExplorer } from '@/components/framer/FrameDropCatalogExplorer';
@@ -109,8 +111,15 @@ export function FrameDropDocsLayout() {
             </button>
 
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#666C64]">
-              <Link href="/framer/frame-drop" className="text-[#0C3823] hover:underline font-bold">
-                Frame Drop
+              <Link href="/framer/frame-drop" className="flex items-center gap-2 text-[#0C3823] hover:underline font-bold">
+                <Image
+                  src="/images/brand/frame-drop-icon-transparent.png"
+                  alt="Frame Drop Logo"
+                  width={18}
+                  height={18}
+                  className="h-4.5 w-4.5 object-contain"
+                />
+                <span>Frame Drop</span>
               </Link>
               <span>/</span>
               <span className="text-[#141915]">Documentation</span>
@@ -155,9 +164,18 @@ export function FrameDropDocsLayout() {
             )}
           >
             <div className="rounded-3xl border border-[#141915]/10 bg-white/95 backdrop-blur-md p-6 shadow-2xs">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-[#0C3823] mb-4">
-                DOCUMENTATION DIRECTORY
-              </h3>
+              <div className="flex items-center gap-2.5 mb-4">
+                <Image
+                  src="/images/brand/frame-drop-icon-transparent.png"
+                  alt="Frame Drop"
+                  width={20}
+                  height={20}
+                  className="h-5 w-5 object-contain"
+                />
+                <h3 className="text-xs font-bold uppercase tracking-widest text-[#0C3823]">
+                  DOCUMENTATION DIRECTORY
+                </h3>
+              </div>
 
               <div className="space-y-6">
                 {docNavigation.map((group) => (
@@ -210,9 +228,23 @@ export function FrameDropDocsLayout() {
                   Frame Drop Documentation
                 </h1>
 
-                <p className="text-base sm:text-lg text-[#555C54] leading-relaxed mb-6 font-normal">
+                <p className="text-base sm:text-lg text-[#555C54] leading-relaxed mb-8 font-normal">
                   Frame Drop is the native Framer component suite and page studio engineered by Qubtic Technologies. It enables creators, agencies, and founders to drop production-grade, WCAG-audited sections directly onto the Framer canvas.
                 </p>
+
+                {/* Hero Banner Visual Card */}
+                <div className="mb-8 overflow-hidden rounded-[24px] border border-[#141915]/10 bg-[#040D1A] shadow-lg">
+                  <div className="relative aspect-[1024/461] w-full">
+                    <Image
+                      src="/images/framedrop-banner.png"
+                      alt="Frame Drop Official Banner"
+                      fill
+                      priority
+                      className="object-cover object-center"
+                      sizes="(max-width: 1200px) 100vw, 900px"
+                    />
+                  </div>
+                </div>
 
                 {/* Quick Feature Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-[#141915]/10">

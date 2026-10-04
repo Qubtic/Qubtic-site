@@ -1,13 +1,14 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import { 
   Share2, 
   Copy, 
   Check, 
   Globe, 
-  Sparkles, 
-  Code2 
+  Download,
+  ImageIcon
 } from 'lucide-react';
 import { 
   FaXTwitter, 
@@ -16,7 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 
 export function FrameDropMarketingToolbox() {
-  const [activeTab, setActiveTab] = React.useState<'twitter' | 'linkedin' | 'seo'>('twitter');
+  const [activeTab, setActiveTab] = React.useState<'twitter' | 'linkedin' | 'seo' | 'brand'>('twitter');
   const [copiedKey, setCopiedKey] = React.useState<string | null>(null);
 
   const snippets = {
@@ -63,6 +64,33 @@ Try it out on Framer today or explore the docs at https://qubtic.tech/framer/fra
     setTimeout(() => setCopiedKey(null), 2500);
   };
 
+  const brandAssets = [
+    {
+      title: 'Official Hero Banner',
+      dims: '1024 × 461 PNG',
+      src: '/images/framedrop-banner.png',
+      desc: 'Primary promotional banner, social graph preview, and marketing asset.',
+      aspect: 'aspect-[1024/461]',
+      bgDark: false,
+    },
+    {
+      title: 'Frame Drop Logo Mark',
+      dims: '1024 × 1024 PNG',
+      src: '/images/brand/frame-drop-logo.png',
+      desc: 'Official square identity mark with blue camera frame & droplet stack.',
+      aspect: 'aspect-square',
+      bgDark: false,
+    },
+    {
+      title: 'Transparent UI Icon',
+      dims: 'Alpha PNG',
+      src: '/images/brand/frame-drop-icon-transparent.png',
+      desc: 'Clean transparent cutout for dark navigation bars, badges, and button icons.',
+      aspect: 'aspect-square',
+      bgDark: true,
+    },
+  ];
+
   return (
     <section id="marketing-toolbox" className="scroll-mt-36 py-12 sm:py-16 relative">
       <div className="relative mx-auto w-full">
@@ -74,15 +102,36 @@ Try it out on Framer today or explore the docs at https://qubtic.tech/framer/fra
             AGENCY &amp; CREATOR PRESS KIT
           </span>
           <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-tight text-[#141915] leading-[1.05]">
-            Social &amp; Launch Snippets
+            Social &amp; Brand Assets
           </h2>
           <p className="mt-4 text-base sm:text-lg text-[#555C54] leading-relaxed">
-            Ready-to-publish marketing assets, developer community launch threads, and structured SEO metadata.
+            Ready-to-publish marketing assets, official logos &amp; banners, developer launch threads, and structured SEO metadata.
           </p>
         </div>
 
         {/* Tab Buttons */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-8">
+          <button
+            onClick={() => setActiveTab('brand')}
+            className={cn(
+              'flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer border',
+              activeTab === 'brand'
+                ? 'bg-[#0066FF] text-white border-[#0066FF] shadow-xs'
+                : 'bg-white text-[#666C64] border-[#141915]/10 hover:bg-[#F4EFE6]'
+            )}
+          >
+            <div className="w-4 h-4 rounded bg-[#0066FF]/20 flex items-center justify-center p-0.5">
+              <Image 
+                src="/images/brand/frame-drop-icon-transparent.png" 
+                alt="Frame Drop" 
+                width={16} 
+                height={16} 
+                className="w-full h-full object-contain brightness-110" 
+              />
+            </div>
+            Official Brand Assets
+          </button>
+
           <button
             onClick={() => setActiveTab('twitter')}
             className={cn(
@@ -126,6 +175,86 @@ Try it out on Framer today or explore the docs at https://qubtic.tech/framer/fra
         {/* Content Box */}
         <div className="rounded-[32px] border border-[#141915]/10 bg-white p-6 sm:p-10 shadow-sm relative">
           
+          {/* Brand Assets Tab */}
+          {activeTab === 'brand' && (
+            <div className="space-y-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#141915]/10 gap-3">
+                <span className="font-mono text-xs text-[#666C64] flex items-center gap-2">
+                  <ImageIcon className="w-3.5 h-3.5 text-[#0066FF]" />
+                  <span>Official Frame Drop Press &amp; Media Kit</span>
+                </span>
+                <span className="text-xs font-mono text-[#0066FF] font-semibold bg-[#0066FF]/10 px-3 py-1 rounded-full w-fit">
+                  High-Resolution • PNG 300DPI
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {brandAssets.map((asset, idx) => (
+                  <div 
+                    key={idx} 
+                    className="flex flex-col justify-between rounded-2xl border border-[#141915]/10 bg-[#F8F6F0] p-4 overflow-hidden group hover:border-[#0066FF]/40 transition-colors"
+                  >
+                    <div>
+                      {/* Image Preview */}
+                      <div className={cn(
+                        'relative w-full rounded-xl overflow-hidden border border-[#141915]/10 mb-4 flex items-center justify-center',
+                        asset.aspect,
+                        asset.bgDark ? 'bg-gradient-to-br from-[#051329] to-[#010915] p-6' : 'bg-white'
+                      )}>
+                        <Image 
+                          src={asset.src} 
+                          alt={asset.title} 
+                          fill 
+                          className={cn(
+                            asset.bgDark ? 'object-contain p-4' : 'object-cover'
+                          )} 
+                        />
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <h4 className="font-heading text-base font-bold text-[#141915]">
+                          {asset.title}
+                        </h4>
+                        <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#0066FF] bg-white px-2 py-0.5 rounded border border-[#0066FF]/20">
+                          {asset.dims}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#666C64] leading-relaxed mb-4">
+                        {asset.desc}
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 pt-3 border-t border-[#141915]/10">
+                      <a
+                        href={asset.src}
+                        download
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-[#141915] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0066FF] transition-colors cursor-pointer text-center"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(asset.src, `asset-${idx}`)}
+                        className="inline-flex items-center justify-center gap-1 rounded-full bg-white border border-[#141915]/15 px-3 py-2 text-xs font-semibold text-[#141915] hover:bg-[#EAE5DC] transition-colors cursor-pointer"
+                        title="Copy asset path"
+                      >
+                        {copiedKey === `asset-${idx}` ? (
+                          <Check className="w-3.5 h-3.5 text-[#0C3823]" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5 text-[#666C64]" />
+                        )}
+                        <span>{copiedKey === `asset-${idx}` ? 'Copied' : 'Path'}</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {activeTab === 'twitter' && (
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-[#141915]/10 mb-6">

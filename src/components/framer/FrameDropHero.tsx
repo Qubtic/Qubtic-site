@@ -74,7 +74,16 @@ export function FrameDropHero({ onInstallClick, onExploreCatalog }: FrameDropHer
               Framer
             </Link>
             <span>/</span>
-            <span className="text-[#0C3823] font-bold">Frame Drop</span>
+            <span className="text-[#0C3823] font-bold inline-flex items-center gap-1.5">
+              <Image
+                src="/images/brand/frame-drop-icon-transparent.png"
+                alt="Frame Drop"
+                width={14}
+                height={14}
+                className="h-3.5 w-3.5 object-contain"
+              />
+              <span>Frame Drop</span>
+            </span>
           </div>
 
           <div className="flex items-center gap-2.5">
@@ -123,11 +132,19 @@ export function FrameDropHero({ onInstallClick, onExploreCatalog }: FrameDropHer
           <div className="flex flex-col items-start text-left lg:col-span-7">
             {/* Eyebrow with Brand Watermark Styling */}
             <div className="mb-4 flex items-center gap-3">
-              <span className="h-px w-8 bg-[#0C3823]/30" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white border border-[#0C3823]/15 shadow-2xs p-1">
+                <Image
+                  src="/images/brand/frame-drop-icon-transparent.png"
+                  alt="Frame Drop Logo"
+                  width={20}
+                  height={20}
+                  className="h-5 w-5 object-contain"
+                />
+              </div>
+              <span className="h-px w-6 bg-[#0C3823]/30" />
               <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#0C3823]">
                 {current.eyebrow}
               </span>
-              <span className="h-px w-8 bg-[#0C3823]/30" />
             </div>
 
             {/* Main Heading */}
@@ -205,7 +222,7 @@ export function FrameDropHero({ onInstallClick, onExploreCatalog }: FrameDropHer
 
           </div>
 
-          {/* Right Column: Hero Visual Showcase (Framedrop Promo) */}
+          {/* Right Column: Hero Visual Showcase (Framedrop Banner) */}
           <div className="relative lg:col-span-5">
             <div className="relative mx-auto w-full max-w-[620px] rounded-[32px] p-2 sm:p-3 bg-gradient-to-b from-white/90 via-white/50 to-white/20 border border-white/80 shadow-[0_30px_70px_rgba(22,78,51,0.18)] backdrop-blur-xl">
               
@@ -216,8 +233,14 @@ export function FrameDropHero({ onInstallClick, onExploreCatalog }: FrameDropHer
                   <div className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
                   <div className="h-2.5 w-2.5 rounded-full bg-[#27C93F]" />
                 </div>
-                <div className="flex items-center gap-2 text-[11px] font-mono font-medium text-[#141915]/70">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#CCFF00]" />
+                <div className="flex items-center gap-2 text-[11px] font-mono font-medium text-[#141915]">
+                  <Image
+                    src="/images/brand/frame-drop-icon-transparent.png"
+                    alt="Frame Drop Logo"
+                    width={16}
+                    height={16}
+                    className="h-4 w-4 object-contain"
+                  />
                   <span>Frame Drop Studio · Framer Plugin</span>
                 </div>
                 <div className="text-[10px] font-bold uppercase tracking-wider text-[#0C3823] bg-[#0C3823]/10 px-2 py-0.5 rounded-full">
@@ -225,11 +248,11 @@ export function FrameDropHero({ onInstallClick, onExploreCatalog }: FrameDropHer
                 </div>
               </div>
 
-              {/* Main Promo Image Canvas */}
-              <div className="relative aspect-[16/10] w-full overflow-hidden rounded-b-[24px] bg-[#0A0D0C]">
+              {/* Main Banner Image Canvas */}
+              <div className="relative aspect-[1024/461] w-full overflow-hidden rounded-b-[24px] bg-[#040D1A]">
                 <Image
-                  src="/images/framedrop-promo.jpg"
-                  alt="Frame Drop Pro - Framer Native Component Studio by Qubtic"
+                  src="/images/framedrop-banner.png"
+                  alt="Frame Drop - Drag. Drop. Build. Framer Plugin by Qubtic"
                   fill
                   priority
                   className="object-cover object-center transition-transform duration-700 hover:scale-[1.02]"
@@ -237,23 +260,29 @@ export function FrameDropHero({ onInstallClick, onExploreCatalog }: FrameDropHer
                 />
 
                 {/* Floating Micro Badge Overlay 1 */}
-                <div className="absolute top-4 left-4 z-20 flex items-center gap-2 rounded-xl bg-[#0A0D0C]/85 px-3 py-1.5 text-xs font-medium text-white shadow-lg backdrop-blur-md border border-white/15">
-                  <Zap className="h-3.5 w-3.5 text-[#CCFF00]" />
+                <div className="absolute top-3 left-3 z-20 flex items-center gap-2 rounded-xl bg-[#040D1A]/85 px-3 py-1.5 text-xs font-medium text-white shadow-lg backdrop-blur-md border border-white/15">
+                  <Zap className="h-3.5 w-3.5 text-[#0084FD]" />
                   <span>1-Click Safe Insertion</span>
                 </div>
 
                 {/* Floating Micro Badge Overlay 2 */}
-                <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2 rounded-xl bg-[#0A0D0C]/85 px-3 py-1.5 text-xs font-medium text-white shadow-lg backdrop-blur-md border border-white/15">
-                  <ShieldCheck className="h-3.5 w-3.5 text-[#CCFF00]" />
-                  <span>WCAG AA &gt;= 4.5:1 Pass</span>
+                <div className="absolute bottom-3 right-3 z-20 flex items-center gap-2 rounded-xl bg-[#040D1A]/85 px-3 py-1.5 text-xs font-medium text-white shadow-lg backdrop-blur-md border border-white/15">
+                  <ShieldCheck className="h-3.5 w-3.5 text-[#0084FD]" />
+                  <span>WCAG AA Pass</span>
                 </div>
               </div>
 
               {/* Quick Interactive Tooltip bar beneath */}
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-xs text-[#555C54] bg-white/60 rounded-2xl border border-[#141915]/5">
                 <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="h-3.5 w-3.5 text-[#0C3823]" />
-                  <span>Obsidian Dark &amp; Crystal Light Theme Duality</span>
+                  <Image
+                    src="/images/brand/frame-drop-icon-transparent.png"
+                    alt="Frame Drop Icon"
+                    width={14}
+                    height={14}
+                    className="h-3.5 w-3.5 object-contain"
+                  />
+                  <span>Drag. Drop. Build. Structured Sections</span>
                 </div>
                 <div className="flex items-center gap-1 font-semibold text-[#0C3823]">
                   <span>25+ Sections</span>
