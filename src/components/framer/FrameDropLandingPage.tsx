@@ -106,50 +106,6 @@ export function FrameDropLandingPage() {
         <FrameDropHero onInstallClick={openInstall} />
       </div>
 
-      {/* 1.5 OFFICIAL HERO BANNER SHOWCASE */}
-      <section className="relative -mt-6 mb-12 sm:mb-16">
-        <div className="relative mx-auto w-full max-w-[1720px] px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20">
-          <div className="relative overflow-hidden rounded-[32px] border border-white/60 bg-gradient-to-b from-[#0A1322] to-[#040D1A] p-3 sm:p-5 shadow-[0_25px_60px_rgba(0,132,253,0.15)]">
-            <div className="relative aspect-[1024/461] w-full overflow-hidden rounded-[24px]">
-              <Image
-                src="/images/framedrop-banner.png"
-                alt="Frame Drop - Drag. Drop. Build. Official Hero Banner by Qubtic"
-                fill
-                priority
-                className="object-cover object-center"
-                sizes="(max-width: 1720px) 100vw, 1600px"
-              />
-            </div>
-            
-            {/* Ambient Banner Footer Bar */}
-            <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 px-3 py-2 text-xs text-white/70">
-              <div className="flex items-center gap-2.5">
-                <Image
-                  src="/images/brand/frame-drop-icon-transparent.png"
-                  alt="Frame Drop Logo"
-                  width={20}
-                  height={20}
-                  className="h-5 w-5 object-contain"
-                />
-                <span className="font-heading font-bold text-white tracking-wide">FRAME DROP NATIVE CANVAS SUITE</span>
-                <span className="hidden sm:inline text-white/40">·</span>
-                <span className="hidden sm:inline text-white/80">Turn your designs into structured sections — instantly</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={openInstall}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#CCFF00] px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[#141915] shadow-xs hover:bg-white transition-colors cursor-pointer"
-                >
-                  <span>Install on Framer</span>
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* 2. VALUE PILLARS & FEATURE MATRIX */}
       <FrameDropBentoGrid />
 

@@ -199,13 +199,13 @@ export default function FeatureRequestPage() {
 
           {/* Hero Visual Showcase */}
           <div className="lg:col-span-5 flex justify-center lg:justify-end">
-            <div className="relative w-full max-w-[460px] aspect-[4/3] sm:aspect-square flex items-center justify-center p-2">
+            <div className="relative w-full max-w-[480px] flex items-center justify-center p-2">
               {/* Soft Ambient Radial Glow behind showcase */}
-              <div className="pointer-events-none absolute h-64 w-64 rounded-full bg-[#164E33]/15 blur-3xl sm:h-72 sm:w-72" />
-              <div className="pointer-events-none absolute h-48 w-48 rounded-full bg-[#CCFF00]/25 blur-2xl sm:h-56 sm:w-56" />
+              <div className="pointer-events-none absolute h-64 w-64 rounded-full bg-[#0066FF]/15 blur-3xl sm:h-72 sm:w-72" />
+              <div className="pointer-events-none absolute h-48 w-48 rounded-full bg-[#00D2FF]/20 blur-2xl sm:h-56 sm:w-56" />
 
               {/* Showcase Container */}
-              <div className="relative z-10 w-full h-full rounded-[28px] overflow-hidden border border-[#E5E0D8] bg-white shadow-xl flex flex-col">
+              <div className="relative z-10 w-full rounded-[28px] overflow-hidden border border-[#E5E0D8] bg-white shadow-xl flex flex-col">
                 {/* Window header */}
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#141915]/10 bg-[#FAF8F5]">
                   <div className="flex items-center gap-1.5">
@@ -223,43 +223,28 @@ export default function FeatureRequestPage() {
                     />
                     <span>Frame Drop Studio</span>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#0C3823] bg-[#0C3823]/10 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#0066FF] bg-[#0066FF]/10 px-2 py-0.5 rounded-full">
                     v0.2.0
                   </span>
                 </div>
 
-                {/* Promo Image */}
-                <div className="relative flex-1 w-full bg-[#040D1A] overflow-hidden">
+                {/* Banner Image */}
+                <div className="relative aspect-[1024/461] w-full bg-[#040D1A] overflow-hidden">
                   <Image
                     src="/images/framedrop-banner.png"
                     alt="Frame Drop Framer Plugin by Qubtic"
                     fill
                     priority
-                    className="object-cover object-center"
-                    sizes="(max-width: 768px) 100vw, 460px"
+                    className="object-contain object-center"
+                    sizes="(max-width: 768px) 100vw, 480px"
                   />
-                  {/* Subtle Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0A0D0C]/80 via-transparent to-transparent" />
-                  
-                  {/* Floating Pill Badge 1 */}
-                  <div className="absolute top-3 right-3 z-20 flex items-center gap-2 rounded-full border border-white/70 bg-white/90 px-3.5 py-1.5 text-xs font-semibold text-[#164E33] shadow-lg backdrop-blur-md">
-                    <span className="h-2 w-2 rounded-full bg-[#CCFF00] shadow-[0_0_0_3px_rgba(204,255,0,0.4)] animate-pulse" />
-                    <span>Direct Access to Engineers</span>
-                  </div>
-
-                  {/* Floating Pill Badge 2 */}
-                  <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2 rounded-full border border-[#164E33]/30 bg-[#164E33]/90 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xl backdrop-blur-md">
-                    <Sparkles className="h-3.5 w-3.5 text-[#CCFF00]" />
-                    <span>Co-Create With Qubtic</span>
-                  </div>
                 </div>
 
                 {/* Bottom Bar */}
                 <div className="px-4 py-2.5 bg-[#F8F7F2] border-t border-[#E5E0D8] flex items-center justify-between text-xs text-[#666C64]">
                   <span>25+ Native Framer Sections</span>
-                  <Link href="/framer/frame-drop" className="text-[#0C3823] font-bold hover:underline inline-flex items-center gap-1">
-                    <span>Learn More</span>
-                    <ArrowUpRight className="w-3 h-3" />
+                  <Link href="/framer/frame-drop" className="text-[#0066FF] font-bold hover:underline inline-flex items-center gap-1">
+                    Explore Studio &rarr;
                   </Link>
                 </div>
               </div>

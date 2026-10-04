@@ -240,7 +240,7 @@ export function FrameDropDocsLayout() {
                       alt="Frame Drop Official Banner"
                       fill
                       priority
-                      className="object-cover object-center"
+                      className="object-contain object-center"
                       sizes="(max-width: 1200px) 100vw, 900px"
                     />
                   </div>
