@@ -500,11 +500,13 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
             framerUserId,
             framerProjectId,
             plan: 'pro',
+            pairing_code: pairingCode ? pairingCode.trim() : undefined,
             metadata: {
               sourceTab: activeTab,
               rememberMe,
               company_name: companyName,
               website_url: websiteUrl,
+              pairing_code: pairingCode ? pairingCode.trim() : undefined,
             },
           }),
         });
@@ -627,67 +629,6 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                   <span className="qubtic-auth-project-name">{framerProjectId}</span>
                 </div>
               )}
-
-              {/* Pairing Code Banner (RFC 8628 Device Handoff) */}
-              <div
-                style={{
-                  marginBottom: '16px',
-                  padding: '10px 14px',
-                  borderRadius: '10px',
-                  background: 'rgba(166, 255, 0, 0.08)',
-                  border: '1px solid rgba(166, 255, 0, 0.25)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '10px',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                  <KeyRound size={16} style={{ color: '#A6FF00', flexShrink: 0 }} />
-                  <div style={{ fontSize: '12px', lineHeight: 1.3 }}>
-                    <div style={{ color: '#8E968F', fontSize: '11px' }}>Pairing Code</div>
-                    <input
-                      type="text"
-                      value={pairingCode}
-                      onChange={(e) => setPairingCode(e.target.value.toUpperCase())}
-                      placeholder="FD-XXXX"
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#A6FF00',
-                        fontWeight: 700,
-                        fontSize: '13px',
-                        letterSpacing: '1px',
-                        outline: 'none',
-                        width: '100px',
-                        fontFamily: 'monospace',
-                      }}
-                    />
-                  </div>
-                </div>
-                <span
-                  style={{
-                    fontSize: '10.5px',
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    background:
-                      pairingStatus === 'confirmed'
-                        ? 'rgba(166, 255, 0, 0.2)'
-                        : 'rgba(255, 255, 255, 0.08)',
-                    color: pairingStatus === 'confirmed' ? '#A6FF00' : '#8E968F',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {pairingStatus === 'confirmed'
-                    ? 'Paired'
-                    : pairingStatus === 'confirming'
-                    ? 'Pairing...'
-                    : pairingCode
-                    ? 'Ready to Pair'
-                    : 'Optional'}
-                </span>
-              </div>
 
               {/* Switcher Tabs */}
               <div
@@ -1239,33 +1180,10 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                   <div className="qubtic-auth-success-row">
                     <span className="qubtic-auth-success-label">Framer Plugin Paired:</span>
                     <span className="qubtic-auth-success-val" style={{ color: '#A6FF00', fontWeight: 600 }}>
-                      <Check size={14} /> {pairingCode}
+                      <Check size={14} /> Connected
                     </span>
                   </div>
                 )}
-              </div>
-
-              {/* 6-Digit Manual Session Code (For Framer Plugin Fallback) */}
-              <div className="qubtic-auth-pin-box">
-                <div className="qubtic-auth-pin-header">
-                  <span className="qubtic-auth-pin-title">
-                    Manual 6-Digit Plugin Pin
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(successData.sessionCode, 'code')}
-                    className="qubtic-auth-copy-btn"
-                  >
-                    {copiedCode ? <Check size={12} /> : <Copy size={12} />}
-                    <span>{copiedCode ? 'Copied' : 'Copy Pin'}</span>
-                  </button>
-                </div>
-                <div className="qubtic-auth-pin-code">
-                  {successData.sessionCode}
-                </div>
-                <p className="qubtic-auth-pin-hint">
-                  If Framer did not auto-advance, paste this pin into your plugin interface.
-                </p>
               </div>
 
               {/* Action Buttons */}

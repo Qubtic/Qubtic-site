@@ -176,10 +176,7 @@ export function FrameDropHero({ onInstallClick, onExploreCatalog }: FrameDropHer
               onClick={onInstallClick}
               className="fd-btn-primary"
             >
-              <span>Install on Framer</span>
-              <span className="fd-tag-cyan">
-                Free to Start
-              </span>
+              <span>Open on Framer</span>
               <ArrowUpRight className="fd-icon-sm" />
             </button>
 

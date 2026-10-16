@@ -233,15 +233,13 @@ export async function createOrUpdateFramerUser(params: {
           ? existing.early_bird_granted_at || existing.created_at || now
           : undefined;
 
-        const updatedRecord: Partial<FramerUserRecord> = {
+        const dbUpdatePayload = {
           name: params.name || existing.name || '',
           company_name: companyToSave,
           website_url: websiteToSave,
           plugin_name: plugin.name,
           auth_token: token,
           plan: resolvedPlan,
-          is_early_bird: resolvedIsEarlyBird,
-          early_bird_granted_at: resolvedEarlyBirdGrantedAt,
           last_login_at: now,
           updated_at: now,
           framer_user_id: params.framerUserId || existing.framer_user_id,
@@ -258,22 +256,28 @@ export async function createOrUpdateFramerUser(params: {
 
         const { data: updated, error: updateErr } = await supabase
           .from('framer_users')
-          .update(updatedRecord)
+          .update(dbUpdatePayload)
           .eq('id', existing.id)
           .select()
           .single();
 
         if (!updateErr && updated) {
-          // Sync locally as backup
-          syncUserLocally(updated as FramerUserRecord);
-          return { user: updated as FramerUserRecord, isNew: false, token };
+          const userWithAttrs = ensureEarlyBirdAttributes({
+            ...updated,
+            is_early_bird: resolvedIsEarlyBird,
+            early_bird_granted_at: resolvedEarlyBirdGrantedAt,
+          } as FramerUserRecord);
+          syncUserLocally(userWithAttrs);
+          return { user: userWithAttrs, isNew: false, token };
+        } else if (updateErr) {
+          console.warn('Supabase framer_users update error:', updateErr);
         }
       } else {
         // Create brand new user
         const earlyBird = evaluateEarlyBirdStatus(now, EARLY_BIRD_CUTOFF_DATE);
         const assignedPlan = earlyBird.is_early_bird ? 'pro' : params.plan || 'free';
 
-        const newRecord: Omit<FramerUserRecord, 'id'> = {
+        const dbInsertPayload = {
           email: normalizedEmail,
           name: params.name || normalizedEmail.split('@')[0],
           company_name: params.company_name || '',
@@ -285,8 +289,6 @@ export async function createOrUpdateFramerUser(params: {
           plan: assignedPlan,
           auth_token: token,
           status: 'active',
-          is_early_bird: earlyBird.is_early_bird,
-          early_bird_granted_at: earlyBird.is_early_bird ? now : undefined,
           metadata: {
             ...(params.metadata || {}),
             ...(params.company_name ? { company_name: params.company_name } : {}),
@@ -301,13 +303,20 @@ export async function createOrUpdateFramerUser(params: {
 
         const { data: created, error: insertErr } = await supabase
           .from('framer_users')
-          .insert(newRecord)
+          .insert(dbInsertPayload)
           .select()
           .single();
 
         if (!insertErr && created) {
-          syncUserLocally(created as FramerUserRecord);
-          return { user: created as FramerUserRecord, isNew: true, token };
+          const userWithAttrs = ensureEarlyBirdAttributes({
+            ...created,
+            is_early_bird: earlyBird.is_early_bird,
+            early_bird_granted_at: earlyBird.is_early_bird ? now : undefined,
+          } as FramerUserRecord);
+          syncUserLocally(userWithAttrs);
+          return { user: userWithAttrs, isNew: true, token };
+        } else if (insertErr) {
+          console.warn('Supabase framer_users insert error:', insertErr);
         }
       }
     }
@@ -688,14 +697,37 @@ export async function initiatePairingSession(params?: {
   // Cache in-memory and write to local JSON store
   syncPairingSessionLocally(sessionRecord);
 
-  // Sync to Supabase if available
+  // Sync to Supabase using exact database schema columns
   try {
-    await supabase.from('framer_pairing_sessions').insert(sessionRecord);
-  } catch {
-    // Fail silently to local store
+    const supabasePayload = {
+      id: sessionRecord.id,
+      device_code: sessionRecord.device_code,
+      user_code: sessionRecord.user_code,
+      plugin_slug: sessionRecord.plugin_slug,
+      plugin_name: sessionRecord.plugin_name,
+      status: sessionRecord.status,
+      expires_at: sessionRecord.expires_at,
+      poll_interval: sessionRecord.poll_interval,
+      poll_count: 0,
+      last_poll_at: null,
+      auth_token: null,
+      user_data: null,
+      metadata: sessionRecord.metadata || {},
+      created_at: sessionRecord.created_at,
+      updated_at: sessionRecord.updated_at,
+    };
+    const { error: sbErr } = await supabase.from('framer_pairing_sessions').insert(supabasePayload);
+    if (sbErr) {
+      console.warn('Supabase framer_pairing_sessions insert error:', sbErr);
+    }
+  } catch (sbEx) {
+    console.warn('Supabase framer_pairing_sessions insert exception:', sbEx);
   }
 
-  const lockedUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://qubtic.tech';
+  let lockedUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.qubtic.tech';
+  if (lockedUrl === 'https://qubtic.tech' || lockedUrl === 'http://qubtic.tech') {
+    lockedUrl = 'https://www.qubtic.tech';
+  }
   const verificationUri = `${lockedUrl}/auth/framedrop`;
   const verificationUriComplete = `${verificationUri}?code=${userCode}`;
 
@@ -748,26 +780,27 @@ export async function confirmPairingSession(
     };
   }
 
-  // Find session
-  let session = inMemoryPairingSessions.get(normalizedCode);
-  if (!session) {
-    const list = readLocalPairingSessions();
-    session = list.find((s) => s.user_code === normalizedCode || s.user_code.toUpperCase() === normalizedCode);
+  // Find session: check Supabase first (distributed source of truth across serverless instances)
+  let session: FramerPairingSessionRecord | null = null;
+  try {
+    const { data, error } = await supabase
+      .from('framer_pairing_sessions')
+      .select('*')
+      .eq('user_code', normalizedCode)
+      .maybeSingle();
+    if (!error && data) {
+      session = data as FramerPairingSessionRecord;
+    }
+  } catch {
+    // ignore
   }
 
   if (!session) {
-    try {
-      const { data } = await supabase
-        .from('framer_pairing_sessions')
-        .select('*')
-        .eq('user_code', normalizedCode)
-        .maybeSingle();
-      if (data) {
-        session = data as FramerPairingSessionRecord;
-      }
-    } catch {
-      // ignore
-    }
+    session = inMemoryPairingSessions.get(normalizedCode) || null;
+  }
+  if (!session) {
+    const list = readLocalPairingSessions();
+    session = list.find((s) => s.user_code === normalizedCode || s.user_code.toUpperCase() === normalizedCode) || null;
   }
 
   if (!session) {
@@ -809,11 +842,11 @@ export async function confirmPairingSession(
     : null;
   session.updated_at = new Date(customNow).toISOString();
 
-  // Persist atomically
+  // Persist locally
   syncPairingSessionLocally(session);
 
   try {
-    await supabase
+    const { error: sbUpdateErr } = await supabase
       .from('framer_pairing_sessions')
       .update({
         status: 'confirmed',
@@ -821,9 +854,12 @@ export async function confirmPairingSession(
         user_data: session.user_data,
         updated_at: session.updated_at,
       })
-      .eq('id', session.id);
-  } catch {
-    // ignore
+      .eq('user_code', normalizedCode);
+    if (sbUpdateErr) {
+      console.warn('Supabase pairing confirm error:', sbUpdateErr);
+    }
+  } catch (sbErr) {
+    console.warn('Supabase pairing confirm exception:', sbErr);
   }
 
   return { success: true, message: 'Plugin paired successfully' };
@@ -853,26 +889,28 @@ export async function resolvePairingSession(
     return { success: false, status: 400, error: 'Invalid device code format' };
   }
 
-  // Look up session
-  let session = inMemoryPairingSessions.get(deviceCode);
-  if (!session) {
-    const list = readLocalPairingSessions();
-    session = list.find((s) => s.device_code === deviceCode);
+  // Look up session from Supabase first (distributed source of truth across serverless instances)
+  let session: FramerPairingSessionRecord | null = null;
+  try {
+    const { data, error } = await supabase
+      .from('framer_pairing_sessions')
+      .select('*')
+      .eq('device_code', deviceCode)
+      .maybeSingle();
+    if (!error && data) {
+      session = data as FramerPairingSessionRecord;
+      syncPairingSessionLocally(session);
+    }
+  } catch {
+    // ignore
   }
 
   if (!session) {
-    try {
-      const { data } = await supabase
-        .from('framer_pairing_sessions')
-        .select('*')
-        .eq('device_code', deviceCode)
-        .maybeSingle();
-      if (data) {
-        session = data as FramerPairingSessionRecord;
-      }
-    } catch {
-      // ignore
-    }
+    session = inMemoryPairingSessions.get(deviceCode) || null;
+  }
+  if (!session) {
+    const list = readLocalPairingSessions();
+    session = list.find((s) => s.device_code === deviceCode) || null;
   }
 
   if (!session) {
@@ -880,8 +918,14 @@ export async function resolvePairingSession(
   }
 
   // Rate limiting check
-  if (minIntervalMs > 0 && session.last_poll_at && session.last_poll_at > 0) {
-    if (customNow - session.last_poll_at < minIntervalMs) {
+  const lastPollMs = session.last_poll_at
+    ? typeof session.last_poll_at === 'number'
+      ? session.last_poll_at
+      : new Date(session.last_poll_at).getTime()
+    : 0;
+
+  if (minIntervalMs > 0 && lastPollMs > 0) {
+    if (customNow - lastPollMs < minIntervalMs) {
       return { success: false, status: 429, error: 'slow_down', retry_in: 3 };
     }
   }
@@ -915,10 +959,10 @@ export async function resolvePairingSession(
         .update({
           status: 'consumed',
           poll_count: session.poll_count,
-          last_poll_at: new Date(session.last_poll_at).toISOString(),
+          last_poll_at: new Date(customNow).toISOString(),
           updated_at: session.updated_at,
         })
-        .eq('id', session.id);
+        .eq('device_code', deviceCode);
     } catch {
       // ignore
     }

@@ -83,7 +83,7 @@ export function QubeAuthLandingPage() {
                 onClick={openInstall}
                 className="qube-btn-primary"
               >
-                <span>Install on Framer Free</span>
+                <span>Open on Framer Free</span>
                 <ArrowUpRight className="h-4 w-4" />
               </button>
 

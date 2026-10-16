@@ -82,7 +82,7 @@ export function FrameDropPageContent() {
                 onClick={openInstall}
                 className="inline-flex items-center gap-2.5 rounded-full bg-[#0C3823] px-8 py-4 text-sm font-semibold text-white shadow-xl hover:bg-[#164E33] hover:-translate-y-0.5 transition-all cursor-pointer"
               >
-                <span>Install on Framer Free</span>
+                <span>Open on Framer Free</span>
                 <ArrowUpRight className="w-4 h-4" />
               </button>
 

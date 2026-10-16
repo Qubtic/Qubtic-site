@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { createOrUpdateFramerUser, findFramerUser, generateSessionCode } from '@/lib/framer-auth';
+import {
+  createOrUpdateFramerUser,
+  findFramerUser,
+  generateSessionCode,
+  confirmPairingSession,
+} from '@/lib/framer-auth';
 import { getPluginMetadata } from '@/lib/plugins-registry';
 
 // Handle CORS Preflight for Framer Plugins
@@ -117,6 +122,16 @@ export async function POST(request: Request) {
         authenticatedVia: 'Qubtic Auth Portal',
       },
     });
+
+    // Auto-confirm pairing session if user_code/pairing_code was provided
+    const rawPairingCode = body.pairing_code || body.pairingCode || body.user_code || body.userCode || body.code;
+    if (rawPairingCode && typeof rawPairingCode === 'string' && rawPairingCode.trim().length > 0) {
+      try {
+        await confirmPairingSession(rawPairingCode.trim(), user);
+      } catch (confirmErr) {
+        console.warn('Auto-confirm pairing error in session route:', confirmErr);
+      }
+    }
 
     const sessionCode = generateSessionCode();
 

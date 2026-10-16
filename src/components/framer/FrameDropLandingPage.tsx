@@ -288,7 +288,7 @@ export function FrameDropLandingPage() {
                 onClick={openInstall}
                 className="fd-bottom-cta-btn-primary"
               >
-                <span>Install on Framer Free</span>
+                <span>Open on Framer Free</span>
                 <ArrowUpRight className="fd-icon-sm" />
               </button>
 

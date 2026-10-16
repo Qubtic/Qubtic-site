@@ -150,7 +150,7 @@ export function QubeAuthHero({ onInstallClick }: QubeAuthHeroProps) {
               onClick={onInstallClick}
               className="qube-btn-primary"
             >
-              <span>Install on Framer</span>
+              <span>Open on Framer</span>
               <span className="qube-tag-dark">
                 Free
               </span>
