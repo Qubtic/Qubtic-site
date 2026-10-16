@@ -28,8 +28,9 @@ const serviceLinks = [
   { name: 'SaaS Engineering', href: '/services/saas-development' },
   { name: 'Shopify Apps & Stores', href: '/services/shopify-apps' },
   { name: 'Framer Sites & Plugins', href: '/services/framer-development' },
-  { name: 'Frame Drop (Framer Plugin)', href: '/framer/frame-drop/docs' },
-  { name: 'Frame Drop Feature Request', href: '/feature-request' },
+  { name: 'Qube Auth (Framer Suite)', href: '/framer/qube-auth' },
+  { name: 'Frame Drop (Framer Plugin)', href: '/framer/frame-drop' },
+  { name: 'Feature Requests', href: '/feature-request' },
   { name: 'Dedicated Retainers', href: '/pricing' },
 ];
 
@@ -45,7 +46,12 @@ export function Footer() {
   const pathname = usePathname();
   const currentYear = new Date().getFullYear();
 
-  if (pathname?.startsWith('/admin') || pathname === '/portfolio/admin') {
+  if (
+    pathname?.startsWith('/admin') ||
+    pathname === '/portfolio/admin' ||
+    pathname?.startsWith('/auth') ||
+    pathname === '/framer/auth'
+  ) {
     return null;
   }
 

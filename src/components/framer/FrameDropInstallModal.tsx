@@ -7,12 +7,8 @@ import {
   ExternalLink, 
   Check, 
   Copy, 
-  Sparkles, 
-  ShieldCheck, 
-  Terminal, 
-  ArrowRight 
+  ShieldCheck 
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface FrameDropInstallModalProps {
   isOpen: boolean;
@@ -31,88 +27,90 @@ export function FrameDropInstallModal({ isOpen, onClose }: FrameDropInstallModal
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fd-modal-fixed">
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity"
+        className="fd-modal-backdrop"
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-lg rounded-[32px] bg-white p-6 sm:p-8 shadow-2xl border border-[#141915]/10 z-10 overflow-hidden">
+      <div className="fd-modal-dialog">
         {/* Glow */}
-        <div className="pointer-events-none absolute -right-24 -top-24 h-48 w-48 rounded-full bg-[#0C3823]/10 blur-3xl" />
+        <div className="fd-modal-glow" />
 
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-[#141915]/10 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-[#141915]/10 shadow-xs p-1">
+        <div className="fd-modal-header">
+          <div className="fd-modal-brand-wrap">
+            <div className="fd-modal-logo-box">
               <Image
                 src="/images/brand/frame-drop-icon-transparent.png"
                 alt="Frame Drop Logo"
                 width={24}
                 height={24}
-                className="h-6 w-6 object-contain"
+                className="fd-icon-lg"
               />
             </div>
             <div>
-              <span className="font-heading text-lg font-bold uppercase text-[#141915] block leading-tight">
+              <span className="fd-modal-title">
                 Install Frame Drop
               </span>
-              <span className="text-[11px] font-mono text-[#0C3823] font-medium flex items-center gap-1.5 mt-0.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#CCFF00] animate-pulse" />
-                Framer Native Plugin · v0.2.0
+              <span className="fd-modal-version">
+                <span className="fd-pulse-lime" />
+                <span>Framer Native Plugin · v0.2.0</span>
               </span>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-[#666C64] hover:bg-black/5 hover:text-[#141915] transition-colors cursor-pointer"
+            className="fd-modal-close-btn"
+            aria-label="Close modal"
           >
-            <X className="w-5 h-5" />
+            <X className="fd-icon-md" />
           </button>
         </div>
 
         {/* Steps */}
-        <div className="space-y-4 mb-8">
-          <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#F8F6F0] border border-[#141915]/5">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-[#0C3823] text-white font-mono text-xs font-bold">
+        <div className="fd-modal-step-list">
+          <div className="fd-modal-step-item">
+            <span className="fd-modal-step-num">
               1
             </span>
             <div>
-              <h4 className="text-xs font-bold uppercase text-[#141915]">
+              <h4 className="fd-modal-step-heading">
                 Open your Framer Project
               </h4>
-              <p className="text-xs text-[#555C54] mt-0.5">
+              <p className="fd-modal-step-text">
                 Launch any project in your Framer dashboard or start from a blank canvas.
               </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#F8F6F0] border border-[#141915]/5">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-[#0C3823] text-white font-mono text-xs font-bold">
+          <div className="fd-modal-step-item">
+            <span className="fd-modal-step-num">
               2
             </span>
             <div>
-              <h4 className="text-xs font-bold uppercase text-[#141915]">
+              <h4 className="fd-modal-step-heading">
                 Open Plugin Search
               </h4>
-              <p className="text-xs text-[#555C54] mt-0.5">
-                Press <kbd className="px-1.5 py-0.5 bg-white border border-black/10 rounded font-mono text-[10px]">Cmd + K</kbd> or <kbd className="px-1.5 py-0.5 bg-white border border-black/10 rounded font-mono text-[10px]">Ctrl + K</kbd> and search for <strong>&ldquo;Frame Drop&rdquo;</strong>.
+              <p className="fd-modal-step-text">
+                Press <kbd className="fd-modal-kbd">Cmd + K</kbd> or <kbd className="fd-modal-kbd">Ctrl + K</kbd> and search for <strong>&ldquo;Frame Drop&rdquo;</strong>.
               </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#F8F6F0] border border-[#141915]/5">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-[#0C3823] text-white font-mono text-xs font-bold">
+          <div className="fd-modal-step-item">
+            <span className="fd-modal-step-num">
               3
             </span>
             <div>
-              <h4 className="text-xs font-bold uppercase text-[#141915]">
+              <h4 className="fd-modal-step-heading">
                 Drop &amp; Design
               </h4>
-              <p className="text-xs text-[#555C54] mt-0.5">
+              <p className="fd-modal-step-text">
                 Click to install and immediately insert 25+ WCAG-audited sections onto your canvas.
               </p>
             </div>
@@ -120,30 +118,30 @@ export function FrameDropInstallModal({ isOpen, onClose }: FrameDropInstallModal
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col gap-3">
+        <div className="fd-modal-actions">
           <a
             href="https://framer.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 rounded-full bg-[#0C3823] py-3.5 px-6 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#164E33] transition-colors"
+            className="fd-modal-primary-btn"
           >
             <span>Launch Framer Marketplace</span>
-            <ExternalLink className="w-4 h-4" />
+            <ExternalLink className="fd-icon-sm" />
           </a>
 
           <button
             type="button"
             onClick={handleCopyLink}
-            className="flex items-center justify-center gap-2 rounded-full border border-[#141915]/15 py-3 px-6 text-xs font-semibold text-[#141915] hover:bg-[#F4EFE6] transition-colors cursor-pointer"
+            className="fd-modal-secondary-btn"
           >
-            {copiedLink ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+            {copiedLink ? <Check className="fd-icon-sm" /> : <Copy className="fd-icon-sm" />}
             <span>{copiedLink ? 'Link Copied to Clipboard!' : 'Copy Documentation Link'}</span>
           </button>
         </div>
 
         {/* Security badge */}
-        <div className="mt-6 flex items-center justify-center gap-2 text-[11px] text-[#666C64]">
-          <ShieldCheck className="w-3.5 h-3.5 text-[#0C3823]" />
+        <div className="fd-modal-badge">
+          <ShieldCheck className="fd-icon-xs" />
           <span>Framer Verified · Zero Code Lock-in · Atomic Rollback Safe</span>
         </div>
       </div>

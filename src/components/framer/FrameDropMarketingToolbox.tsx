@@ -2,17 +2,17 @@
 
 import * as React from 'react';
 import Image from 'next/image';
-import { 
-  Share2, 
-  Copy, 
-  Check, 
-  Globe, 
+import {
+  Share2,
+  Copy,
+  Check,
+  Globe,
   Download,
   ImageIcon
 } from 'lucide-react';
-import { 
-  FaXTwitter, 
-  FaLinkedinIn 
+import {
+  FaXTwitter,
+  FaLinkedinIn
 } from 'react-icons/fa6';
 import { cn } from '@/lib/utils';
 
@@ -36,7 +36,7 @@ Try it free in Framer today: qubtic.tech/framer/frame-drop`,
 
     linkedin: `Exciting news from Qubtic Technologies! 🚀
 
-We’ve officially launched Frame Drop—our native Framer component suite and page studio designed for modern founders, creative studios, and product designers.
+We’ve officially launched Frame Drop-our native Framer component suite and page studio designed for modern founders, creative studios, and product designers.
 
 Frame Drop eliminates layout friction by letting you browse, customize, and drop production-grade sections directly onto your Framer canvas with complete responsive layout support and zero code lock-in.
 
@@ -94,7 +94,7 @@ Try it out on Framer today or explore the docs at https://qubtic.tech/framer/fra
   return (
     <section id="marketing-toolbox" className="scroll-mt-36 py-12 sm:py-16 relative">
       <div className="relative mx-auto w-full">
-        
+
         {/* Header */}
         <div className="mb-12 max-w-3xl">
           <span className="inline-flex items-center gap-2 rounded-full border border-[#0C3823]/15 bg-white/70 px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest text-[#0C3823] mb-4 shadow-2xs backdrop-blur-md">
@@ -121,12 +121,12 @@ Try it out on Framer today or explore the docs at https://qubtic.tech/framer/fra
             )}
           >
             <div className="w-4 h-4 rounded bg-[#0066FF]/20 flex items-center justify-center p-0.5">
-              <Image 
-                src="/images/brand/frame-drop-icon-transparent.png" 
-                alt="Frame Drop" 
-                width={16} 
-                height={16} 
-                className="w-full h-full object-contain brightness-110" 
+              <Image
+                src="/images/brand/frame-drop-icon-transparent.png"
+                alt="Frame Drop"
+                width={16}
+                height={16}
+                className="w-full h-full object-contain brightness-110"
               />
             </div>
             Official Brand Assets
@@ -174,7 +174,7 @@ Try it out on Framer today or explore the docs at https://qubtic.tech/framer/fra
 
         {/* Content Box */}
         <div className="rounded-[32px] border border-[#141915]/10 bg-white p-6 sm:p-10 shadow-sm relative">
-          
+
           {/* Brand Assets Tab */}
           {activeTab === 'brand' && (
             <div className="space-y-8">
@@ -190,8 +190,8 @@ Try it out on Framer today or explore the docs at https://qubtic.tech/framer/fra
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {brandAssets.map((asset, idx) => (
-                  <div 
-                    key={idx} 
+                  <div
+                    key={idx}
                     className="flex flex-col justify-between rounded-2xl border border-[#141915]/10 bg-[#F8F6F0] p-4 overflow-hidden group hover:border-[#0066FF]/40 transition-colors"
                   >
                     <div>
@@ -201,13 +201,13 @@ Try it out on Framer today or explore the docs at https://qubtic.tech/framer/fra
                         asset.aspect,
                         asset.bgDark ? 'bg-gradient-to-br from-[#051329] to-[#010915] p-6' : 'bg-white'
                       )}>
-                        <Image 
-                          src={asset.src} 
-                          alt={asset.title} 
-                          fill 
+                        <Image
+                          src={asset.src}
+                          alt={asset.title}
+                          fill
                           className={cn(
                             asset.bgDark ? 'object-contain p-4' : 'object-cover'
-                          )} 
+                          )}
                         />
                       </div>
 

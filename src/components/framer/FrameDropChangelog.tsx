@@ -1,16 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { 
-  Sparkles, 
-  Tag, 
-  Calendar, 
-  CheckCircle2, 
-  Layers, 
-  ShieldCheck, 
-  Sliders, 
-  KeyRound, 
-  Cpu 
+import {
+  Sparkles,
+  Tag,
+  Calendar,
+  CheckCircle2,
+  Layers,
+  ShieldCheck,
+  Sliders,
+  KeyRound,
+  Cpu
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -63,7 +63,7 @@ export function FrameDropChangelog() {
   return (
     <section id="changelog" className="scroll-mt-36 py-12 sm:py-16 relative">
       <div className="relative mx-auto w-full">
-        
+
         {/* Release Tag Ribbon */}
         <div className="rounded-[32px] border border-[#141915]/10 bg-white p-8 sm:p-12 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-8 border-b border-[#141915]/10 mb-8">
@@ -93,7 +93,7 @@ export function FrameDropChangelog() {
             </h2>
 
             <blockquote className="rounded-2xl border-l-4 border-[#0C3823] bg-[#F8F6F0] p-6 text-base sm:text-lg italic text-[#444A42] leading-relaxed">
-              &ldquo;We&apos;re excited to unveil Frame Drop—a native Framer plugin built by the Qubtic Technologies engineering and design teams to accelerate how modern websites are built.&rdquo;
+              &ldquo;We&apos;re excited to unveil Frame Drop-a native Framer plugin built by the Qubtic Technologies engineering and design teams to accelerate how modern websites are built.&rdquo;
             </blockquote>
           </div>
 

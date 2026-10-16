@@ -3,12 +3,13 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { 
-  ArrowUpRight, 
-  Sparkles, 
-  Layers, 
-  Zap, 
-  ChevronRight
+import {
+  ArrowUpRight,
+  Sparkles,
+  Layers,
+  Zap,
+  ChevronRight,
+  CheckCircle2
 } from 'lucide-react';
 
 interface FrameDropHeroProps {
@@ -18,237 +19,373 @@ interface FrameDropHeroProps {
 
 export function FrameDropHero({ onInstallClick, onExploreCatalog }: FrameDropHeroProps) {
   return (
-    <section className="relative overflow-hidden pt-32 pb-16 sm:pt-36 md:pt-40 lg:pb-24">
+    <section className="fd-hero-section">
       {/* Radiant Electric Blue Ambient Glows */}
-      <div className="pointer-events-none absolute -left-40 top-12 h-[38rem] w-[38rem] rounded-full bg-[#0066FF]/12 blur-[140px]" />
-      <div className="pointer-events-none absolute -right-40 top-16 h-[38rem] w-[38rem] rounded-full bg-[#00D2FF]/12 blur-[140px]" />
-      <div className="pointer-events-none absolute left-1/2 top-10 h-[30rem] w-[56rem] -translate-x-1/2 rounded-full bg-[#0066FF]/8 blur-[120px]" />
+      <div className="fd-hero-glow-left" />
+      <div className="fd-hero-glow-right" />
+      <div className="fd-hero-glow-center" />
 
-      <div className="relative mx-auto w-full max-w-[1720px] px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20">
-        
+      <div className="fd-container">
+
         {/* Top Breadcrumb & Status Bar */}
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#666C64]">
-            <Link href="/" className="hover:text-[#141915] transition-colors">
+        <div className="fd-hero-top-bar">
+          <div className="fd-hero-breadcrumbs">
+            <Link href="/">
               Home
             </Link>
             <span>/</span>
-            <Link href="/services/framer-development" className="hover:text-[#141915] transition-colors">
+            <Link href="/services/framer-development">
               Framer
             </Link>
             <span>/</span>
-            <span className="text-[#0066FF] font-bold inline-flex items-center gap-1.5">
+            <span className="fd-hero-badge-brand">
               <Image
                 src="/images/brand/frame-drop-icon-transparent.png"
                 alt="Frame Drop"
                 width={14}
                 height={14}
-                className="h-3.5 w-3.5 object-contain"
+                className="fd-icon-xs"
               />
               <span>Frame Drop</span>
             </span>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#0066FF]/20 bg-white/80 px-3.5 py-1 text-xs font-semibold text-[#0066FF] shadow-2xs backdrop-blur-md">
-              <span className="h-2 w-2 rounded-full bg-[#00D2FF] animate-pulse" />
-              v0.2.0 Available on Framer Marketplace
+          <div className="fd-hero-status-pills">
+            <span className="fd-status-pill-blue">
+              <span className="fd-pulse-cyan" />
+              <span>v0.2.0 Available on Framer Marketplace</span>
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-[#141915]/10 bg-white/60 px-3 py-1 text-xs font-medium text-[#141915] backdrop-blur-md">
+            <span className="fd-status-pill-subtle">
               Verified Plugin
             </span>
           </div>
         </div>
 
         {/* Center-Aligned Hero Header Copy */}
-        <div className="mx-auto max-w-4xl text-center flex flex-col items-center">
-          
+        <div className="fd-hero-content">
+
           {/* Eyebrow Chip */}
-          <div className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-[#0066FF]/25 bg-[#0066FF]/[0.06] px-4 py-1.5 backdrop-blur-md">
-            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-[#0066FF]/15 p-0.5">
+          <div className="fd-eyebrow-chip">
+            <div className="fd-eyebrow-icon-box">
               <Image
                 src="/images/brand/frame-drop-icon-transparent.png"
                 alt="Frame Drop Logo"
                 width={16}
                 height={16}
-                className="h-4 w-4 object-contain"
+                className="fd-icon-xs"
               />
             </div>
-            <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#0066FF]">
+            <span className="fd-eyebrow-text">
               Qubtic ™ · Built for Framer
             </span>
           </div>
 
-          {/* Main Headline (Exact text from official banner) */}
-          <h1 className="font-heading text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black uppercase tracking-tight text-[#141915] leading-[0.98]">
-            Drag. Drop. <span className="text-[#0066FF] bg-gradient-to-r from-[#0066FF] to-[#00D2FF] bg-clip-text text-transparent">Build.</span>
+          {/* Main Headline */}
+          <h1 className="fd-hero-title">
+            Drag. Drop. <span className="fd-title-accent">Build.</span>
           </h1>
 
-          {/* Subheading (Exact text from official banner) */}
-          <p className="mt-5 text-xl sm:text-2xl md:text-3xl font-medium tracking-tight text-[#141915] max-w-3xl leading-snug">
-            Turn your designs into structured sections — instantly, with Frame Drop.
+          {/* Subheading */}
+          <p className="fd-hero-subtitle">
+            Turn your designs into structured sections - instantly, with Frame Drop.
           </p>
 
           {/* Supporting Explanatory Paragraph */}
-          <p className="mt-4 max-w-2xl text-sm sm:text-base leading-relaxed text-[#555C54]">
-            The native Framer component suite and page studio engineered for founders, design agencies, and creators. Build pixel-perfect, WCAG-audited landing pages in seconds—without touching a line of code.
+          <p className="fd-hero-desc">
+            The native Framer component suite and page studio engineered for founders, design agencies, and creators. Build pixel-perfect, WCAG-audited landing pages in seconds-without touching a line of code.
           </p>
 
-          {/* The 3 Core Value Pillars (Matching banner icons & styling) */}
-          <div className="mt-7 inline-flex flex-wrap items-center justify-center gap-3 sm:gap-6 rounded-full border border-[#141915]/10 bg-white/70 px-5 py-2.5 shadow-2xs backdrop-blur-md">
-            <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#141915]">
-              <Zap className="h-4 w-4 text-[#0066FF]" />
+          {/* The 3 Core Value Pillars */}
+          <div className="fd-hero-pillars-bar">
+            <div className="fd-hero-pillar-item">
+              <Zap className="fd-icon-sm" />
               <span>Fast Workflow</span>
             </div>
-            <span className="hidden sm:inline text-[#141915]/20">|</span>
-            <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#141915]">
-              <Layers className="h-4 w-4 text-[#0066FF]" />
+            <span className="fd-pillar-divider">|</span>
+            <div className="fd-hero-pillar-item">
+              <Layers className="fd-icon-sm" />
               <span>Clean Structure</span>
             </div>
-            <span className="hidden sm:inline text-[#141915]/20">|</span>
-            <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#141915]">
-              <Sparkles className="h-4 w-4 text-[#0066FF]" />
+            <span className="fd-pillar-divider">|</span>
+            <div className="fd-hero-pillar-item">
+              <Sparkles className="fd-icon-sm" />
               <span>Built for Framer</span>
             </div>
           </div>
 
           {/* High-Converting CTA Buttons */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5 sm:gap-4">
+          <div className="fd-hero-cta-group">
             <button
               type="button"
               onClick={onInstallClick}
-              className="group relative inline-flex items-center gap-3 rounded-full bg-[#0066FF] px-8 py-4 text-sm font-semibold text-white shadow-[0_14px_35px_rgba(0,102,255,0.32)] transition-all duration-300 hover:-translate-y-1 hover:bg-[#0055DD] hover:shadow-[0_18px_40px_rgba(0,102,255,0.45)] cursor-pointer"
+              className="fd-btn-primary"
             >
               <span>Install on Framer</span>
-              <span className="rounded-full bg-[#00D2FF] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#021028]">
+              <span className="fd-tag-cyan">
                 Free to Start
               </span>
-              <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              <ArrowUpRight className="fd-icon-sm" />
             </button>
 
             <a
               href="#catalog"
               onClick={onExploreCatalog}
-              className="group inline-flex items-center gap-2.5 rounded-full border border-[#141915]/15 bg-white/80 px-7 py-4 text-sm font-semibold text-[#141915] shadow-xs backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:bg-white hover:border-[#141915]/30"
+              className="fd-btn-secondary"
             >
               <span>Explore 25+ Components</span>
-              <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              <ChevronRight className="fd-icon-sm" />
             </a>
 
             <Link
               href="/framer/frame-drop/docs"
-              className="inline-flex items-center gap-1.5 px-4 py-4 text-xs font-semibold text-[#666C64] hover:text-[#0066FF] transition-colors"
+              className="fd-btn-link"
             >
               <span>Documentation</span>
-              <ArrowUpRight className="h-3.5 w-3.5" />
+              <ArrowUpRight className="fd-icon-xs" />
             </Link>
           </div>
 
         </div>
 
-        {/* HERO CENTERPIECE SHOWCASE: The Official Banner in Full Uncropped Glory */}
-        <div className="mt-12 sm:mt-16 w-full max-w-[1360px] mx-auto">
-          <div className="relative rounded-[28px] sm:rounded-[36px] p-2.5 sm:p-4 bg-gradient-to-b from-[#0A162B] via-[#051024] to-[#020714] border border-white/20 shadow-[0_30px_90px_rgba(0,102,255,0.22)] backdrop-blur-xl">
-            
-            {/* Studio Window Chrome Bar */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/[0.04] rounded-t-[20px] sm:rounded-t-[28px]">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-[#FF5F56]" />
-                <div className="h-3 w-3 rounded-full bg-[#FFBD2E]" />
-                <div className="h-3 w-3 rounded-full bg-[#27C93F]" />
+        {/* HERO CENTERPIECE SHOWCASE: Full-Detail Native 3D Studio Showcase */}
+        <div className="fd-hero-banner-wrapper">
+          <div className="fd-showcase-card">
+            {/* Ambient Lighting & Sheen */}
+            <div className="fd-showcase-ambient-glow" />
+            <div className="fd-showcase-ambient-grid" />
+
+            <div className="fd-showcase-content">
+              {/* Left Column: Product Branding & Vector Typography */}
+              <div className="fd-showcase-left">
+                {/* Agency Lockup */}
+                <div className="fd-showcase-agency">
+                  <Image
+                    src="/images/brand/qubtic-white.png"
+                    alt="Qubtic"
+                    width={92}
+                    height={22}
+                    className="fd-showcase-agency-img"
+                  />
+                  <span className="fd-showcase-agency-tm">™</span>
+                  <span className="fd-showcase-agency-divider">/</span>
+                  <span className="fd-showcase-agency-tag">
+                    Build Smarter. Faster.
+                  </span>
+                </div>
+
+                {/* Frame Drop Brand Emblem */}
+                <div className="fd-showcase-brand">
+                  <div className="fd-showcase-icon-box">
+                    <Image
+                      src="/images/brand/frame-drop-icon-transparent.png"
+                      alt="Frame Drop Icon"
+                      width={52}
+                      height={52}
+                      className="fd-showcase-icon-img"
+                    />
+                  </div>
+                  <div className="fd-showcase-brand-text">
+                    <span className="fd-showcase-brand-name">Frame Drop</span>
+                    <span className="fd-showcase-brand-badge">Native Framer Suite</span>
+                  </div>
+                </div>
+
+                {/* Headline & Subtitle */}
+                <h2 className="fd-showcase-headline">
+                  Drag. Drop. Build.
+                </h2>
+                <p className="fd-showcase-subtitle">
+                  Turn your designs into structured sections — instantly, with Frame Drop.
+                </p>
+
+                {/* Core Feature Pillars */}
+                <div className="fd-showcase-pillars">
+                  <div className="fd-showcase-pillar">
+                    <div className="fd-showcase-pillar-icon">
+                      <Zap size={14} />
+                    </div>
+                    <span>Fast Workflow</span>
+                  </div>
+                  <div className="fd-showcase-pillar">
+                    <div className="fd-showcase-pillar-icon">
+                      <Layers size={14} />
+                    </div>
+                    <span>Clean Structure</span>
+                  </div>
+                  <div className="fd-showcase-pillar">
+                    <div className="fd-showcase-pillar-icon">
+                      <Sparkles size={14} />
+                    </div>
+                    <span>Built for Framer</span>
+                  </div>
+                </div>
+
+                {/* Interactive Action Row */}
+                <div className="fd-showcase-action-row">
+                  <button
+                    type="button"
+                    onClick={onInstallClick}
+                    className="fd-showcase-btn-primary"
+                  >
+                    <span>Install on Framer</span>
+                    <ArrowUpRight size={14} />
+                  </button>
+                  <Link
+                    href="/framer/frame-drop/docs"
+                    className="fd-showcase-btn-secondary"
+                  >
+                    Documentation &rarr;
+                  </Link>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 text-xs font-mono font-medium text-white/80">
-                <Image
-                  src="/images/brand/frame-drop-icon-transparent.png"
-                  alt="Frame Drop Logo"
-                  width={16}
-                  height={16}
-                  className="h-4 w-4 object-contain brightness-110"
-                />
-                <span className="hidden sm:inline">Frame Drop Studio · Framer Canvas Plugin</span>
-                <span className="sm:hidden">Frame Drop Studio</span>
-              </div>
+              {/* Right Column: 3D High-Detail Interactive Canvas Studio */}
+              <div className="fd-showcase-right">
+                {/* 3D Ambient Glowing Rings (Mimicking original 3D render depth) */}
+                <div className="fd-canvas-ambient-ring fd-canvas-ambient-ring--1" />
+                <div className="fd-canvas-ambient-ring fd-canvas-ambient-ring--2" />
 
-              <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-[#00D2FF] bg-[#00D2FF]/10 border border-[#00D2FF]/20 px-2.5 py-1 rounded-full">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#00D2FF] animate-pulse" />
-                <span>Live Canvas</span>
+                {/* Floating 3D Framer Logo Tile 1 */}
+                <div className="fd-floating-framer-chip fd-floating-framer-chip--top">
+                  <svg width="18" height="26" viewBox="0 0 18 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0 0H18V8.66667H9V17.3333L0 8.66667V0Z" fill="white"/>
+                    <path d="M0 8.66667H9L18 17.3333H0V8.66667Z" fill="#38BDF8"/>
+                    <path d="M0 17.3333H9V26L0 17.3333Z" fill="white"/>
+                  </svg>
+                  <span>Framer Canvas</span>
+                </div>
+
+                {/* Floating 3D Framer Logo Tile 2 (Right-floating orb from original image) */}
+                <div className="fd-floating-framer-tile">
+                  <svg width="22" height="32" viewBox="0 0 18 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0 0H18V8.66667H9V17.3333L0 8.66667V0Z" fill="white"/>
+                    <path d="M0 8.66667H9L18 17.3333H0V8.66667Z" fill="#00D2FF"/>
+                    <path d="M0 17.3333H9V26L0 17.3333Z" fill="white"/>
+                  </svg>
+                </div>
+
+                <div className="fd-canvas-studio-stage">
+                  {/* Main 3D Frosted Glass Canvas Window */}
+                  <div className="fd-canvas-window">
+                    {/* Window Titlebar */}
+                    <div className="fd-canvas-window-header">
+                      <div className="fd-canvas-window-dots">
+                        <span className="fd-w-dot fd-w-dot--red" />
+                        <span className="fd-w-dot fd-w-dot--yellow" />
+                        <span className="fd-w-dot fd-w-dot--green" />
+                      </div>
+                      <span className="fd-canvas-window-title">
+                        FrameDrop · Live Canvas Studio
+                      </span>
+                      <span className="fd-canvas-window-badge">
+                        <span className="fd-pulse-dot-cyan" />
+                        Live
+                      </span>
+                    </div>
+
+                    {/* Canvas Stage Area */}
+                    <div className="fd-canvas-body">
+                      {/* Section 1: Pre-inserted Hero Section */}
+                      <div className="fd-canvas-section fd-canvas-section--top">
+                        <div className="fd-cs-bar">
+                          <span className="fd-cs-tag">SECTION-01 · HERO</span>
+                          <span className="fd-cs-meta">100% WCAG AA</span>
+                        </div>
+                        <div className="fd-cs-preview-row">
+                          <div className="fd-cs-img-placeholder">
+                            <Layers size={13} />
+                          </div>
+                          <div className="fd-cs-text-skeleton">
+                            <div className="fd-cs-line fd-cs-line--title" />
+                            <div className="fd-cs-line fd-cs-line--sub" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Section 2: Active Component Drop (Glowing Electric Blue with 3D Cursor) */}
+                      <div className="fd-canvas-section fd-canvas-section--active">
+                        <div className="fd-active-drop-glow" />
+                        <div className="fd-cs-bar">
+                          <span className="fd-cs-tag-active">
+                            <span className="fd-pulse-cyan-sm" />
+                            DROPPING SECTION · BENTO GRID
+                          </span>
+                          <span className="fd-cs-meta-active">Responsive</span>
+                        </div>
+                        <div className="fd-cs-preview-row">
+                          <div className="fd-cs-img-placeholder-active">
+                            <Sparkles size={16} />
+                          </div>
+                          <div className="fd-cs-text-skeleton">
+                            <div className="fd-cs-line fd-cs-line--title-active" />
+                            <div className="fd-cs-line fd-cs-line--sub-active" />
+                          </div>
+                        </div>
+
+                        {/* 3D Drop Cursor */}
+                        <div className="fd-3d-cursor">
+                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="fd-cursor-svg">
+                            <path d="M3 3L10.07 19.97L12.58 12.58L19.97 10.07L3 3Z" fill="#00D2FF" stroke="#FFFFFF" strokeWidth="2" strokeLinejoin="round"/>
+                          </svg>
+                          <span className="fd-cursor-tooltip">1-Click Drop</span>
+                        </div>
+                      </div>
+
+                      {/* Section 3: Next Slot Target */}
+                      <div className="fd-canvas-section fd-canvas-section--target">
+                        <span className="fd-target-text">+ Drop Next Section (25+ Available)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Floating Micro-badge 1 */}
+                  <div className="fd-floating-badge fd-floating-badge--bottom-left">
+                    <CheckCircle2 size={12} className="text-[#22C55E]" />
+                    <span>Auto Token Sync</span>
+                  </div>
+
+                  {/* Floating Micro-badge 2 */}
+                  <div className="fd-floating-badge fd-floating-badge--top-right">
+                    <Zap size={12} className="text-[#38BDF8]" />
+                    <span>Zero Code Lock-in</span>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Pristine Full Uncropped Banner Visual */}
-            <div className="relative aspect-[1024/461] w-full overflow-hidden rounded-b-[20px] sm:rounded-b-[28px] bg-[#020714]">
-              <Image
-                src="/images/framedrop-banner.png"
-                alt="Frame Drop - Drag. Drop. Build. Framer Plugin by Qubtic"
-                fill
-                priority
-                className="object-contain object-center"
-                sizes="(max-width: 1400px) 100vw, 1360px"
-              />
-            </div>
-
-            {/* Interactive Quick Bar Under the Banner */}
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 px-3 py-2 text-xs text-white/60 bg-white/[0.03] rounded-2xl border border-white/5">
-              <div className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#00D2FF]" />
-                <span className="font-mono text-[11px] text-white/80">
-                  Official Framer Component Suite by Qubtic Technologies
-                </span>
-              </div>
-
-              <div className="flex items-center gap-4 text-xs font-medium">
-                <button
-                  type="button"
-                  onClick={onInstallClick}
-                  className="text-[#00D2FF] hover:underline cursor-pointer flex items-center gap-1"
-                >
-                  <span>1-Click Launch</span>
-                  <ArrowUpRight className="h-3 w-3" />
-                </button>
-                <Link
-                  href="/framer/frame-drop/docs"
-                  className="hover:text-white transition-colors"
-                >
-                  Architecture Docs &rarr;
-                </Link>
-              </div>
-            </div>
-
           </div>
         </div>
 
         {/* Trust Metrics Bar */}
-        <div className="mt-14 mx-auto max-w-4xl pt-8 border-t border-[#141915]/10 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-          <div className="flex flex-col items-center">
-            <span className="font-heading text-3xl sm:text-4xl font-extrabold text-[#141915] tracking-tight">
+        <div className="fd-trust-metrics-bar">
+          <div className="fd-metric-col">
+            <span className="fd-metric-num">
               25+
             </span>
-            <span className="text-xs text-[#666C64] font-medium mt-1">
+            <span className="fd-metric-label">
               Production Sections
             </span>
           </div>
-          <div className="flex flex-col items-center">
-            <span className="font-heading text-3xl sm:text-4xl font-extrabold text-[#0066FF] tracking-tight">
+          <div className="fd-metric-col">
+            <span className="fd-metric-num-blue">
               1-Click
             </span>
-            <span className="text-xs text-[#666C64] font-medium mt-1">
+            <span className="fd-metric-label">
               Safe Canvas Insertion
             </span>
           </div>
-          <div className="flex flex-col items-center">
-            <span className="font-heading text-3xl sm:text-4xl font-extrabold text-[#141915] tracking-tight">
+          <div className="fd-metric-col">
+            <span className="fd-metric-num">
               100%
             </span>
-            <span className="text-xs text-[#666C64] font-medium mt-1">
+            <span className="fd-metric-label">
               WCAG AA Compliant
             </span>
           </div>
-          <div className="flex flex-col items-center">
-            <span className="font-heading text-3xl sm:text-4xl font-extrabold text-[#0066FF] tracking-tight">
+          <div className="fd-metric-col">
+            <span className="fd-metric-num-blue">
               Zero
             </span>
-            <span className="text-xs text-[#666C64] font-medium mt-1">
+            <span className="fd-metric-label">
               Code Lock-in
             </span>
           </div>

@@ -14,6 +14,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/terms-of-service',
     '/privacy-policy',
     '/refund-policy',
+    '/framer/qube-auth',
+    '/framer/qube-auth/docs',
+    '/framer/frame-drop',
+    '/framer/frame-drop/docs',
+    '/framer/auth-bridge',
+    '/feature-request',
   ];
 
   const servicePages = [

@@ -1,0 +1,3790 @@
+/* ==========================================================================
+   QUBE AUTH LANDING PAGE: 100% PURE EXTERNAL STYLESHEET
+   Zero Tailwind Utilities · Zero Inline Styles
+   ========================================================================== */
+
+:root {
+  --qube-bg: #070D09;
+  --qube-bg-surface: #090F0B;
+  --qube-card-bg: rgba(14, 23, 18, 0.75);
+  --qube-card-border: rgba(255, 255, 255, 0.1);
+  --qube-accent: #A6FF00;
+  --qube-accent-hover: #b8ff26;
+  --qube-accent-glow: rgba(166, 255, 0, 0.25);
+  --qube-emerald: #0C3823;
+  --qube-emerald-light: #164E33;
+  --qube-text-main: #FFFFFF;
+  --qube-text-muted: rgba(255, 255, 255, 0.72);
+  --qube-text-subtle: rgba(255, 255, 255, 0.45);
+  --qube-border-subtle: rgba(255, 255, 255, 0.08);
+}
+
+/* Page Root Wrapper */
+.qube-landing {
+  position: relative;
+  background-color: var(--qube-bg);
+  color: var(--qube-text-main);
+  overflow: hidden;
+  font-family: var(--font-body), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Common Container */
+.qube-container {
+  position: relative;
+  width: 100%;
+  max-width: 1720px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .qube-container {
+    padding: 0 2rem;
+  }
+}
+@media (min-width: 1024px) {
+  .qube-container {
+    padding: 0 3rem;
+  }
+}
+@media (min-width: 1280px) {
+  .qube-container {
+    padding: 0 4rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   1. STICKY SUB-NAVIGATION
+   -------------------------------------------------------------------------- */
+.qube-subnav-sticky {
+  position: sticky;
+  top: 5rem;
+  z-index: 40;
+  width: 100%;
+  padding: 0.625rem 0;
+  transition: all 0.2s ease;
+}
+
+@media (min-width: 640px) {
+  .qube-subnav-sticky {
+    top: 6rem;
+  }
+}
+
+.qube-subnav-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+.qube-subnav-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(12, 20, 15, 0.88);
+  padding: 0.5rem;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.qube-subnav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding-left: 0.75rem;
+  padding-right: 0.5rem;
+  color: #FFFFFF;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease;
+}
+
+.qube-subnav-brand:hover {
+  opacity: 0.9;
+}
+
+.qube-subnav-logo-box {
+  display: flex;
+  height: 28px;
+  width: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #142318;
+  padding: 3px;
+  border: 1px solid rgba(166, 255, 0, 0.3);
+  box-sizing: border-box;
+}
+
+.qube-subnav-logo-box img {
+  height: 20px;
+  width: 20px;
+  object-fit: contain;
+}
+
+.qube-subnav-title {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #FFFFFF;
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .qube-subnav-title {
+    display: inline;
+  }
+}
+
+.qube-subnav-version {
+  font-size: 10px;
+  font-family: monospace;
+  color: var(--qube-accent);
+  background: rgba(166, 255, 0, 0.1);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(166, 255, 0, 0.2);
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .qube-subnav-version {
+    display: inline;
+  }
+}
+
+.qube-subnav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 2px 0;
+}
+.qube-subnav-links::-webkit-scrollbar {
+  display: none;
+}
+
+.qube-subnav-link {
+  border-radius: 9999px;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.qube-subnav-link:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.qube-subnav-link.active {
+  background: var(--qube-accent);
+  color: var(--qube-emerald);
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(166, 255, 0, 0.25);
+}
+
+.qube-subnav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 4px;
+  flex-shrink: 0;
+}
+
+.qube-subnav-docs-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+@media (min-width: 640px) {
+  .qube-subnav-docs-btn {
+    display: inline-flex;
+  }
+}
+
+.qube-subnav-docs-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.qube-subnav-install-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 9999px;
+  background: var(--qube-accent);
+  color: var(--qube-emerald);
+  padding: 0.375rem 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(166, 255, 0, 0.25);
+}
+
+.qube-subnav-install-btn:hover {
+  background: var(--qube-accent-hover);
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   2. HERO SECTION
+   -------------------------------------------------------------------------- */
+.qube-hero-section {
+  position: relative;
+  overflow: hidden;
+  padding-top: 7rem;
+  padding-bottom: 4rem;
+  background: var(--qube-bg-surface);
+  color: #FFFFFF;
+}
+
+@media (min-width: 640px) {
+  .qube-hero-section {
+    padding-top: 8rem;
+  }
+}
+@media (min-width: 1024px) {
+  .qube-hero-section {
+    padding-bottom: 6rem;
+  }
+}
+
+.qube-hero-orb-1 {
+  position: absolute;
+  top: 2.5rem;
+  left: -12rem;
+  width: 42rem;
+  height: 42rem;
+  border-radius: 50%;
+  background: rgba(166, 255, 0, 0.1);
+  filter: blur(150px);
+  -webkit-filter: blur(150px);
+  pointer-events: none;
+}
+
+.qube-hero-orb-2 {
+  position: absolute;
+  top: 5rem;
+  right: -12rem;
+  width: 42rem;
+  height: 42rem;
+  border-radius: 50%;
+  background: rgba(22, 78, 51, 0.35);
+  filter: blur(150px);
+  -webkit-filter: blur(150px);
+  pointer-events: none;
+}
+
+.qube-hero-orb-center {
+  position: absolute;
+  top: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60rem;
+  height: 32rem;
+  border-radius: 50%;
+  background: rgba(166, 255, 0, 0.08);
+  filter: blur(130px);
+  -webkit-filter: blur(130px);
+  pointer-events: none;
+}
+
+.qube-hero-breadcrumb-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.qube-hero-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.qube-hero-breadcrumbs a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.qube-hero-breadcrumbs a:hover {
+  color: #FFFFFF;
+}
+
+.qube-hero-badge-framer {
+  color: var(--qube-accent);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qube-hero-status-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.qube-status-pill-green {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(166, 255, 0, 0.3);
+  background: rgba(166, 255, 0, 0.1);
+  padding: 0.25rem 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--qube-accent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.qube-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--qube-accent);
+  animation: qubePulse 2s infinite;
+}
+
+@keyframes qubePulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(166, 255, 0, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(166, 255, 0, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(166, 255, 0, 0); }
+}
+
+.qube-status-pill-subtle {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@media (min-width: 640px) {
+  .qube-status-pill-subtle {
+    display: inline-flex;
+  }
+}
+
+.qube-hero-content {
+  margin: 0 auto;
+  max-width: 64rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.qube-eyebrow-chip {
+  margin-bottom: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(166, 255, 0, 0.3);
+  background: rgba(166, 255, 0, 0.08);
+  padding: 0.375rem 1rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.qube-eyebrow-logo-box {
+  display: flex;
+  height: 20px;
+  width: 20px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(166, 255, 0, 0.2);
+  padding: 2px;
+  box-sizing: border-box;
+}
+
+.qube-eyebrow-text {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--qube-accent);
+}
+
+.qube-hero-title {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 2.5rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .qube-hero-title {
+    font-size: 3.75rem;
+  }
+}
+@media (min-width: 768px) {
+  .qube-hero-title {
+    font-size: 4.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .qube-hero-title {
+    font-size: 5.5rem;
+  }
+}
+
+.qube-text-gradient {
+  color: var(--qube-accent);
+  background: linear-gradient(90deg, #A6FF00 0%, #CCFF00 50%, #27D267 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.qube-hero-subtitle {
+  margin-top: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.95);
+  max-width: 48rem;
+  line-height: 1.4;
+}
+
+@media (min-width: 640px) {
+  .qube-hero-subtitle {
+    font-size: 1.5rem;
+  }
+}
+@media (min-width: 768px) {
+  .qube-hero-subtitle {
+    font-size: 1.875rem;
+  }
+}
+
+.qube-hero-desc {
+  margin-top: 1rem;
+  max-width: 48rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.qube-hero-pillars-bar {
+  margin-top: 1.75rem;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.75rem 1.25rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+@media (min-width: 640px) {
+  .qube-hero-pillars-bar {
+    gap: 1.5rem;
+  }
+}
+
+.qube-hero-pillar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+@media (min-width: 640px) {
+  .qube-hero-pillar-item {
+    font-size: 0.875rem;
+  }
+}
+
+.qube-pillar-icon-box {
+  display: flex;
+  height: 24px;
+  width: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(166, 255, 0, 0.2);
+  color: var(--qube-accent);
+}
+
+.qube-pillar-divider {
+  display: none;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+@media (min-width: 640px) {
+  .qube-pillar-divider {
+    display: inline;
+  }
+}
+
+.qube-hero-tech-pills {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.qube-tech-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.25rem 0.75rem;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.qube-hero-cta-group {
+  margin-top: 2.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.qube-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 9999px;
+  background: var(--qube-accent);
+  color: var(--qube-emerald);
+  padding: 1rem 2rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  box-shadow: 0 14px 35px rgba(166, 255, 0, 0.32);
+}
+
+.qube-btn-primary:hover {
+  transform: translateY(-2px);
+  background: var(--qube-accent-hover);
+  box-shadow: 0 18px 45px rgba(166, 255, 0, 0.45);
+}
+
+.qube-tag-dark {
+  border-radius: 9999px;
+  background: var(--qube-emerald);
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--qube-accent);
+}
+
+.qube-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(166, 255, 0, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+  color: #FFFFFF;
+  padding: 1rem 1.75rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.25s ease;
+}
+
+.qube-btn-secondary:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--qube-accent);
+}
+
+.qube-btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.qube-btn-link:hover {
+  color: var(--qube-accent);
+}
+
+/* Banner Frame */
+.qube-hero-banner-wrapper {
+  margin-top: 3.5rem;
+  width: 100%;
+  max-width: 1380px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) {
+  .qube-hero-banner-wrapper {
+    margin-top: 4.5rem;
+  }
+}
+
+.qube-hero-banner-frame {
+  position: relative;
+  border-radius: 28px;
+  padding: 0.625rem;
+  background: linear-gradient(180deg, #142318 0%, #0C1710 50%, #070D09 100%);
+  border: 1px solid rgba(166, 255, 0, 0.25);
+  box-shadow: 0 30px 90px rgba(166, 255, 0, 0.15);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+@media (min-width: 640px) {
+  .qube-hero-banner-frame {
+    border-radius: 36px;
+    padding: 1rem;
+  }
+}
+
+.qube-hero-banner-chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+
+.qube-chrome-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qube-dot-red { width: 12px; height: 12px; border-radius: 50%; background: #FF5F56; }
+.qube-dot-yellow { width: 12px; height: 12px; border-radius: 50%; background: #FFBD2E; }
+.qube-dot-green { width: 12px; height: 12px; border-radius: 50%; background: #27C93F; }
+
+.qube-chrome-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.qube-chrome-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--qube-accent);
+  background: rgba(166, 255, 0, 0.1);
+  border: 1px solid rgba(166, 255, 0, 0.2);
+  padding: 2px 10px;
+  border-radius: 9999px;
+}
+
+.qube-hero-banner-img-box {
+  position: relative;
+  aspect-ratio: 1024 / 550;
+  width: 100%;
+  overflow: hidden;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  background: #070D09;
+}
+
+.qube-hero-banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.qube-banner-quick-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.875rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+}
+
+.qube-quick-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qube-quick-bar-meta {
+  font-family: monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.qube-quick-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.qube-quick-bar-btn {
+  background: none;
+  border: none;
+  color: var(--qube-accent);
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  font-size: 12px;
+  transition: opacity 0.2s ease;
+}
+
+.qube-quick-bar-btn:hover {
+  opacity: 0.85;
+}
+
+.qube-quick-bar-link {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.qube-quick-bar-link:hover {
+  color: #FFFFFF;
+}
+
+/* --------------------------------------------------------------------------
+   3. SECTION SHARED HEADERS
+   -------------------------------------------------------------------------- */
+.qube-section {
+  position: relative;
+  padding: 5rem 0;
+  background: var(--qube-bg-surface);
+  color: #FFFFFF;
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+@media (min-width: 1024px) {
+  .qube-section {
+    padding: 7rem 0;
+  }
+}
+
+.qube-section-header {
+  margin-bottom: 3.5rem;
+  max-width: 48rem;
+}
+
+.qube-section-header.center,
+.qube-header-center {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) {
+  .qube-section-header {
+    margin-bottom: 4.5rem;
+  }
+}
+
+.qube-section-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(166, 255, 0, 0.3);
+  background: rgba(166, 255, 0, 0.1);
+  padding: 0.375rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--qube-accent);
+  margin-bottom: 1rem;
+}
+
+.qube-section-title {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .qube-section-title {
+    font-size: 3rem;
+  }
+}
+@media (min-width: 1024px) {
+  .qube-section-title {
+    font-size: 3.75rem;
+  }
+}
+
+.qube-section-desc,
+.qube-section-subtitle {
+  margin-top: 1rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+@media (min-width: 640px) {
+  .qube-section-desc,
+  .qube-section-subtitle {
+    font-size: 1.125rem;
+  }
+}
+
+.qube-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(166, 255, 0, 0.3);
+  background: rgba(166, 255, 0, 0.1);
+  padding: 0.375rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--qube-accent);
+  margin-bottom: 1rem;
+}
+
+.qube-section-header {
+  text-align: center;
+  max-width: 48rem;
+  margin: 0 auto 3rem auto;
+}
+
+@media (min-width: 640px) {
+  .qube-section-header {
+    margin-bottom: 4rem;
+  }
+}
+
+.qube-highlight {
+  color: var(--qube-accent);
+}
+
+.qube-icon-xs { width: 14px; height: 14px; }
+.qube-icon-sm { width: 16px; height: 16px; }
+.qube-icon-md { width: 20px; height: 20px; }
+.qube-icon-lg { width: 32px; height: 32px; }
+
+.qube-spin {
+  animation: qube-spin 1s linear infinite;
+}
+
+@keyframes qube-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.qube-text-center {
+  text-align: center;
+}
+
+.qube-brand-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.qube-br-sm {
+  display: none;
+}
+@media (min-width: 640px) {
+  .qube-br-sm {
+    display: inline;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. BENTO GRID FEATURES
+   -------------------------------------------------------------------------- */
+.qube-bento-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .qube-bento-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .qube-bento-grid {
+    grid-template-columns: repeat(12, 1fr);
+    gap: 2rem;
+  }
+}
+
+.qube-bento-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(14, 23, 18, 0.65);
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .qube-bento-card {
+    padding: 2.5rem;
+  }
+}
+
+.qube-bento-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(166, 255, 0, 0.35);
+  box-shadow: 0 20px 50px rgba(166, 255, 0, 0.08);
+}
+
+.qube-col-4 { grid-column: span 1; }
+.qube-col-6 { grid-column: span 1; }
+.qube-col-7 { grid-column: span 1; }
+.qube-col-8 { grid-column: span 1; }
+.qube-col-12 { grid-column: span 1; }
+
+@media (min-width: 1024px) {
+  .qube-col-4 { grid-column: span 4; }
+  .qube-col-6 { grid-column: span 6; }
+  .qube-col-7 { grid-column: span 7; }
+  .qube-col-8 { grid-column: span 8; }
+  .qube-col-12 { grid-column: span 12; }
+}
+
+.qube-card-icon-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.qube-card-icon-badge {
+  display: flex;
+  height: 48px;
+  width: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: rgba(166, 255, 0, 0.12);
+  color: var(--qube-accent);
+  border: 1px solid rgba(166, 255, 0, 0.25);
+}
+
+.qube-card-tag {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--qube-accent);
+  background: rgba(166, 255, 0, 0.08);
+  border: 1px solid rgba(166, 255, 0, 0.2);
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+.qube-card-title {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.2;
+}
+
+.qube-card-desc {
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.55;
+  margin: 0 0 1.5rem 0;
+}
+
+.qube-card-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-top: 1rem;
+}
+
+.qube-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.qube-check-item svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--qube-accent);
+}
+
+.qube-bento-card.col-8 { grid-column: span 1; }
+.qube-bento-card.col-4 { grid-column: span 1; }
+.qube-bento-card.col-6 { grid-column: span 1; }
+.qube-bento-card.col-12 { grid-column: span 1; }
+
+@media (min-width: 1024px) {
+  .qube-bento-card.col-8 { grid-column: span 8; }
+  .qube-bento-card.col-4 { grid-column: span 4; }
+  .qube-bento-card.col-6 { grid-column: span 6; }
+  .qube-bento-card.col-12 { grid-column: span 12; }
+}
+
+.qube-feature-pills-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .qube-feature-pills-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.qube-feature-mini-pill {
+  padding: 0.875rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.qube-feature-mini-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 0.25rem;
+}
+
+.qube-feature-mini-desc {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.qube-social-oauth-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qube-social-btn {
+  display: flex;
+  height: 36px;
+  width: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  transition: all 0.2s ease;
+}
+
+.qube-social-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.qube-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.625rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .qube-presets-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.qube-preset-item {
+  padding: 0.625rem 0.75rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qube-preset-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.qube-preset-dot[data-color="framer-blue"] { background-color: #0066FF; }
+.qube-preset-dot[data-color="monochrome"] { background-color: #71717A; }
+.qube-preset-dot[data-color="midnight"] { background-color: #4F46E5; }
+.qube-preset-dot[data-color="emerald"] { background-color: #0C3823; }
+.qube-preset-dot[data-color="violet"] { background-color: #7C3AED; }
+.qube-preset-dot[data-color="aurora-teal"] { background-color: #06B6D4; }
+.qube-preset-dot[data-color="sunset-ember"] { background-color: #EA580C; }
+.qube-preset-dot[data-color="cyber-lime"] { background-color: #CCFF00; }
+
+.qube-preset-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qube-bento-split-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.qube-bento-col-text {
+  max-width: 48rem;
+}
+
+.qube-bento-action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.qube-badge-inline {
+  position: static !important;
+}
+
+.qube-space-b-6 {
+  margin-bottom: 1.5rem !important;
+}
+
+.qube-title-lg {
+  font-size: 2.25rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. SANDBOX & INTERACTIVE PLAYGROUND
+   -------------------------------------------------------------------------- */
+.qube-sandbox-section {
+  position: relative;
+  padding: 5rem 0;
+  overflow: hidden;
+  background-color: var(--qube-bg);
+  color: var(--qube-text-main);
+}
+
+@media (min-width: 1024px) {
+  .qube-sandbox-section {
+    padding: 7rem 0;
+  }
+}
+
+.qube-sandbox-glow-left {
+  position: absolute;
+  left: -10rem;
+  top: 25%;
+  width: 24rem;
+  height: 24rem;
+  border-radius: 50%;
+  filter: blur(120px);
+  -webkit-filter: blur(120px);
+  pointer-events: none;
+  transition: background-color 0.5s ease;
+}
+
+.qube-sandbox-glow-right {
+  position: absolute;
+  right: -10rem;
+  bottom: 25%;
+  width: 24rem;
+  height: 24rem;
+  border-radius: 50%;
+  filter: blur(120px);
+  -webkit-filter: blur(120px);
+  pointer-events: none;
+  transition: background-color 0.5s ease;
+}
+
+.qube-sandbox-section[data-theme="emerald"] .qube-sandbox-glow-left,
+.qube-sandbox-section[data-theme="emerald"] .qube-sandbox-glow-right {
+  background: rgba(166, 255, 0, 0.14);
+}
+.qube-sandbox-section[data-theme="framer-blue"] .qube-sandbox-glow-left,
+.qube-sandbox-section[data-theme="framer-blue"] .qube-sandbox-glow-right {
+  background: rgba(0, 102, 255, 0.16);
+}
+.qube-sandbox-section[data-theme="obsidian"] .qube-sandbox-glow-left,
+.qube-sandbox-section[data-theme="obsidian"] .qube-sandbox-glow-right {
+  background: rgba(255, 255, 255, 0.1);
+}
+.qube-sandbox-section[data-theme="cyber-lime"] .qube-sandbox-glow-left,
+.qube-sandbox-section[data-theme="cyber-lime"] .qube-sandbox-glow-right {
+  background: rgba(204, 255, 0, 0.18);
+}
+.qube-sandbox-section[data-theme="violet"] .qube-sandbox-glow-left,
+.qube-sandbox-section[data-theme="violet"] .qube-sandbox-glow-right {
+  background: rgba(124, 58, 237, 0.16);
+}
+
+.qube-sandbox-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .qube-sandbox-grid {
+    grid-template-columns: 5fr 7fr;
+    gap: 2.5rem;
+  }
+}
+
+.qube-sandbox-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.qube-sandbox-card-box {
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1.5rem;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+}
+
+.qube-sandbox-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.qube-sandbox-title-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qube-sandbox-chip {
+  font-size: 10px;
+  font-family: monospace;
+  color: var(--qube-accent);
+  background: rgba(166, 255, 0, 0.1);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(166, 255, 0, 0.2);
+}
+
+.qube-sandbox-methods-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .qube-sandbox-methods-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.qube-sandbox-method-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.75rem 0.5rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.qube-sandbox-method-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #FFFFFF;
+}
+
+.qube-sandbox-method-btn.active {
+  border-color: var(--qube-accent);
+  background: rgba(166, 255, 0, 0.14);
+  color: var(--qube-accent);
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(166, 255, 0, 0.15);
+}
+
+.qube-canvas-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.qube-canvas-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+}
+
+.qube-theme-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.qube-theme-option-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.qube-theme-option-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #FFFFFF;
+}
+
+.qube-theme-option-btn.active {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.qube-theme-option-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.qube-theme-swatch {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.qube-swatch-emerald { background-color: #A6FF00; }
+.qube-swatch-framer-blue { background-color: #00D2FF; }
+.qube-swatch-obsidian { background-color: #FFFFFF; }
+.qube-swatch-cyber-lime { background-color: #CCFF00; }
+.qube-swatch-violet { background-color: #C4B5FD; }
+
+.qube-code-snippet-box {
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.55);
+  padding: 1.25rem;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-sizing: border-box;
+}
+
+.qube-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  font-family: monospace;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.qube-code-copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--qube-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.2s ease;
+}
+
+.qube-code-copy-btn:hover {
+  text-decoration: underline;
+}
+
+.qube-code-pre {
+  font-size: 11px;
+  font-family: monospace;
+  color: rgba(255, 255, 255, 0.85);
+  overflow-x: auto;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Virtual Framer Canvas Frame (Right Column) */
+.qube-virtual-canvas-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.qube-virtual-canvas-window {
+  width: 100%;
+  max-width: 540px;
+  border-radius: 36px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .qube-virtual-canvas-window {
+    padding: 2rem;
+  }
+}
+
+.qube-virtual-canvas-window[data-canvas="dark"] {
+  background-color: #09100C;
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+}
+
+.qube-virtual-canvas-window[data-canvas="light"] {
+  background-color: #F4EFE6;
+  border-color: rgba(20, 25, 21, 0.12);
+  color: #141915;
+}
+
+.qube-canvas-window-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.qube-virtual-canvas-window[data-canvas="light"] .qube-canvas-window-header {
+  border-bottom-color: rgba(20, 25, 21, 0.1);
+}
+
+.qube-window-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qube-window-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.qube-dot-red { background: #FF5F56; }
+.qube-dot-yellow { background: #FFBD2E; }
+.qube-dot-green { background: #27C93F; }
+
+.qube-window-title {
+  font-size: 10px;
+  font-family: monospace;
+  opacity: 0.5;
+  margin-left: 0.5rem;
+}
+
+.qube-window-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-family: monospace;
+  opacity: 0.7;
+}
+
+/* Sandbox Component Preview Card */
+.qube-sandbox-card {
+  border-radius: 28px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .qube-sandbox-card {
+    padding: 2rem;
+  }
+}
+
+.qube-sandbox-card[data-theme="emerald"] {
+  background: #0E1712;
+  border-color: rgba(166, 255, 0, 0.3);
+  color: #FFFFFF;
+}
+.qube-sandbox-card[data-theme="framer-blue"] {
+  background: #081220;
+  border-color: rgba(0, 102, 255, 0.35);
+  color: #FFFFFF;
+}
+.qube-sandbox-card[data-theme="obsidian"] {
+  background: #18181B;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+}
+.qube-sandbox-card[data-theme="cyber-lime"] {
+  background: #0A0D0B;
+  border-color: rgba(204, 255, 0, 0.4);
+  color: #FFFFFF;
+}
+.qube-sandbox-card[data-theme="violet"] {
+  background: #140F24;
+  border-color: rgba(124, 58, 237, 0.35);
+  color: #FFFFFF;
+}
+
+.qube-virtual-canvas-window[data-canvas="light"] .qube-sandbox-card {
+  background: #FFFFFF !important;
+  color: #141915 !important;
+  border-color: rgba(20, 25, 21, 0.12) !important;
+  box-shadow: 0 15px 40px rgba(12, 56, 35, 0.08);
+}
+
+.qube-sandbox-logo-badge {
+  display: inline-flex;
+  height: 48px;
+  width: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  padding: 8px;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.qube-sandbox-logo-badge[data-theme="emerald"] { background-color: #0C3823; }
+.qube-sandbox-logo-badge[data-theme="framer-blue"] { background-color: #0066FF; }
+.qube-sandbox-logo-badge[data-theme="obsidian"] { background-color: #27272A; }
+.qube-sandbox-logo-badge[data-theme="cyber-lime"] { background-color: #111812; }
+.qube-sandbox-logo-badge[data-theme="violet"] { background-color: #7C3AED; }
+
+.qube-sandbox-form-title {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.qube-sandbox-form-desc {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-top: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.qube-form-field-group {
+  margin-bottom: 1rem;
+}
+
+.qube-form-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.375rem;
+}
+
+.qube-form-field-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+}
+
+.qube-form-label-link {
+  font-size: 11px;
+  opacity: 0.7;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+.qube-form-label-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.qube-form-input-relative {
+  position: relative;
+  width: 100%;
+}
+
+.qube-form-input {
+  width: 100%;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.qube-form-input.has-icon {
+  padding-left: 2.5rem;
+}
+
+.qube-form-input.has-toggle {
+  padding-right: 2.5rem;
+}
+
+.qube-virtual-canvas-window[data-canvas="light"] .qube-form-input {
+  background: #FFFFFF;
+  border-color: rgba(20, 25, 21, 0.16);
+  color: #141915;
+}
+
+.qube-form-input:focus {
+  outline: none;
+  border-color: var(--qube-accent);
+}
+
+.qube-form-input-icon {
+  position: absolute;
+  left: 0.875rem;
+  top: 0.875rem;
+  width: 1rem;
+  height: 1rem;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.qube-form-input-toggle {
+  position: absolute;
+  right: 0.875rem;
+  top: 0.875rem;
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.5;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qube-form-input-toggle:hover {
+  opacity: 1;
+}
+
+.qube-otp-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.qube-otp-input {
+  height: 3rem;
+  width: 2.75rem;
+  text-align: center;
+  font-family: monospace;
+  font-size: 1.125rem;
+  font-weight: 700;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+  box-sizing: border-box;
+}
+
+.qube-virtual-canvas-window[data-canvas="light"] .qube-otp-input {
+  background: #FFFFFF;
+  border-color: rgba(20, 25, 21, 0.16);
+  color: #141915;
+}
+
+.qube-passkey-card {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  margin-bottom: 1rem;
+}
+
+.qube-virtual-canvas-window[data-canvas="light"] .qube-passkey-card {
+  background: rgba(20, 25, 21, 0.03);
+  border-color: rgba(20, 25, 21, 0.15);
+}
+
+.qube-passkey-icon-circle {
+  margin: 0 auto 0.75rem auto;
+  display: flex;
+  height: 4rem;
+  width: 4rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(166, 255, 0, 0.15);
+  color: var(--qube-accent);
+  animation: pulse 2s infinite;
+}
+
+.qube-preview-submit-btn {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+  font-family: inherit;
+  margin-top: 1rem;
+}
+
+.qube-sandbox-card[data-theme="emerald"] .qube-preview-submit-btn {
+  background: #A6FF00;
+  color: #0C3823;
+}
+.qube-sandbox-card[data-theme="emerald"] .qube-preview-submit-btn:hover {
+  background: #b8ff26;
+}
+
+.qube-sandbox-card[data-theme="framer-blue"] .qube-preview-submit-btn {
+  background: #0066FF;
+  color: #FFFFFF;
+}
+.qube-sandbox-card[data-theme="framer-blue"] .qube-preview-submit-btn:hover {
+  background: #0052cc;
+}
+
+.qube-sandbox-card[data-theme="obsidian"] .qube-preview-submit-btn {
+  background: #FFFFFF;
+  color: #000000;
+}
+.qube-sandbox-card[data-theme="obsidian"] .qube-preview-submit-btn:hover {
+  background: #E4E4E7;
+}
+
+.qube-sandbox-card[data-theme="cyber-lime"] .qube-preview-submit-btn {
+  background: #CCFF00;
+  color: #000000;
+}
+.qube-sandbox-card[data-theme="cyber-lime"] .qube-preview-submit-btn:hover {
+  background: #d8ff33;
+}
+
+.qube-sandbox-card[data-theme="violet"] .qube-preview-submit-btn {
+  background: #7C3AED;
+  color: #FFFFFF;
+}
+.qube-sandbox-card[data-theme="violet"] .qube-preview-submit-btn:hover {
+  background: #6D28D9;
+}
+
+.qube-status-banner {
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34D399;
+  font-size: 0.75rem;
+  font-family: monospace;
+  text-align: center;
+  margin-top: 0.75rem;
+}
+
+.qube-social-divider-row {
+  position: relative;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qube-social-divider-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.qube-virtual-canvas-window[data-canvas="light"] .qube-social-divider-line {
+  background: rgba(20, 25, 21, 0.1);
+}
+
+.qube-social-divider-text {
+  position: relative;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: monospace;
+  padding: 0 0.5rem;
+  opacity: 0.6;
+}
+
+.qube-sandbox-card[data-theme="emerald"] .qube-social-divider-text { background: #0E1712; }
+.qube-sandbox-card[data-theme="framer-blue"] .qube-social-divider-text { background: #081220; }
+.qube-sandbox-card[data-theme="obsidian"] .qube-social-divider-text { background: #18181B; }
+.qube-sandbox-card[data-theme="cyber-lime"] .qube-social-divider-text { background: #0A0D0B; }
+.qube-sandbox-card[data-theme="violet"] .qube-social-divider-text { background: #140F24; }
+.qube-virtual-canvas-window[data-canvas="light"] .qube-social-divider-text { background: #FFFFFF !important; }
+
+.qube-social-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.qube-social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qube-virtual-canvas-window[data-canvas="light"] .qube-social-btn {
+  border-color: rgba(20, 25, 21, 0.1);
+  background: rgba(20, 25, 21, 0.02);
+}
+
+.qube-social-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.qube-virtual-canvas-window[data-canvas="light"] .qube-social-btn:hover {
+  background: rgba(20, 25, 21, 0.06);
+}
+
+.qube-form-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.qube-virtual-canvas-window[data-canvas="light"] .qube-form-footer {
+  border-top-color: rgba(20, 25, 21, 0.1);
+}
+
+.qube-form-footer-btn {
+  font-weight: 700;
+  color: var(--qube-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+.qube-form-footer-btn:hover {
+  text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   6. MONETIZATION DEMO & PRICING MATRIX
+   -------------------------------------------------------------------------- */
+.qube-monetization-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .qube-monetization-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+}
+
+.qube-tier-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(14, 23, 18, 0.7);
+  padding: 2.25rem 2rem;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.3s ease;
+}
+
+.qube-tier-card.popular {
+  border-color: rgba(166, 255, 0, 0.4);
+  background: linear-gradient(180deg, rgba(20, 35, 24, 0.85) 0%, rgba(10, 18, 13, 0.9) 100%);
+  box-shadow: 0 20px 60px rgba(166, 255, 0, 0.12);
+}
+
+.qube-tier-badge {
+  position: absolute;
+  top: -12px;
+  right: 2rem;
+  border-radius: 9999px;
+  background: var(--qube-accent);
+  color: var(--qube-emerald);
+  padding: 2px 12px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.qube-tier-name {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0 0 0.5rem 0;
+}
+
+.qube-tier-price {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.qube-tier-price span {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.qube-monetization-toolbar {
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.qube-provider-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.375rem;
+  backdrop-filter: blur(12px);
+}
+
+.qube-provider-btn {
+  border-radius: 9999px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.qube-provider-btn:hover {
+  color: #FFFFFF;
+}
+
+.qube-provider-btn.active.stripe {
+  background: #635BFF;
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(99, 91, 255, 0.4);
+}
+
+.qube-provider-btn.active.polar {
+  background: #0062FF;
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(0, 98, 255, 0.4);
+}
+
+.qube-cycle-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.375rem;
+  backdrop-filter: blur(12px);
+}
+
+.qube-cycle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 9999px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.qube-cycle-btn:hover {
+  color: #FFFFFF;
+}
+
+.qube-cycle-btn.active {
+  background: var(--qube-accent);
+  color: var(--qube-emerald);
+  box-shadow: 0 4px 14px rgba(166, 255, 0, 0.25);
+}
+
+.qube-cycle-save-badge {
+  border-radius: 9999px;
+  background: var(--qube-emerald);
+  color: var(--qube-accent);
+  padding: 2px 6px;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.qube-tier-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.qube-tier-provider-tag {
+  font-family: monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.qube-tier-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 1rem;
+}
+
+.qube-tier-price-val {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 2.75rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  line-height: 1;
+}
+
+.qube-tier-price-unit {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: monospace;
+}
+
+.qube-tier-divider {
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 1.5rem 0;
+}
+
+.qube-tier-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.qube-tier-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.45;
+}
+
+.qube-tier-feature-item svg {
+  color: var(--qube-accent);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.qube-tier-cta-btn {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.qube-tier-cta-btn.primary {
+  background: var(--qube-accent);
+  color: var(--qube-emerald);
+  box-shadow: 0 8px 24px rgba(166, 255, 0, 0.25);
+}
+
+.qube-tier-cta-btn.primary:hover {
+  background: var(--qube-accent-hover);
+  transform: translateY(-2px);
+}
+
+.qube-tier-cta-btn.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+
+.qube-tier-cta-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.qube-paywall-box {
+  border-radius: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, #101D15 0%, #0C1710 50%, #070D08 100%);
+  padding: 2rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .qube-paywall-box {
+    padding: 3rem;
+  }
+}
+@media (min-width: 1024px) {
+  .qube-paywall-box {
+    padding: 4rem;
+  }
+}
+
+.qube-paywall-states {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.qube-paywall-state-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.qube-paywall-state-btn:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.qube-paywall-state-btn.active {
+  background: var(--qube-accent);
+  color: var(--qube-emerald);
+  border-color: var(--qube-accent);
+}
+
+.qube-paywall-stage {
+  position: relative;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.45);
+  padding: 2rem;
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .qube-paywall-stage {
+    padding: 2.5rem;
+  }
+}
+
+.qube-paywall-unlocked {
+  width: 100%;
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.qube-unlocked-icon-badge {
+  margin: 0 auto 1rem auto;
+  display: flex;
+  height: 64px;
+  width: 64px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(166, 255, 0, 0.15);
+  color: var(--qube-accent);
+  border: 1px solid rgba(166, 255, 0, 0.35);
+}
+
+.qube-paywall-locked-card {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 2rem;
+  border-radius: 28px;
+  background: #0E1712;
+  border: 1px solid rgba(166, 255, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 10;
+}
+
+.qube-locked-icon-badge {
+  margin: 0 auto 1rem auto;
+  display: flex;
+  height: 56px;
+  width: 56px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: rgba(166, 255, 0, 0.12);
+  color: var(--qube-accent);
+  border: 1px solid rgba(166, 255, 0, 0.25);
+}
+
+.qube-paywall-locked-blur {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+  filter: blur(8px);
+  padding: 2rem;
+  user-select: none;
+}
+
+.qube-paywall-portal-bar {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+@media (min-width: 640px) {
+  .qube-paywall-portal-bar {
+    flex-direction: row;
+  }
+}
+
+.qube-mb-20 { margin-bottom: 5rem; }
+.qube-mt-4 { margin-top: 1rem; }
+.qube-no-margin { margin: 0 !important; }
+.qube-justify-center { justify-content: center !important; }
+.qube-text-none { text-transform: none !important; }
+.qube-btn-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+.qube-btn-full {
+  width: 100%;
+  justify-content: center;
+}
+
+/* --------------------------------------------------------------------------
+   7. 5-STEP WORKFLOW PIPELINE
+   -------------------------------------------------------------------------- */
+.qube-workflow-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .qube-workflow-layout {
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+  }
+}
+
+.qube-workflow-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.qube-workflow-step-btn {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1.5rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: inherit;
+  color: inherit;
+}
+
+.qube-workflow-step-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.qube-workflow-step-btn.active {
+  background: rgba(166, 255, 0, 0.08);
+  border-color: rgba(166, 255, 0, 0.35);
+  box-shadow: 0 10px 30px rgba(166, 255, 0, 0.08);
+}
+
+.qube-step-number {
+  font-family: monospace;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--qube-accent);
+}
+
+.qube-workflow-stepper-bar {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+}
+
+@media (min-width: 640px) {
+  .qube-workflow-stepper-bar {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.qube-workflow-stepper-item {
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-family: inherit;
+  color: inherit;
+}
+
+.qube-workflow-stepper-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.qube-workflow-stepper-item.active {
+  border-color: var(--qube-accent);
+  background: rgba(166, 255, 0, 0.12);
+  box-shadow: 0 8px 24px rgba(166, 255, 0, 0.12);
+}
+
+.qube-workflow-stepper-item.active .qube-stepper-num {
+  color: var(--qube-accent);
+}
+
+.qube-stepper-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.qube-stepper-num {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.qube-stepper-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qube-workflow-card {
+  border-radius: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, #121E16 0%, #0A120D 100%);
+  padding: 2rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+@media (min-width: 640px) {
+  .qube-workflow-card {
+    padding: 3rem;
+  }
+}
+
+.qube-workflow-summary {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--qube-accent);
+  margin: 0 0 1rem 0;
+}
+
+.qube-workflow-tip {
+  padding: 1rem 1.25rem;
+  border-radius: 16px;
+  background: rgba(166, 255, 0, 0.1);
+  border: 1px solid rgba(166, 255, 0, 0.25);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  line-height: 1.5;
+}
+
+.qube-workflow-tip svg {
+  color: var(--qube-accent);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.qube-workflow-nav-bar {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.qube-workflow-prev-btn {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.qube-workflow-prev-btn:hover:not(:disabled) {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.qube-workflow-prev-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.qube-workflow-next-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 12px;
+  background: var(--qube-accent);
+  color: var(--qube-emerald);
+  padding: 0.625rem 1.25rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.qube-workflow-next-btn:hover:not(:disabled) {
+  background: var(--qube-accent-hover);
+}
+
+.qube-workflow-next-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.qube-step-title {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0 0 0.35rem 0;
+}
+
+.qube-step-desc {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.qube-code-viewer {
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #060B08;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.qube-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.qube-code-content {
+  padding: 1.5rem;
+  font-family: monospace;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: #A6FF00;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* --------------------------------------------------------------------------
+   8. COMPONENT CATALOG
+   -------------------------------------------------------------------------- */
+.qube-catalog-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.qube-catalog-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.qube-catalog-tab-btn {
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.qube-catalog-tab-btn:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.qube-catalog-tab-btn.active {
+  background: var(--qube-accent);
+  color: var(--qube-emerald);
+  border-color: var(--qube-accent);
+  font-weight: 700;
+}
+
+.qube-catalog-search-wrapper {
+  position: relative;
+  min-width: 280px;
+}
+
+.qube-catalog-search-input {
+  width: 100%;
+  padding: 0.625rem 1rem 0.625rem 2.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #FFFFFF;
+  font-size: 0.8125rem;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.qube-catalog-search-input:focus {
+  outline: none;
+  border-color: var(--qube-accent);
+}
+
+.qube-catalog-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .qube-catalog-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .qube-catalog-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.qube-catalog-card {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(14, 23, 18, 0.7);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.25s ease;
+}
+
+.qube-catalog-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(166, 255, 0, 0.3);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+
+.qube-catalog-search-icon {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+}
+
+.qube-catalog-select {
+  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #0E1511;
+  color: #FFFFFF;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.qube-catalog-select:focus {
+  outline: none;
+  border-color: var(--qube-accent);
+}
+
+.qube-catalog-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 16px;
+  margin-top: 1rem;
+}
+
+.qube-catalog-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.qube-catalog-category-tag {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--qube-accent);
+  background: rgba(166, 255, 0, 0.1);
+  border: 1px solid rgba(166, 255, 0, 0.2);
+  padding: 3px 10px;
+  border-radius: 9999px;
+}
+
+.qube-catalog-tier-badge {
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.qube-catalog-tier-badge.pro {
+  background: rgba(251, 191, 36, 0.15);
+  color: #FBBF24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.qube-catalog-tier-badge.free {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.qube-catalog-code-snippet {
+  margin-bottom: 0.875rem;
+}
+
+.qube-catalog-code-snippet code {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--qube-accent);
+  background: rgba(0, 0, 0, 0.4);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.qube-catalog-card-footer {
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.qube-catalog-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--qube-accent);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  font-family: inherit;
+}
+
+.qube-catalog-copy-btn:hover {
+  opacity: 0.8;
+}
+
+.qube-catalog-search-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.qube-catalog-lang-tag {
+  font-size: 11px;
+  font-family: monospace;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.qube-catalog-empty {
+  text-align: center;
+  padding: 4rem 0;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* --------------------------------------------------------------------------
+   9. SECURITY & RLS SECTION
+   -------------------------------------------------------------------------- */
+.qube-security-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .qube-security-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+  }
+}
+
+.qube-security-feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.qube-security-card {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1.5rem;
+}
+
+.qube-security-table-card {
+  border-radius: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, #121E16 0%, #0A120D 100%);
+  padding: 1.5rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  margin-bottom: 4rem;
+  overflow-x: auto;
+}
+
+@media (min-width: 640px) {
+  .qube-security-table-card {
+    padding: 2.5rem;
+  }
+}
+
+.qube-security-table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.qube-security-table th {
+  padding: 1rem;
+  font-family: monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.qube-security-table th.accent {
+  color: var(--qube-accent);
+  background: rgba(166, 255, 0, 0.08);
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.qube-security-table td {
+  padding: 1rem;
+  font-size: 0.8125rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.qube-security-table td.qube-cell-feature {
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.qube-security-table td.qube-cell-accent {
+  font-weight: 600;
+  color: var(--qube-accent);
+  background: rgba(166, 255, 0, 0.04);
+}
+
+.qube-security-table td.qube-cell-widget {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.qube-security-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+@media (min-width: 1024px) {
+  .qube-security-layout {
+    grid-template-columns: 5fr 7fr;
+  }
+}
+
+.qube-security-callout {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, #142318 0%, #0B150F 100%);
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+@media (min-width: 640px) {
+  .qube-security-callout {
+    padding: 2.5rem;
+  }
+}
+
+.qube-cell-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qube-callout-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-family: monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--qube-accent);
+  margin-bottom: 1rem;
+}
+
+.qube-security-alert {
+  padding: 1rem 1.25rem;
+  border-radius: 16px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #FDE68A;
+  font-size: 0.75rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  line-height: 1.5;
+}
+
+.qube-security-alert svg {
+  color: #FBBF24;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.qube-alert-title {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.qube-callout-footer {
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.qube-callout-footer-action {
+  color: var(--qube-accent);
+  font-family: monospace;
+  font-weight: 700;
+}
+
+.qube-sql-terminal {
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.85);
+  padding: 1.5rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+@media (min-width: 640px) {
+  .qube-sql-terminal {
+    padding: 2rem;
+  }
+}
+
+.qube-terminal-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.qube-terminal-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qube-terminal-tab-btn {
+  border-radius: 12px;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.qube-terminal-tab-btn.active {
+  background: var(--qube-accent);
+  color: var(--qube-emerald);
+}
+
+.qube-terminal-tab-btn:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.qube-terminal-tab-btn:not(.active):hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.qube-terminal-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--qube-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  font-family: inherit;
+}
+
+.qube-terminal-copy-btn:hover {
+  opacity: 0.8;
+}
+
+.qube-terminal-code {
+  font-family: monospace;
+  font-size: 0.75rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.85);
+  overflow-x: auto;
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 1rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   10. USE CASES
+   -------------------------------------------------------------------------- */
+.qube-usecases-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .qube-usecases-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.qube-usecase-card {
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #121E16 0%, #0A120D 100%);
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.3s ease;
+}
+
+@media (min-width: 640px) {
+  .qube-usecase-card {
+    padding: 2.5rem;
+  }
+}
+
+.qube-usecase-card:hover {
+  border-color: rgba(166, 255, 0, 0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(166, 255, 0, 0.08);
+}
+
+.qube-usecase-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.qube-usecase-badge {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--qube-accent);
+  background: rgba(166, 255, 0, 0.1);
+  border: 1px solid rgba(166, 255, 0, 0.2);
+  padding: 4px 12px;
+  border-radius: 9999px;
+}
+
+.qube-usecase-tag {
+  font-family: monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.qube-usecase-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.qube-usecase-icon-box {
+  display: flex;
+  height: 40px;
+  width: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(166, 255, 0, 0.15);
+  color: var(--qube-accent);
+  border: 1px solid rgba(166, 255, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.qube-usecase-title {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  margin: 0;
+  line-height: 1.2;
+}
+
+@media (min-width: 640px) {
+  .qube-usecase-title {
+    font-size: 1.4rem;
+  }
+}
+
+.qube-usecase-desc {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.55;
+  margin: 0 0 1.5rem 0;
+}
+
+.qube-usecase-bullets {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.qube-usecase-bullet-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+}
+
+.qube-usecase-bullet-item svg {
+  color: var(--qube-accent);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.qube-usecase-footer {
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.qube-usecase-flow {
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--qube-accent);
+  background: rgba(166, 255, 0, 0.1);
+  border: 1px solid rgba(166, 255, 0, 0.2);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.qube-usecase-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.qube-usecase-card:hover .qube-usecase-link {
+  color: var(--qube-accent);
+}
+
+/* --------------------------------------------------------------------------
+   10b. FAQ ACCORDION
+   -------------------------------------------------------------------------- */
+.qube-faq-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.qube-faq-item {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(14, 23, 18, 0.65);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.qube-faq-item.open {
+  border-color: rgba(166, 255, 0, 0.3);
+}
+
+.qube-faq-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  background: none;
+  border: none;
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.qube-faq-trigger svg {
+  color: var(--qube-accent);
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.qube-faq-item.open .qube-faq-trigger svg {
+  transform: rotate(180deg);
+}
+
+.qube-faq-answer {
+  padding: 0 1.5rem 1.25rem 1.5rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* --------------------------------------------------------------------------
+   11. BOTTOM CTA HERO
+   -------------------------------------------------------------------------- */
+.qube-cta-section {
+  position: relative;
+  padding: 5rem 0;
+  background: #090F0B;
+  color: #FFFFFF;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .qube-cta-section {
+    padding: 7rem 0;
+  }
+}
+
+.qube-cta-box {
+  max-width: 56rem;
+  margin: 0 auto;
+  border-radius: 36px;
+  background: linear-gradient(135deg, #121E16 0%, #0E1812 50%, #0A120D 100%);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  border: 1px solid rgba(166, 255, 0, 0.3);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .qube-cta-box {
+    border-radius: 48px;
+    padding: 4rem 3rem;
+  }
+}
+@media (min-width: 768px) {
+  .qube-cta-box {
+    padding: 5rem 4rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   12. INSTALL MODAL DIALOG
+   -------------------------------------------------------------------------- */
+.qube-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.qube-modal-backdrop-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.qube-modal-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 32rem;
+  border-radius: 32px;
+  background: #0E1511;
+  color: #FFFFFF;
+  padding: 2rem;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(166, 255, 0, 0.25);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.qube-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.qube-modal-close-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qube-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+.qube-modal-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.qube-modal-logo-box {
+  display: flex;
+  height: 44px;
+  width: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: #142318;
+  border: 1px solid rgba(166, 255, 0, 0.3);
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.qube-modal-logo-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.qube-modal-title {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.qube-modal-subtitle {
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--qube-accent);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.qube-modal-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  margin-bottom: 1.75rem;
+}
+
+.qube-modal-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 0.875rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.qube-modal-step-num {
+  display: flex;
+  height: 28px;
+  width: 28px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--qube-accent);
+  color: var(--qube-emerald);
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.qube-modal-step-heading {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.qube-modal-step-text {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 2px 0 0 0;
+  line-height: 1.45;
+}
+
+.qube-modal-kbd {
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 10px;
+  color: #FFFFFF;
+}
+
+.qube-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.qube-modal-primary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background: var(--qube-accent);
+  color: var(--qube-emerald);
+  padding: 0.875rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(166, 255, 0, 0.25);
+  transition: all 0.2s ease;
+}
+
+.qube-modal-primary-btn:hover {
+  background: var(--qube-accent-hover);
+  transform: translateY(-1px);
+}
+
+.qube-modal-secondary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.qube-modal-secondary-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.qube-modal-trust-bar {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.qube-modal-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

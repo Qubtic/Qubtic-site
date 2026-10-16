@@ -1,0 +1,103 @@
+[
+  {
+    "id": "7950fabd-0ad3-4242-9429-9aa64e062a12",
+    "email": "founder@qubtic.com",
+    "name": "founder",
+    "plugin_slug": "qube-auth",
+    "plugin_name": "Qube Auth",
+    "framer_user_id": "",
+    "framer_project_id": "",
+    "plan": "pro",
+    "auth_token": "qbt_fr_qubeauth_2ae623849b63742319fde70b148cd44a01b0e77bba8ed5b4",
+    "status": "active",
+    "metadata": {
+      "sourceTab": "signin",
+      "rememberMe": true,
+      "clientIp": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+      "authenticatedVia": "Qubtic Auth Portal"
+    },
+    "created_at": "2026-10-16T13:53:11.333Z",
+    "updated_at": "2026-10-16T13:53:11.333Z",
+    "last_login_at": "2026-10-16T13:53:11.333Z"
+  },
+  {
+    "id": "d17e05b0-4365-4bde-9743-4e81f7920318",
+    "email": "demo.creator@qube-auth.app",
+    "name": "Demo Creator",
+    "plugin_slug": "qube-auth",
+    "plugin_name": "Qube Auth",
+    "framer_user_id": "demo_framer_usr_42",
+    "framer_project_id": "demo_framer_canvas_99",
+    "plan": "pro",
+    "auth_token": "qbt_fr_qubeauth_468a521146ce2218b3f36bf7a187d8269ed38725e8749cc6",
+    "status": "active",
+    "metadata": {
+      "isDemoSession": true,
+      "clientIp": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+      "authenticatedVia": "Qubtic Auth Portal"
+    },
+    "created_at": "2026-10-16T12:49:49.181Z",
+    "updated_at": "2026-10-16T12:49:49.181Z",
+    "last_login_at": "2026-10-16T12:49:49.181Z"
+  },
+  {
+    "id": "fa11a001-1111-4000-8000-000000000001",
+    "email": "alex.design@framerstudio.co",
+    "name": "Alex Vance",
+    "plugin_slug": "qube-auth",
+    "plugin_name": "Qube Auth",
+    "framer_user_id": "fr_usr_99812",
+    "framer_project_id": "proj_qube_saas_01",
+    "plan": "pro",
+    "auth_token": "qbt_fr_qubeauth_a8f902c3e1b74d92a1045e7f",
+    "status": "active",
+    "metadata": {
+      "framerVersion": "2026.4.1",
+      "preferredTheme": "emerald",
+      "authenticatedVia": "Qubtic Auth Portal"
+    },
+    "created_at": "2026-10-14T09:15:00.000Z",
+    "updated_at": "2026-10-16T15:20:00.000Z",
+    "last_login_at": "2026-10-16T15:20:00.000Z"
+  },
+  {
+    "id": "fa11a002-2222-4000-8000-000000000002",
+    "email": "sarah.chen@creatorgrid.io",
+    "name": "Sarah Chen",
+    "plugin_slug": "frame-drop",
+    "plugin_name": "Frame Drop",
+    "framer_user_id": "fr_usr_44102",
+    "framer_project_id": "proj_framerdemo_88",
+    "plan": "pro",
+    "auth_token": "qbt_fr_framedro_b71049c81920e812d8a4f910",
+    "status": "active",
+    "metadata": {
+      "framerVersion": "2026.3.8",
+      "authenticatedVia": "Qubtic Auth Portal"
+    },
+    "created_at": "2026-10-12T11:30:00.000Z",
+    "updated_at": "2026-10-16T14:10:00.000Z",
+    "last_login_at": "2026-10-16T14:10:00.000Z"
+  },
+  {
+    "id": "fa11a003-3333-4000-8000-000000000003",
+    "email": "marcus.dev@synthetix.design",
+    "name": "Marcus Kane",
+    "plugin_slug": "qube-auth",
+    "plugin_name": "Qube Auth",
+    "framer_user_id": "fr_usr_55198",
+    "framer_project_id": "proj_nexus_corp_99",
+    "plan": "free",
+    "auth_token": "qbt_fr_qubeauth_f10a83e0c4b28190d7e63a11",
+    "status": "active",
+    "metadata": {
+      "framerVersion": "2026.4.1",
+      "authenticatedVia": "Qubtic Auth Portal"
+    },
+    "created_at": "2026-10-15T18:40:00.000Z",
+    "updated_at": "2026-10-16T10:05:00.000Z",
+    "last_login_at": "2026-10-16T10:05:00.000Z"
+  }
+]
