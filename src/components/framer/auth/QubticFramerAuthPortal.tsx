@@ -693,7 +693,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
               <div
                 className="qubtic-auth-tabs"
                 style={{
-                  gridTemplateColumns: 'repeat(5, 1fr)',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
                   display: 'grid',
                 }}
               >
@@ -718,39 +718,6 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                   className={`qubtic-auth-tab ${activeTab === 'signup' ? 'active' : ''}`}
                 >
                   Sign Up
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('otp');
-                    setErrorMessage('');
-                    setStatusMessage('');
-                  }}
-                  className={`qubtic-auth-tab ${activeTab === 'otp' ? 'active' : ''}`}
-                >
-                  OTP Code
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('reset');
-                    setErrorMessage('');
-                    setStatusMessage('');
-                  }}
-                  className={`qubtic-auth-tab ${activeTab === 'reset' ? 'active' : ''}`}
-                >
-                  Reset
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('teams');
-                    setErrorMessage('');
-                    setStatusMessage('');
-                  }}
-                  className={`qubtic-auth-tab ${activeTab === 'teams' ? 'active' : ''}`}
-                >
-                  Teams
                 </button>
               </div>
 
@@ -851,30 +818,6 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem' }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveTab('otp');
-                          setErrorMessage('');
-                          setStatusMessage('');
-                        }}
-                        className="qubtic-auth-magic-link-btn"
-                      >
-                        Use OTP verification code
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveTab('teams');
-                          setErrorMessage('');
-                          setStatusMessage('');
-                        }}
-                        className="qubtic-auth-magic-link-btn"
-                      >
-                        Select team account
-                      </button>
-                    </div>
                   </>
                 )}
 
@@ -1069,6 +1012,20 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                         </div>
                       </>
                     )}
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab('signin');
+                          setErrorMessage('');
+                          setStatusMessage('');
+                        }}
+                        className="qubtic-auth-magic-link-btn"
+                      >
+                        ← Back to Sign In
+                      </button>
+                    </div>
                   </>
                 )}
 

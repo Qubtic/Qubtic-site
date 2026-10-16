@@ -8,7 +8,9 @@ import {
   Sparkles,
   Layers,
   Zap,
-  ChevronRight
+  ChevronRight,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 
 interface FrameDropHeroProps {
@@ -17,6 +19,61 @@ interface FrameDropHeroProps {
 }
 
 export function FrameDropHero({ onInstallClick, onExploreCatalog }: FrameDropHeroProps) {
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const [isMuted, setIsMuted] = React.useState(true);
+
+  const toggleSound = React.useCallback((e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (videoRef.current) {
+      const next = !videoRef.current.muted;
+      videoRef.current.muted = next;
+      setIsMuted(next);
+      if (!next) {
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Attempt unmuted autoplay first (succeeds if user already clicked/interacted with site)
+    video.muted = false;
+    video.play()
+      .then(() => {
+        setIsMuted(false);
+      })
+      .catch(() => {
+        // Browser blocked audio autoplay, start muted
+        video.muted = true;
+        setIsMuted(true);
+        video.play().catch(() => {});
+      });
+
+    // Automatically unmute on the first user interaction anywhere on the document
+    const handleFirstInteraction = () => {
+      if (video.muted) {
+        video.muted = false;
+        setIsMuted(false);
+        video.play().catch(() => {});
+      }
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
+    };
+
+    window.addEventListener('click', handleFirstInteraction, { once: true });
+    window.addEventListener('keydown', handleFirstInteraction, { once: true });
+    window.addEventListener('touchstart', handleFirstInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
+    };
+  }, []);
+
   return (
     <section className="fd-hero-section">
       {/* Radiant Electric Blue Ambient Glows */}
@@ -150,69 +207,51 @@ export function FrameDropHero({ onInstallClick, onExploreCatalog }: FrameDropHer
         <div className="fd-hero-banner-wrapper">
           <div className="fd-hero-banner-frame">
 
-            {/* Studio Window Chrome Bar */}
-            <div className="fd-hero-banner-chrome">
-              <div className="fd-chrome-dots">
-                <div className="fd-dot-red" />
-                <div className="fd-dot-yellow" />
-                <div className="fd-dot-green" />
-              </div>
+          
 
-              <div className="fd-chrome-title">
-                <Image
-                  src="/images/brand/frame-drop-icon-transparent.png"
-                  alt="Frame Drop Logo"
-                  width={16}
-                  height={16}
-                  className="fd-icon-xs"
-                />
-                <span>Frame Drop Studio · Framer Canvas Plugin</span>
-              </div>
+            {/* Pristine Full Video Visual with Sound Controls */}
+            <div
+              className="fd-hero-banner-img-box"
+              onClick={toggleSound}
+              style={{ cursor: 'pointer' }}
+              title={isMuted ? 'Click anywhere on video to unmute sound' : 'Click to mute sound'}
+            >
+              <video
+                ref={videoRef}
+                src="/images/framer-drop-video.mp4"
+                poster="/images/framedrop-banner.png"
+                autoPlay
+                muted={isMuted}
+                loop
+                playsInline
+                preload="auto"
+                className="fd-hero-banner-video"
+              >
+                Your browser does not support the video tag.
+              </video>
 
-              <div className="fd-chrome-status">
-                <span className="fd-pulse-cyan" />
-                <span>Live Canvas</span>
-              </div>
+              {/* Sound / Unmute Overlay Pill */}
+              <button
+                type="button"
+                onClick={toggleSound}
+                className="fd-video-sound-toggle"
+                aria-label={isMuted ? 'Unmute video audio' : 'Mute video audio'}
+              >
+                {isMuted ? (
+                  <>
+                    <VolumeX className="fd-sound-icon" />
+                    <span>Unmute Sound</span>
+                  </>
+                ) : (
+                  <>
+                    <Volume2 className="fd-sound-icon" />
+                    <span>Sound On</span>
+                  </>
+                )}
+              </button>
             </div>
 
-            {/* Pristine Full Uncropped Banner Visual */}
-            <div className="fd-hero-banner-img-box">
-              <Image
-                src="/images/framedrop-banner.png"
-                alt="Frame Drop - Drag. Drop. Build. Framer Plugin by Qubtic"
-                fill
-                priority
-                className="fd-hero-banner-img"
-                sizes="(max-width: 1400px) 100vw, 1360px"
-              />
-            </div>
-
-            {/* Interactive Quick Bar Under the Banner */}
-            <div className="fd-banner-quick-bar">
-              <div className="fd-hero-pillar-item">
-                <span className="fd-pulse-cyan" />
-                <span>
-                  Official Framer Component Suite by Qubtic Technologies
-                </span>
-              </div>
-
-              <div className="fd-hero-pillar-item">
-                <button
-                  type="button"
-                  onClick={onInstallClick}
-                  className="fd-banner-quick-link"
-                >
-                  <span>1-Click Launch</span>
-                  <ArrowUpRight className="fd-icon-xs" />
-                </button>
-                <Link
-                  href="/framer/frame-drop/docs"
-                  className="fd-banner-quick-doc"
-                >
-                  Architecture Docs &rarr;
-                </Link>
-              </div>
-            </div>
+          
 
           </div>
         </div>
