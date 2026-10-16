@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -10,13 +10,14 @@ import {
   Check,
   Search,
   Image as ImageIcon,
-  ExternalLink,
   Copy,
 } from 'lucide-react';
 import { CloudImage } from '@/components/ui/CloudImage';
 import { ConfirmModal } from './ConfirmModal';
 import { TechLoader } from '@/components/ui/TechLoader';
 import { LumaSpin } from '@/components/ui/luma-spin';
+
+const emptySubscribe = () => () => {};
 
 export interface CloudinaryResource {
   public_id: string;
@@ -44,17 +45,13 @@ export function MediaLibraryModal({
   onSelect,
   selectedPublicId,
 }: MediaLibraryModalProps) {
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [resources, setResources] = useState<CloudinaryResource[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [uploading, setUploading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    setPortalContainer(document.body);
-  }, []);
 
   const fetchMedia = async () => {
     setLoading(true);
@@ -67,17 +64,41 @@ export function MediaLibraryModal({
       } else {
         setError(data.error || 'Failed to fetch media library');
       }
-    } catch (err: any) {
-      setError(err.message || 'Error connecting to Cloudinary');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error connecting to Cloudinary';
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (isOpen) {
-      fetchMedia();
-    }
+    let ignore = false;
+    if (!isOpen) return;
+
+    fetch('/api/admin/media')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!ignore) {
+          if (data.resources) {
+            setResources(data.resources);
+          } else if (data.error) {
+            setError(data.error);
+          }
+          setLoading(false);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!ignore) {
+          const msg = err instanceof Error ? err.message : 'Error connecting to Cloudinary';
+          setError(msg);
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, [isOpen]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,8 +125,9 @@ export function MediaLibraryModal({
       } else {
         alert(data.error || 'Upload failed');
       }
-    } catch (err: any) {
-      alert('Upload failed: ' + err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      alert('Upload failed: ' + msg);
     } finally {
       setUploading(false);
     }
@@ -137,8 +159,9 @@ export function MediaLibraryModal({
         const data = await res.json();
         alert(data.error || 'Failed to delete media from Cloudinary');
       }
-    } catch (err: any) {
-      alert('Error deleting file: ' + err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      alert('Error deleting file: ' + msg);
     } finally {
       setIsDeleting(false);
     }
@@ -151,7 +174,7 @@ export function MediaLibraryModal({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  if (!isOpen || !portalContainer) return null;
+  if (!isOpen || !isMounted) return null;
 
   const filteredResources = resources.filter((item) =>
     item.public_id.toLowerCase().includes(searchQuery.toLowerCase())
@@ -359,7 +382,7 @@ export function MediaLibraryModal({
         onCancel={() => setDeletingPublicId(null)}
       />
     </div>,
-    portalContainer
+    document.body
   );
 }
 

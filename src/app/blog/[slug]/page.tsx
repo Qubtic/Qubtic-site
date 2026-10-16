@@ -2,9 +2,8 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getBlogDb, BlogPostItem } from '@/lib/store';
+import { getBlogDb } from '@/lib/store';
 import { ArrowLeft, Clock, Calendar, User, Share2, ArrowUpRight } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;

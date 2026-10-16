@@ -44,9 +44,10 @@ export async function POST(request: NextRequest) {
       height: result.height,
       format: result.format,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Upload handler error:', error);
-    const msg = error?.error?.message || error?.message || '';
+    const err = error as { message?: string; error?: { message?: string } } | null;
+    const msg = err?.error?.message || err?.message || '';
     if (msg.includes('api_secret mismatch')) {
       return NextResponse.json(
         {

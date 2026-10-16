@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       success: true,
       message: 'Inquiry submitted successfully! We will reach out within 24 business hours.',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error handling contact form submission:', error);
 
     if (error instanceof z.ZodError) {

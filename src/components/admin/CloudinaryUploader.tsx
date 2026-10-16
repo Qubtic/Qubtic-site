@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { UploadCloud, Image as ImageIcon, Trash2, Loader2, FolderOpen, AlertCircle, Check } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { UploadCloud, Image as ImageIcon, Trash2, FolderOpen, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import { CloudImage } from '@/components/ui/CloudImage';
 import { MediaLibraryModal } from './MediaLibraryModal';
@@ -23,12 +23,13 @@ export function CloudinaryUploader({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+  const [prevValue, setPrevValue] = useState(value);
+  if (prevValue !== value) {
+    setPrevValue(value);
+    setImageError(false);
+  }
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setImageError(false);
-  }, [value]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -54,8 +55,9 @@ export function CloudinaryUploader({
       }
 
       onChange(data.public_id || data.secure_url);
-    } catch (err: any) {
-      setError(err.message || 'Image upload failed');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Image upload failed';
+      setError(msg);
     } finally {
       setUploading(false);
       if (fileInputRef.current) {

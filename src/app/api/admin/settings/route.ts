@@ -9,7 +9,7 @@ export async function GET() {
       adminPasswordHash: '••••••••',
     };
     return NextResponse.json(safeSettings);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch site settings' }, { status: 500 });
   }
 }

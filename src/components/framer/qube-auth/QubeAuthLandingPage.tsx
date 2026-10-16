@@ -4,14 +4,10 @@ import * as React from 'react';
 import Link from 'next/link';
 import { 
   ArrowUpRight, 
-  Sparkles, 
   ShieldCheck, 
   CheckCircle2, 
   BookOpen, 
-  Database,
-  Lock,
-  Layers,
-  CreditCard
+  Database
 } from 'lucide-react';
 
 import { QubeAuthHero } from './QubeAuthHero';

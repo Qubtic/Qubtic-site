@@ -10,7 +10,7 @@ function ensureStoreDir() {
   if (!fs.existsSync(STORE_DIR)) {
     try {
       fs.mkdirSync(STORE_DIR, { recursive: true });
-    } catch (e) {
+    } catch (_e) {
       // Ignore if read-only environment
     }
   }
@@ -25,7 +25,7 @@ function readJsonFile<T>(filename: string, fallbackData: T): T {
     }
     const data = fs.readFileSync(filePath, 'utf-8');
     return JSON.parse(data) as T;
-  } catch (error) {
+  } catch (_error) {
     return fallbackData;
   }
 }
@@ -35,7 +35,7 @@ function writeJsonFile<T>(filename: string, data: T): void {
     ensureStoreDir();
     const filePath = path.join(STORE_DIR, filename);
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (error) {
+  } catch (_error) {
     // Ignore in read-only environment
   }
 }
@@ -262,22 +262,22 @@ export async function getProjectsDb(): Promise<ProjectItem[]> {
       return getProjectsStore();
     }
 
-    return data.map((row: any) => ({
-      id: row.id,
-      slug: row.slug,
-      title: row.title,
-      category: row.category,
-      client: row.client || '',
-      year: row.year || '',
-      metric: row.metric || '',
-      liveUrl: row.live_url || '',
-      shortDescription: row.short_description || '',
-      challenge: row.challenge || '',
-      solution: row.solution || '',
-      results: Array.isArray(row.results) ? row.results : [],
-      techStack: Array.isArray(row.tech_stack) ? row.tech_stack : [],
-      testimonial: row.testimonial || undefined,
-      image: row.image || undefined,
+    return (data as Record<string, unknown>[]).map((row) => ({
+      id: row.id as string | undefined,
+      slug: (row.slug as string) || '',
+      title: (row.title as string) || '',
+      category: (row.category as string) || '',
+      client: (row.client as string) || '',
+      year: (row.year as string) || '',
+      metric: (row.metric as string) || '',
+      liveUrl: (row.live_url as string) || '',
+      shortDescription: (row.short_description as string) || '',
+      challenge: (row.challenge as string) || '',
+      solution: (row.solution as string) || '',
+      results: Array.isArray(row.results) ? (row.results as ProjectItem['results']) : [],
+      techStack: Array.isArray(row.tech_stack) ? (row.tech_stack as string[]) : [],
+      testimonial: (row.testimonial as ProjectItem['testimonial']) || undefined,
+      image: (row.image as string) || undefined,
     }));
   } catch (err) {
     console.error('Error fetching projects from Supabase:', err);
@@ -305,7 +305,7 @@ export async function saveProjectDb(project: ProjectItem): Promise<ProjectItem> 
       updated_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('projects')
       .upsert(row, { onConflict: 'slug' })
       .select()
@@ -362,17 +362,17 @@ export async function getServicesDb(): Promise<ServiceItem[]> {
       return getServicesStore();
     }
 
-    return data.map((row: any) => ({
-      id: row.id,
-      slug: row.slug,
-      title: row.title,
-      shortDescription: row.short_description || '',
-      longDescription: row.long_description || '',
-      icon: row.icon || 'Globe',
-      features: Array.isArray(row.features) ? row.features : [],
-      process: Array.isArray(row.process) ? row.process : [],
-      techStack: Array.isArray(row.tech_stack) ? row.tech_stack : [],
-      faq: Array.isArray(row.faq) ? row.faq : [],
+    return (data as Record<string, unknown>[]).map((row) => ({
+      id: row.id as string | undefined,
+      slug: (row.slug as string) || '',
+      title: (row.title as string) || '',
+      shortDescription: (row.short_description as string) || '',
+      longDescription: (row.long_description as string) || '',
+      icon: (row.icon as string) || 'Globe',
+      features: Array.isArray(row.features) ? (row.features as string[]) : [],
+      process: Array.isArray(row.process) ? (row.process as Array<{ name: string; description: string }>) : [],
+      techStack: Array.isArray(row.tech_stack) ? (row.tech_stack as string[]) : [],
+      faq: Array.isArray(row.faq) ? (row.faq as Array<{ question: string; answer: string }>) : [],
     }));
   } catch (err) {
     console.error('Error fetching services from Supabase:', err);
@@ -478,7 +478,7 @@ export async function saveFullPricingDb(pricing: PricingData): Promise<PricingDa
     // Delete existing and reinsert fresh
     await supabase.from('pricing_plans').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
-    const rowsToInsert: any[] = [];
+    const rowsToInsert: Record<string, unknown>[] = [];
     for (const category of ['web', 'saas', 'shopify', 'framer'] as const) {
       const plans = pricing[category] || [];
       for (let i = 0; i < plans.length; i++) {
@@ -523,17 +523,17 @@ export async function getBlogDb(): Promise<BlogPostItem[]> {
       return getBlogStore();
     }
 
-    return data.map((row: any) => ({
-      id: row.id,
-      slug: row.slug,
-      title: row.title,
-      excerpt: row.excerpt || '',
-      content: row.content || '',
-      date: row.date || '',
-      readingTime: row.reading_time || '5 min read',
-      category: row.category || 'General',
-      author: row.author || 'qubtic Team',
-      image: row.image || undefined,
+    return (data as Record<string, unknown>[]).map((row) => ({
+      id: row.id as string | undefined,
+      slug: (row.slug as string) || '',
+      title: (row.title as string) || '',
+      excerpt: (row.excerpt as string) || '',
+      content: (row.content as string) || '',
+      date: (row.date as string) || '',
+      readingTime: (row.reading_time as string) || '5 min read',
+      category: (row.category as string) || 'General',
+      author: (row.author as string) || 'qubtic Team',
+      image: (row.image as string) || undefined,
     }));
   } catch (err) {
     console.error('Error fetching blog posts from Supabase:', err);
@@ -676,16 +676,16 @@ export async function getInquiriesDb(): Promise<InquiryItem[]> {
       return getInquiriesStore();
     }
 
-    return data.map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      email: row.email,
-      company: row.company || '',
-      service: row.service || 'Web Development',
-      budget: row.budget || '$5k-$15k',
-      message: row.message || '',
-      status: row.status || 'new',
-      createdAt: row.created_at,
+    return (data as Record<string, unknown>[]).map((row) => ({
+      id: (row.id as string) || '',
+      name: (row.name as string) || '',
+      email: (row.email as string) || '',
+      company: (row.company as string) || '',
+      service: (row.service as string) || 'Web Development',
+      budget: (row.budget as string) || '$5k-$15k',
+      message: (row.message as string) || '',
+      status: (row.status as string) || 'new',
+      createdAt: (row.created_at as string) || new Date().toISOString(),
     }));
   } catch (err) {
     console.error('Error fetching inquiries from Supabase:', err);
@@ -752,13 +752,13 @@ export async function getAdminUsersDb(): Promise<AdminUserItem[]> {
       .order('created_at', { ascending: true });
 
     if (error || !data) return [];
-    return data.map((u: any) => ({
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      role: u.role || 'admin',
-      lastLoginAt: u.last_login_at,
-      createdAt: u.created_at,
+    return (data as Record<string, unknown>[]).map((u) => ({
+      id: (u.id as string) || '',
+      name: (u.name as string) || '',
+      email: (u.email as string) || '',
+      role: (u.role as string) || 'admin',
+      lastLoginAt: u.last_login_at as string | undefined,
+      createdAt: u.created_at as string | undefined,
     }));
   } catch (err) {
     console.error('Error fetching admin users:', err);

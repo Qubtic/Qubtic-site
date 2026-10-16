@@ -41,7 +41,6 @@ export function Navbar() {
   const [isMobileProductOpen, setIsMobileProductOpen] = React.useState(true);
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const dropdownRef = React.useRef<HTMLDivElement | null>(null);
-  const productButtonRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 24);
@@ -50,20 +49,16 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  React.useEffect(() => {
+  const [prevPathname, setPrevPathname] = React.useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setIsProductOpen(false);
     setIsOpen(false);
-  }, [pathname]);
+  }
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      const target = event.target as Node;
-      if (
-        dropdownRef.current && 
-        !dropdownRef.current.contains(target) &&
-        productButtonRef.current &&
-        !productButtonRef.current.contains(target)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsProductOpen(false);
       }
     };
@@ -150,7 +145,6 @@ export function Navbar() {
               return (
                 <div
                   key={link.name}
-                  ref={productButtonRef}
                   className="qubtic-nav-item"
                   onMouseEnter={handleProductEnter}
                   onMouseLeave={handleProductLeave}
@@ -223,47 +217,33 @@ export function Navbar() {
                     <Link
                       href="/framer/qube-auth"
                       onClick={closeProductMenu}
-                      className="qubtic-dropdown__product-card qubtic-dropdown__product-card--qube-auth"
+                      className="qubtic-dropdown__product-card"
                     >
-                      <div className="qubtic-dropdown__card-inner">
+                      <div>
                         <div className="qubtic-dropdown__card-top">
-                          <div className="qubtic-dropdown__product-icon qubtic-dropdown__product-icon--qube-auth">
+                          <div className="qubtic-dropdown__product-icon">
                             <Image
                               src="/images/qube-auth/qube-auth-logo.png"
                               alt="Qube Auth Logo"
-                              width={44}
-                              height={44}
+                              width={24}
+                              height={24}
                               className="qubtic-dropdown__product-img"
                             />
                           </div>
-                          <span className="qubtic-dropdown__badge qubtic-dropdown__badge--qube-auth">
-                            <span className="qubtic-dropdown__badge-dot" />
+                          <span className="qubtic-dropdown__badge">
                             v1.0 · New
                           </span>
                         </div>
 
-                        <div className="qubtic-dropdown__body">
-                          <div className="qubtic-dropdown__eyebrow">
-                            Auth &amp; Licensing Suite
-                          </div>
-                          <div className="qubtic-dropdown__title-row">
-                            <h3 className="qubtic-dropdown__title">
-                              Qube Auth
-                            </h3>
-                            <div className="qubtic-dropdown__arrow-btn">
-                              <ArrowUpRight className="qubtic-dropdown__arrow" />
-                            </div>
-                          </div>
-                          <p className="qubtic-dropdown__desc">
-                            Full-stack auth, user licensing &amp; Supabase toolkit for Framer.
-                          </p>
+                        <div className="qubtic-dropdown__title-row">
+                          <h3 className="qubtic-dropdown__title">
+                            Qube Auth
+                          </h3>
+                          <ArrowUpRight className="qubtic-dropdown__arrow" />
                         </div>
-
-                        <div className="qubtic-dropdown__tags">
-                          <span className="qubtic-dropdown__tag">Supabase</span>
-                          <span className="qubtic-dropdown__tag">Stripe Paywalls</span>
-                          <span className="qubtic-dropdown__tag">Zero-Code</span>
-                        </div>
+                        <p className="qubtic-dropdown__desc">
+                          Full-stack auth, user licensing &amp; Supabase toolkit for Framer.
+                        </p>
                       </div>
                     </Link>
 
@@ -271,52 +251,36 @@ export function Navbar() {
                     <Link
                       href="/framer/frame-drop"
                       onClick={closeProductMenu}
-                      className="qubtic-dropdown__product-card qubtic-dropdown__product-card--frame-drop"
+                      className="qubtic-dropdown__product-card"
                     >
-                      <div className="qubtic-dropdown__card-inner">
+                      <div>
                         <div className="qubtic-dropdown__card-top">
-                          <div className="qubtic-dropdown__product-icon qubtic-dropdown__product-icon--frame-drop">
+                          <div className="qubtic-dropdown__product-icon">
                             <Image
                               src="/images/brand/frame-drop-icon-transparent.png"
                               alt="Frame Drop Logo"
-                              width={44}
-                              height={44}
+                              width={24}
+                              height={24}
                               className="qubtic-dropdown__product-img"
                             />
                           </div>
-                          <span className="qubtic-dropdown__badge qubtic-dropdown__badge--frame-drop">
-                            <span className="qubtic-dropdown__badge-dot qubtic-dropdown__badge-dot--sky" />
+                          <span className="qubtic-dropdown__badge qubtic-dropdown__badge--muted">
                             v0.2 · Live
                           </span>
                         </div>
 
-                        <div className="qubtic-dropdown__body">
-                          <div className="qubtic-dropdown__eyebrow">
-                            Component Studio
-                          </div>
-                          <div className="qubtic-dropdown__title-row">
-                            <h3 className="qubtic-dropdown__title">
-                              Frame Drop
-                            </h3>
-                            <div className="qubtic-dropdown__arrow-btn">
-                              <ArrowUpRight className="qubtic-dropdown__arrow" />
-                            </div>
-                          </div>
-                          <p className="qubtic-dropdown__desc">
-                            Native Framer component studio with 25+ responsive section drops.
-                          </p>
+                        <div className="qubtic-dropdown__title-row">
+                          <h3 className="qubtic-dropdown__title">
+                            Frame Drop
+                          </h3>
+                          <ArrowUpRight className="qubtic-dropdown__arrow" />
                         </div>
-
-                        <div className="qubtic-dropdown__tags">
-                          <span className="qubtic-dropdown__tag">25+ Sections</span>
-                          <span className="qubtic-dropdown__tag">WCAG AA</span>
-                          <span className="qubtic-dropdown__tag">Token Sync</span>
-                        </div>
+                        <p className="qubtic-dropdown__desc">
+                          Native Framer component studio with 25+ responsive section drops.
+                        </p>
                       </div>
                     </Link>
                   </div>
-
-                 
                 </div>
               </motion.div>
             </div>

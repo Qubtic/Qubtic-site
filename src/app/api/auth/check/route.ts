@@ -23,12 +23,12 @@ export async function GET() {
           },
         });
       }
-    } catch (parseErr) {
+    } catch {
       // Invalid session token format
     }
 
     return NextResponse.json({ authenticated: false }, { status: 401 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ authenticated: false }, { status: 500 });
   }
 }

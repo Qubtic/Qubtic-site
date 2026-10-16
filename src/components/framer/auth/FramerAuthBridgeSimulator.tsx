@@ -8,27 +8,40 @@ import {
   CheckCircle2,
   Copy,
   Check,
-  ExternalLink,
-  ShieldCheck,
   RefreshCw,
   Terminal,
-  Code2,
   Database,
   ArrowRight,
   Zap,
   Play,
-  KeyRound,
   FileCode,
 } from 'lucide-react';
-import { SiFramer, SiSupabase } from 'react-icons/si';
 import { REGISTERED_PLUGINS } from '@/lib/plugins-registry';
+
+interface ReceivedAuthPayload {
+  type?: string;
+  token?: string;
+  plugin?: string;
+  user?: {
+    email?: string;
+    plan?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+interface VerificationResult {
+  valid?: boolean;
+  error?: string;
+  [key: string]: unknown;
+}
 
 export default function FramerAuthBridgeSimulator() {
   const [selectedPlugin, setSelectedPlugin] = useState<string>('qube-auth');
   const [customSlug, setCustomSlug] = useState<string>('');
   const [authStatus, setAuthStatus] = useState<'idle' | 'listening' | 'authenticated'>('idle');
-  const [receivedPayload, setReceivedPayload] = useState<any>(null);
-  const [verificationResult, setVerificationResult] = useState<any>(null);
+  const [receivedPayload, setReceivedPayload] = useState<ReceivedAuthPayload | null>(null);
+  const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [copiedSnippet, setCopiedSnippet] = useState(false);
 
@@ -40,17 +53,20 @@ export default function FramerAuthBridgeSimulator() {
       // Validate message structure
       if (event.data && event.data.type === 'QUBTIC_AUTH_SUCCESS') {
         console.log('Received Qubtic Auth Handshake:', event.data);
-        setReceivedPayload(event.data);
+        setReceivedPayload(event.data as ReceivedAuthPayload);
         setAuthStatus('authenticated');
 
         // Automatically verify token via Qubtic backend
         setIsVerifying(true);
         try {
-          const res = await fetch(`/api/framer-auth/verify?token=${encodeURIComponent(event.data.token)}&plugin=${encodeURIComponent(event.data.plugin || activeSlug)}`);
-          const verifyJson = await res.json();
+          const tokenStr = String(event.data.token || '');
+          const pluginStr = String(event.data.plugin || activeSlug);
+          const res = await fetch(`/api/framer-auth/verify?token=${encodeURIComponent(tokenStr)}&plugin=${encodeURIComponent(pluginStr)}`);
+          const verifyJson = (await res.json()) as VerificationResult;
           setVerificationResult(verifyJson);
-        } catch (e: any) {
-          setVerificationResult({ valid: false, error: e.message });
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : 'Unknown error';
+          setVerificationResult({ valid: false, error: msg });
         } finally {
           setIsVerifying(false);
         }
@@ -340,7 +356,7 @@ export class QubticFramerAuth {
                     No active auth session
                   </p>
                   <p className="text-xs text-zinc-600 max-w-sm mx-auto mt-1">
-                    Click "Launch Auth Popup" to simulate a user connecting their account inside Framer.
+                    Click &quot;Launch Auth Popup&quot; to simulate a user connecting their account inside Framer.
                   </p>
                 </div>
               )}
@@ -439,7 +455,7 @@ export class QubticFramerAuth {
               <span>Framer Plugin Integration SDK Code</span>
             </h3>
             <p className="text-xs text-zinc-400 mt-1">
-              Copy and paste this helper into your Framer Plugin's code asset to trigger the external Qubtic Auth flow.
+              Copy and paste this helper into your Framer Plugin&apos;s code asset to trigger the external Qubtic Auth flow.
             </p>
           </div>
 

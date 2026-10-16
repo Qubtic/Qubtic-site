@@ -18,13 +18,11 @@ interface QubeAuthInstallModalProps {
   onClose: () => void;
 }
 
+const emptySubscribe = () => () => {};
+
 export function QubeAuthInstallModal({ isOpen, onClose }: QubeAuthInstallModalProps) {
   const [copiedLink, setCopiedLink] = React.useState(false);
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = React.useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   if (!isOpen || !mounted) return null;
 

@@ -49,14 +49,25 @@ export async function GET(request: Request) {
       );
     }
 
+    const isPro = user.plan === 'pro' || user.plan === 'enterprise' || Boolean(user.is_early_bird);
+
     return NextResponse.json(
       {
         valid: true,
+        is_pro: isPro,
+        tier: user.plan,
+        is_early_bird: Boolean(user.is_early_bird),
         user: {
           id: user.id,
           email: user.email,
           name: user.name,
+          company_name: user.company_name,
+          website_url: user.website_url,
           plan: user.plan,
+          is_pro: isPro,
+          tier: user.plan,
+          is_early_bird: Boolean(user.is_early_bird),
+          early_bird_granted_at: user.early_bird_granted_at,
           plugin_slug: user.plugin_slug,
           plugin_name: user.plugin_name,
           status: user.status,
@@ -102,11 +113,24 @@ export async function POST(request: Request) {
       );
     }
 
+    const isPro = user.plan === 'pro' || user.plan === 'enterprise' || Boolean(user.is_early_bird);
+
     return NextResponse.json(
-      { valid: true, user },
+      {
+        valid: true,
+        is_pro: isPro,
+        tier: user.plan,
+        is_early_bird: Boolean(user.is_early_bird),
+        user: {
+          ...user,
+          is_pro: isPro,
+          tier: user.plan,
+          is_early_bird: Boolean(user.is_early_bird),
+        },
+      },
       { status: 200, headers: { 'Access-Control-Allow-Origin': '*' } }
     );
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { valid: false, message: 'Server error' },
       { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } }

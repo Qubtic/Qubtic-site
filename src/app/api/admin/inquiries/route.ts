@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const inquiries = await getInquiriesDb();
     return NextResponse.json(inquiries);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch inquiries' }, { status: 500 });
   }
 }
@@ -19,7 +19,7 @@ export async function DELETE(request: Request) {
 
     const success = await deleteInquiryDb(id);
     return NextResponse.json({ success, message: 'Inquiry deleted successfully' });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, error: 'Failed to delete inquiry' }, { status: 500 });
   }
 }

@@ -42,7 +42,7 @@ export function TestimonialCard({
         ))}
       </div>
       <blockquote className="flex-1 text-slate-300 italic mb-6">
-        "{quote}"
+        &ldquo;{quote}&rdquo;
       </blockquote>
       <div className="flex items-center gap-4 mt-auto">
         {avatarUrl ? (

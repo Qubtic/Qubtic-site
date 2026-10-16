@@ -4,7 +4,6 @@ import * as React from 'react';
 import { 
   CreditCard, 
   Check, 
-  Sparkles, 
   Lock, 
   Unlock, 
   ArrowRight, 
@@ -14,10 +13,12 @@ import {
   FileText 
 } from 'lucide-react';
 
+type MemberState = 'signed-out' | 'free' | 'pro';
+
 export function QubeAuthMonetizationDemo() {
   const [provider, setProvider] = React.useState<'stripe' | 'polar'>('stripe');
   const [billingCycle, setBillingCycle] = React.useState<'monthly' | 'annual'>('annual');
-  const [memberState, setMemberState] = React.useState<'signed-out' | 'free' | 'pro'>('signed-out');
+  const [memberState, setMemberState] = React.useState<MemberState>('signed-out');
   const [isCheckingAccess, setIsCheckingAccess] = React.useState(false);
   const [accessCheckedMessage, setAccessCheckedMessage] = React.useState<string | null>(null);
 
@@ -107,7 +108,23 @@ export function QubeAuthMonetizationDemo() {
           {/* Dual Engine & Billing Cycle Switchers */}
           <div className="qube-monetization-toolbar">
             
-           
+            {/* Payment Engine Switcher */}
+            <div className="qube-cycle-pill">
+              <button
+                type="button"
+                onClick={() => setProvider('stripe')}
+                className={`qube-cycle-btn ${provider === 'stripe' ? 'active' : ''}`}
+              >
+                Stripe Engine
+              </button>
+              <button
+                type="button"
+                onClick={() => setProvider('polar')}
+                className={`qube-cycle-btn ${provider === 'polar' ? 'active' : ''}`}
+              >
+                Polar.sh Engine
+              </button>
+            </div>
 
             {/* Monthly / Annual Switcher */}
             <div className="qube-cycle-pill">
@@ -208,11 +225,11 @@ export function QubeAuthMonetizationDemo() {
           {/* Interactive Member State Simulator Switcher */}
           <div className="qube-paywall-states">
             <span className="qube-callout-tag qube-no-margin">Simulate Visitor State:</span>
-            {[
+            {([
               { id: 'signed-out', label: '1. Anonymous / Signed Out', icon: Lock },
               { id: 'free', label: '2. Free Member (No Subscription)', icon: Zap },
               { id: 'pro', label: '3. Paid Pro Subscriber', icon: Unlock },
-            ].map((st) => {
+            ] as const).map((st) => {
               const Icon = st.icon;
               const isActive = memberState === st.id;
               return (
@@ -220,7 +237,7 @@ export function QubeAuthMonetizationDemo() {
                   key={st.id}
                   type="button"
                   onClick={() => {
-                    setMemberState(st.id as any);
+                    setMemberState(st.id);
                     setAccessCheckedMessage(null);
                   }}
                   className={`qube-paywall-state-btn ${isActive ? 'active' : ''}`}

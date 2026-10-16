@@ -1,9 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useId } from 'react';
-import Link from 'next/link';
-import { ArrowUpRight, Calculator, Check, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowUpRight, Calculator, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 type ProjectType = 'web' | 'saas' | 'shopify' | 'framer';

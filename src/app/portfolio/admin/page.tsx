@@ -8,22 +8,29 @@ import { TechLoader } from '@/components/ui/TechLoader';
 export default function PortfolioAdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  const checkAuth = async () => {
-    try {
-      const res = await fetch('/api/auth/check');
-      if (res.ok) {
-        const data = await res.json();
-        setIsAuthenticated(data.authenticated);
-      } else {
-        setIsAuthenticated(false);
-      }
-    } catch (err) {
-      setIsAuthenticated(false);
-    }
-  };
-
   useEffect(() => {
+    let active = true;
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/auth/check');
+        if (active) {
+          if (res.ok) {
+            const data = await res.json();
+            setIsAuthenticated(data.authenticated);
+          } else {
+            setIsAuthenticated(false);
+          }
+        }
+      } catch {
+        if (active) {
+          setIsAuthenticated(false);
+        }
+      }
+    }
     checkAuth();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleLogout = async () => {

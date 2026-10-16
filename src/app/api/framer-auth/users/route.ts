@@ -28,7 +28,7 @@ export async function DELETE(request: Request) {
 
     await deleteFramerUser(id);
     return NextResponse.json({ success: true, message: 'User deleted successfully.' });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, message: 'Failed to delete user.' },
       { status: 500 }

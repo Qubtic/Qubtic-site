@@ -2,13 +2,9 @@
 
 import * as React from 'react';
 import { 
-  Layers, 
   Search, 
-  Sparkles, 
   Check, 
   Copy, 
-  ExternalLink, 
-  Eye, 
   ArrowDownToLine, 
   ShieldCheck, 
   Smartphone, 

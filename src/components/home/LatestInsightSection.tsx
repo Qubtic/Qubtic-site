@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { CloudImage } from '@/components/ui/CloudImage';
 
 const insights = [
@@ -12,8 +12,6 @@ const insights = [
 ];
 
 export default function LatestInsightSection() {
-  const reduceMotion = useReducedMotion();
-
   return (
     <section className="py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">

@@ -21,9 +21,7 @@ import {
   ShieldAlert,
   Sparkles,
   FolderOpen,
-  ChevronRight,
   Globe,
-  Code2,
   Zap,
   Inbox,
   Users,
@@ -79,6 +77,11 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [editingPricingPlan, setEditingPricingPlan] = useState<{ plan: Partial<PricingPlan>; index: number } | null>(null);
   const [editingBlogPost, setEditingBlogPost] = useState<Partial<BlogPostItem> | null>(null);
 
+  const showFeedback = (type: 'success' | 'error', message: string) => {
+    setFeedback({ type, message });
+    setTimeout(() => setFeedback(null), 4000);
+  };
+
   // Load All Store Data
   const fetchAllData = async () => {
     setLoading(true);
@@ -113,7 +116,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           if (fData.stats) setFramerStats(fData.stats);
         }
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to sync live database');
     } finally {
       setLoading(false);
@@ -121,13 +124,56 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   };
 
   useEffect(() => {
-    fetchAllData();
-  }, []);
+    let ignore = false;
+    async function initData() {
+      try {
+        const [projRes, servRes, priceRes, blogRes, inqRes, authRes, usersRes, setRes, framerRes] = await Promise.all([
+          fetch('/api/admin/projects'),
+          fetch('/api/admin/services'),
+          fetch('/api/admin/pricing'),
+          fetch('/api/admin/blog'),
+          fetch('/api/admin/inquiries'),
+          fetch('/api/auth/check'),
+          fetch('/api/admin/users'),
+          fetch('/api/admin/settings'),
+          fetch('/api/framer-auth/users'),
+        ]);
 
-  const showFeedback = (type: 'success' | 'error', message: string) => {
-    setFeedback({ type, message });
-    setTimeout(() => setFeedback(null), 4000);
-  };
+        if (ignore) return;
+        if (projRes.ok) setProjects(await projRes.json());
+        if (servRes.ok) setServices(await servRes.json());
+        if (priceRes.ok) setPricing(await priceRes.json());
+        if (blogRes.ok) setBlogPosts(await blogRes.json());
+        if (inqRes.ok) setInquiries(await inqRes.json());
+        if (authRes.ok) {
+          const authData = await authRes.json();
+          if (authData.user) setCurrentUser(authData.user);
+        }
+        if (usersRes.ok) setAdminUsers(await usersRes.json());
+        if (setRes.ok) setSettings(await setRes.json());
+        if (framerRes.ok) {
+          const fData = await framerRes.json();
+          if (fData.success) {
+            setFramerUsers(fData.users || []);
+            if (fData.stats) setFramerStats(fData.stats);
+          }
+        }
+      } catch {
+        if (!ignore) {
+          showFeedback('error', 'Failed to sync live database');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    }
+
+    initData();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   // --- PROJECT ACTIONS ---
   const handleSaveProject = async (e: React.FormEvent) => {
@@ -155,7 +201,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setEditingProject(null);
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to save project');
     }
   };
@@ -172,7 +218,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         showFeedback('success', 'Project deleted');
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to delete project');
     }
   };
@@ -200,7 +246,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setEditingService(null);
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to save service');
     }
   };
@@ -217,7 +263,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         showFeedback('success', 'Service deleted');
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to delete service');
     }
   };
@@ -248,7 +294,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setEditingPricingPlan(null);
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to save pricing plan');
     }
   };
@@ -269,7 +315,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         showFeedback('success', 'Pricing plan deleted');
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to delete pricing plan');
     }
   };
@@ -298,7 +344,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setEditingBlogPost(null);
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to save blog post');
     }
   };
@@ -315,7 +361,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         showFeedback('success', 'Blog post deleted');
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to delete blog post');
     }
   };
@@ -333,7 +379,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         showFeedback('success', 'Inquiry deleted');
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to delete inquiry');
     }
   };
@@ -354,7 +400,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         showFeedback('success', 'Site settings & customizations saved live to Supabase!');
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to save settings');
     }
   };

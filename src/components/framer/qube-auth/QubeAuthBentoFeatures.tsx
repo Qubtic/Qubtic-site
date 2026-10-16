@@ -15,7 +15,6 @@ import {
   Globe, 
   Users, 
   Palette, 
-  FileCode2,
   Zap
 } from 'lucide-react';
 import { 

@@ -3,11 +3,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
-
 export function FrameDropSubnav() {
-  const [activeSection, setActiveSection] = React.useState('overview');
-
   const navItems = [
     { label: 'Overview', href: '#overview' },
     { label: 'Pillars & Bento', href: '#features' },

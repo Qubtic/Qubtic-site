@@ -65,6 +65,30 @@ export const REGISTERED_PLUGINS: Record<string, FramerPluginMetadata> = {
       { id: 'sync', label: 'Cloud Asset Sync', description: 'Save and retrieve custom canvas assets' },
     ],
   },
+  'framedrop': {
+    slug: 'frame-drop',
+    name: 'Frame Drop',
+    shortName: 'Frame Drop',
+    tagline: 'Smart Asset & Component Sync for Framer',
+    description: 'Instant 1-click cloud sync of high-fidelity vectors, design tokens, and components directly to your Framer canvas.',
+    version: 'v1.2.0',
+    logo: '/images/brand/frame-drop-logo.png',
+    accentColor: '#0066FF',
+    glowColor: 'rgba(0, 102, 255, 0.35)',
+    badge: 'Official Plugin',
+    docsUrl: '/framer/frame-drop',
+    productUrl: '/framer/frame-drop',
+    features: [
+      'Cloud Component Library',
+      'Instant Canvas Sync',
+      'Design Token Importer',
+      'Team Collaboration Hub',
+    ],
+    scopes: [
+      { id: 'profile', label: 'Designer Identity', description: 'Access to designer email and workspace' },
+      { id: 'sync', label: 'Cloud Asset Sync', description: 'Save and retrieve custom canvas assets' },
+    ],
+  },
 };
 
 /**
@@ -72,9 +96,14 @@ export const REGISTERED_PLUGINS: Record<string, FramerPluginMetadata> = {
  * so future plugins work seamlessly without any manual code updates.
  */
 export function getPluginMetadata(rawSlug?: string | null): FramerPluginMetadata {
-  const slug = (rawSlug || 'qube-auth').toLowerCase().trim();
+  let slug = (rawSlug || 'qube-auth').toLowerCase().trim();
 
-  if (REGISTERED_PLUGINS[slug]) {
+  // Normalize aliases so /auth/framedrop, /auth/frame-drop, and /auth/plugin load full metadata cleanly
+  if (slug === 'framedrop' || slug === 'plugin' || slug === 'framedrop-auth') {
+    slug = 'frame-drop';
+  }
+
+  if (Object.prototype.hasOwnProperty.call(REGISTERED_PLUGINS, slug)) {
     return REGISTERED_PLUGINS[slug];
   }
 

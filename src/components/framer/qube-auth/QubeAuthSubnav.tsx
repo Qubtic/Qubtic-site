@@ -9,24 +9,24 @@ interface QubeAuthSubnavProps {
   onInstallClick?: () => void;
 }
 
+const NAV_ITEMS = [
+  { label: 'Overview', href: '#overview' },
+  { label: 'Live Sandbox', href: '#sandbox' },
+  { label: 'Features', href: '#features' },
+  { label: 'Monetization', href: '#monetization' },
+  { label: 'How It Works', href: '#workflow' },
+  { label: 'Components (30+)', href: '#components' },
+  { label: 'Security & RLS', href: '#security' },
+  { label: 'Use Cases', href: '#use-cases' },
+  { label: 'FAQ', href: '#faq' },
+];
+
 export function QubeAuthSubnav({ onInstallClick }: QubeAuthSubnavProps) {
   const [activeSection, setActiveSection] = React.useState('overview');
 
-  const navItems = [
-    { label: 'Overview', href: '#overview' },
-    { label: 'Live Sandbox', href: '#sandbox' },
-    { label: 'Features', href: '#features' },
-    { label: 'Monetization', href: '#monetization' },
-    { label: 'How It Works', href: '#workflow' },
-    { label: 'Components (30+)', href: '#components' },
-    { label: 'Security & RLS', href: '#security' },
-    { label: 'Use Cases', href: '#use-cases' },
-    { label: 'FAQ', href: '#faq' },
-  ];
-
   React.useEffect(() => {
     const handleScroll = () => {
-      const sections = navItems.map((item) => item.href.substring(1));
+      const sections = NAV_ITEMS.map((item) => item.href.substring(1));
       const scrollPosition = window.scrollY + 200;
 
       for (let i = sections.length - 1; i >= 0; i--) {
@@ -70,7 +70,7 @@ export function QubeAuthSubnav({ onInstallClick }: QubeAuthSubnavProps) {
 
           {/* Nav Items (scrollable horizontally on smaller screens) */}
           <div className="qube-subnav-links">
-            {navItems.map((item) => {
+            {NAV_ITEMS.map((item) => {
               const isActive = activeSection === item.href.substring(1);
               return (
                 <a

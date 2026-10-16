@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
+import { Star, Quote } from 'lucide-react';
 
 export default function Testimonials() {
   const testimonials = [
@@ -30,16 +30,6 @@ export default function Testimonials() {
       rating: 5,
     },
   ];
-
-  const [currentIndex, setCurrentIndex] = React.useState(0);
-
-  const prev = () => {
-    setCurrentIndex((prev) => (prev === 0 ? testimonials.length - 1 : prev - 1));
-  };
-
-  const next = () => {
-    setCurrentIndex((prev) => (prev === testimonials.length - 1 ? 0 : prev + 1));
-  };
 
   return (
     <section className="py-16 md:py-24 border-t border-[#E5E0D8]">

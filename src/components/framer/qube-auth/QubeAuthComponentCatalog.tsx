@@ -4,16 +4,8 @@ import * as React from 'react';
 import { 
   Search, 
   Layers, 
-  Lock, 
-  CreditCard, 
-  Globe, 
-  Sparkles, 
   Check, 
-  Copy, 
-  ShieldCheck, 
-  SlidersHorizontal,
-  Fingerprint,
-  Users
+  Copy 
 } from 'lucide-react';
 
 interface ComponentSpec {

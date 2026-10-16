@@ -170,11 +170,11 @@ export default function CaseStudyLayout({ project, prevSlug, nextSlug }: CaseStu
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {project.results.map((res: any, idx: number) => {
+              {project.results.map((res: ResultItem | string, idx: number) => {
                 const isObject = typeof res === 'object' && res !== null;
                 const text = isObject ? res.label || res.value : String(res);
                 const rawVal = isObject ? res.value : null;
-                const val = rawVal && rawVal !== '✓' && rawVal !== res.label ? rawVal : null;
+                const val = rawVal && rawVal !== '✓' && rawVal !== (isObject ? res.label : null) ? rawVal : null;
 
                 return (
                   <div

@@ -4,26 +4,13 @@ import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { 
-  BookOpen, 
   Search, 
-  ExternalLink, 
   Sparkles, 
-  Layers, 
-  ShieldCheck, 
-  Code2, 
   ArrowUpRight, 
   Check, 
   Copy, 
-  ChevronRight, 
   Menu, 
-  X,
-  Terminal,
-  Database,
-  Lock,
-  CreditCard,
-  Zap,
-  CheckCircle2,
-  AlertTriangle
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QubeAuthInstallModal } from './QubeAuthInstallModal';
@@ -75,7 +62,6 @@ const docNavigation = [
 ];
 
 export function QubeAuthDocsLayout() {
-  const [activeSection, setActiveSection] = React.useState('overview');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = React.useState(false);

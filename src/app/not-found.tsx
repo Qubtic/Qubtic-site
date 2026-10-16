@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, Home, Briefcase, FolderGit2, Mail, Search } from 'lucide-react';
+import { Home, Briefcase, FolderGit2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { NotFoundAnimation } from '@/components/404/NotFoundAnimation';
 

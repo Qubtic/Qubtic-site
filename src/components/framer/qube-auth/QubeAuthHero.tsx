@@ -6,17 +6,13 @@ import Link from 'next/link';
 import { 
   ArrowUpRight, 
   Sparkles, 
-  Layers, 
   ShieldCheck, 
   Zap, 
-  CheckCircle2, 
   ChevronRight, 
   Lock, 
   Database, 
   CreditCard,
-  UserCheck,
-  Flame,
-  Code2
+  UserCheck
 } from 'lucide-react';
 
 interface QubeAuthHeroProps {

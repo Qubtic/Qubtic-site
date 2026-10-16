@@ -5,8 +5,7 @@ import Image from 'next/image';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Mail, Phone, MapPin, Clock, Loader2, ArrowUpRight, CheckCircle2, Copy, Check, Calendar, MessageSquare, ShieldCheck } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { Mail, Phone, MapPin, Clock, ArrowUpRight, CheckCircle2, Copy, Check, Calendar, MessageSquare, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TechLoader } from '@/components/ui/TechLoader';
@@ -45,7 +44,6 @@ const contactSchema = z.object({
 type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function ContactPage() {
-  const reduceMotion = useReducedMotion();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [copiedEmail, setCopiedEmail] = useState(false);

@@ -8,11 +8,9 @@ import {
   FileCode2, 
   Layers, 
   ArrowRight, 
-  CheckCircle2, 
   Copy, 
   Check, 
   Sparkles,
-  ShieldCheck,
   Zap
 } from 'lucide-react';
 

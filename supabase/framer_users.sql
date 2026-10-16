@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS public.framer_users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT NOT NULL,
     name TEXT,
+    company_name TEXT,
+    website_url TEXT,
     plugin_slug TEXT NOT NULL, -- e.g. 'frame-drop', 'qube-auth', etc.
     plugin_name TEXT,          -- human-readable plugin name
     framer_user_id TEXT,       -- optional Framer user/creator ID passed from plugin
@@ -25,6 +27,11 @@ CREATE TABLE IF NOT EXISTS public.framer_users (
     last_login_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
     CONSTRAINT framer_users_email_plugin_unique UNIQUE (email, plugin_slug)
 );
+
+-- Migration for existing databases:
+ALTER TABLE public.framer_users
+    ADD COLUMN IF NOT EXISTS company_name TEXT,
+    ADD COLUMN IF NOT EXISTS website_url TEXT;
 
 -- 2. Performance Indexes
 CREATE INDEX IF NOT EXISTS idx_framer_users_plugin_slug ON public.framer_users(plugin_slug);

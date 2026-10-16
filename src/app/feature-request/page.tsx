@@ -17,10 +17,7 @@ import {
   ArrowUpRight, 
   CheckCircle2, 
   Rocket, 
-  ExternalLink,
-  ChevronRight,
-  SlidersHorizontal,
-  Code2
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CustomSelect } from '@/components/ui/CustomSelect';

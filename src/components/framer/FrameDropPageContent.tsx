@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowUpRight, Sparkles, Mail, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { FrameDropHero } from '@/components/framer/FrameDropHero';

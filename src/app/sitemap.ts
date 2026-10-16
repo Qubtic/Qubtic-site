@@ -42,19 +42,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...staticPages.map((route) => ({
       url: `${baseUrl}${route}`,
       lastModified: new Date().toISOString(),
-      changeFrequency: (route === '' ? 'weekly' : 'monthly') as any,
+      changeFrequency: (route === '' ? 'weekly' : 'monthly') as 'weekly' | 'monthly',
       priority: route === '' ? 1.0 : 0.8,
     })),
     ...servicePages.map((route) => ({
       url: `${baseUrl}${route}`,
       lastModified: new Date().toISOString(),
-      changeFrequency: 'monthly' as any,
+      changeFrequency: 'monthly' as const,
       priority: 0.9,
     })),
     ...blogSlugs.map((slug) => ({
       url: `${baseUrl}/blog/${slug}`,
       lastModified: new Date().toISOString(),
-      changeFrequency: 'monthly' as any,
+      changeFrequency: 'monthly' as const,
       priority: 0.7,
     })),
   ];

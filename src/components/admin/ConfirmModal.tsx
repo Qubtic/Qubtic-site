@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { Trash2, X } from 'lucide-react';
+
+const emptySubscribe = () => () => {};
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -27,13 +29,9 @@ export function ConfirmModal({
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
-  useEffect(() => {
-    setPortalContainer(document.body);
-  }, []);
-
-  if (!isOpen || !portalContainer) return null;
+  if (!isOpen || !isMounted) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-[9999999] bg-black/70 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -103,7 +101,7 @@ export function ConfirmModal({
         </div>
       </div>
     </div>,
-    portalContainer
+    document.body
   );
 }
 
