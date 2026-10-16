@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 const projects = [
   {
@@ -42,7 +42,6 @@ const projects = [
 ];
 
 export default function BestProjectSection() {
-  const reduceMotion = useReducedMotion();
   const [featured, ...secondaryProjects] = projects;
 
   return (
@@ -97,7 +96,7 @@ export default function BestProjectSection() {
           </motion.article>
 
           <div className="grid gap-5 lg:col-span-5">
-            {secondaryProjects.map((project, index) => (
+            {secondaryProjects.map((project) => (
               <motion.article
                 key={project.title}
                 initial={false}

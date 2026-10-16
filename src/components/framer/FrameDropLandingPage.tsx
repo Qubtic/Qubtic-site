@@ -1,24 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { 
   ArrowUpRight, 
   Sparkles, 
-  Layers, 
   ShieldCheck, 
-  Zap, 
   CheckCircle2, 
   BookOpen, 
-  ChevronRight, 
-  ChevronDown, 
-  Mail, 
-  Code2, 
-  SlidersHorizontal,
-  ExternalLink
+  ChevronDown 
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import '@/styles/frame-drop-landing.css';
 import { FrameDropHero } from '@/components/framer/FrameDropHero';
 import { FrameDropBentoGrid } from '@/components/framer/FrameDropBentoGrid';
 import { FrameDropHowItWorks } from '@/components/framer/FrameDropHowItWorks';
@@ -36,37 +28,37 @@ export function FrameDropLandingPage() {
       name: 'Liquid Glass Split Media Hero',
       category: 'Heroes',
       desc: 'Backdrop-blur cards with dual CTAs, trust metric bar, and interactive 3D container.',
-      gradient: 'from-[#0C3823] to-[#082417]',
+      gradientKey: 'hero',
     },
     {
       name: 'Refractive Glass Capsule Navbar',
       category: 'Floating Navbars',
       desc: 'Floating pill navigation with real-time blur saturation and responsive drawer.',
-      gradient: 'from-[#141915] to-[#1c221d]',
+      gradientKey: 'navbar',
     },
     {
       name: 'Obsidian 6-Pack Architecture Bento',
       category: 'Bento Grids',
       desc: 'Calibrated asymmetric grid featuring dark glass surfaces and neon accents.',
-      gradient: 'from-[#0A0D0C] to-[#141915]',
+      gradientKey: 'bento',
     },
     {
       name: 'Masonry Testimonial Wall of Love',
       category: 'Social Proof',
       desc: 'Verified customer cards with avatar badges, star ratings, and company logo marks.',
-      gradient: 'from-[#164E33] to-[#0C3823]',
+      gradientKey: 'social',
     },
     {
       name: '3-Tier SaaS Pricing Matrix',
       category: 'Pricing',
       desc: 'Clear tiers with annual discount switch, feature checklists, and checkout hooks.',
-      gradient: 'from-[#0C3823] to-[#082417]',
+      gradientKey: 'pricing',
     },
     {
       name: 'Accordion FAQ with Category Filters',
       category: 'FAQs & Support',
       desc: 'Accessible disclosure widgets with smooth height animations and Schema.org markup.',
-      gradient: 'from-[#141915] to-[#0A0D0C]',
+      gradientKey: 'faq',
     },
   ];
 
@@ -99,7 +91,7 @@ export function FrameDropLandingPage() {
   ];
 
   return (
-    <div className="relative overflow-hidden">
+    <div className="fd-landing">
       
       {/* 1. HERO SECTION */}
       <div id="overview">
@@ -113,83 +105,82 @@ export function FrameDropLandingPage() {
       <FrameDropHowItWorks />
 
       {/* 4. CURATED COMPONENT SHOWCASE */}
-      <section className="py-16 sm:py-20 lg:py-28 relative">
-        <div className="relative mx-auto w-full max-w-[1720px] px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20">
+      <section id="catalog" className="fd-presets-section">
+        <div className="fd-container">
           
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-12 sm:mb-16">
-            <div className="max-w-3xl">
-              <span className="inline-flex items-center gap-2 rounded-full border border-[#0C3823]/15 bg-white/70 px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest text-[#0C3823] mb-4 shadow-2xs backdrop-blur-md">
-                <span className="h-2 w-2 rounded-full bg-[#CCFF00] animate-pulse" />
+          <div className="fd-presets-header-row">
+            <div>
+              <span className="fd-presets-tag">
+                <span className="fd-pulse-lime" />
                 CURATED PRESETS
               </span>
-              <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-tight text-[#141915] leading-[1.05]">
+              <h2 className="fd-presets-title">
                 Production Sections at Your Fingertips
               </h2>
-              <p className="mt-4 text-base sm:text-lg text-[#555C54] leading-relaxed">
+              <p className="fd-presets-desc">
                 Drop high-converting sections directly onto your Framer canvas. Zero dependencies, pure responsive React code.
               </p>
             </div>
 
             <Link
               href="/framer/frame-drop/docs#catalog"
-              className="inline-flex items-center gap-2 rounded-full bg-[#0C3823] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-sm hover:bg-[#164E33] transition-colors w-fit"
+              className="fd-presets-link-btn"
             >
               <span>Explore All 25+ Sections in Docs</span>
-              <ArrowUpRight className="w-4 h-4" />
+              <ArrowUpRight className="fd-icon-sm" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="fd-presets-grid">
             {featuredSections.map((item) => (
               <div
                 key={item.name}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-[28px] border border-[#141915]/10 bg-white p-6 sm:p-7 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                className="fd-preset-card"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#0C3823] bg-[#0C3823]/10 px-2.5 py-1 rounded-full">
+                  <div className="fd-card-header">
+                    <span className="fd-preset-category">
                       {item.category}
                     </span>
-                    <span className="flex items-center gap-1 text-[11px] font-mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                      <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                      WCAG AA
+                    <span className="fd-preset-wcag">
+                      <ShieldCheck className="fd-icon-xs" />
+                      <span>WCAG AA</span>
                     </span>
                   </div>
 
-                  <div className={cn('relative aspect-[16/9] w-full rounded-2xl p-4 flex flex-col justify-between overflow-hidden text-white mb-5 bg-gradient-to-br shadow-inner', item.gradient)}>
-                    <div className="flex items-center justify-between text-[10px] font-mono opacity-80">
-                      <span>Native Framer React</span>
-                      <span>Responsive</span>
+                  <div className="fd-preset-preview-box" data-gradient={item.gradientKey}>
+                    <div className="fd-card-header">
+                      <span className="fd-pillar-num">Native Framer React</span>
+                      <span className="fd-pillar-num">Responsive</span>
                     </div>
                     <div>
-                      <div className="h-1.5 w-16 bg-[#CCFF00] rounded-full mb-1.5" />
-                      <div className="h-2 w-28 bg-white/60 rounded-full" />
+                      <span className="fd-swatch-circle fd-swatch-emerald" />
                     </div>
-                    <div className="text-[10px] font-mono text-[#CCFF00]">
+                    <div className="fd-slot-badge-pinned">
                       1-Click Safe Drop
                     </div>
                   </div>
 
-                  <h3 className="font-heading text-lg font-bold uppercase text-[#141915] mb-2 leading-snug">
+                  <h3 className="fd-card-title">
                     {item.name}
                   </h3>
-                  <p className="text-xs sm:text-sm text-[#555C54] leading-relaxed mb-6 font-normal">
+                  <p className="fd-card-desc">
                     {item.desc}
                   </p>
                 </div>
 
-                <div className="pt-4 border-t border-[#141915]/10 flex items-center justify-between">
+                <div className="fd-preset-footer">
                   <button
                     type="button"
                     onClick={openInstall}
-                    className="flex items-center gap-1.5 text-xs font-bold uppercase text-[#0C3823] hover:underline cursor-pointer"
+                    className="fd-preset-drop-btn"
                   >
                     <span>Drop in Framer</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
+                    <ArrowUpRight className="fd-icon-xs" />
                   </button>
                   <Link
                     href="/framer/frame-drop/docs#catalog"
-                    className="text-xs text-[#666C64] hover:text-[#141915]"
+                    className="fd-preset-inspect-link"
                   >
                     Inspect Props &rarr;
                   </Link>
@@ -202,70 +193,65 @@ export function FrameDropLandingPage() {
       </section>
 
       {/* 5. EDITORIAL STORY CALLOUT */}
-      <section className="py-12 sm:py-16">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-[32px] border border-[#141915]/10 bg-white p-8 sm:p-12 shadow-sm flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="max-w-xl">
-              <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[#0C3823] block mb-2">
+      <section className="fd-editorial-section">
+        <div className="fd-editorial-container">
+          <div className="fd-editorial-card">
+            <div>
+              <span className="fd-editorial-tag">
                 INSIDE THE STUDIO
               </span>
-              <h3 className="font-heading text-2xl sm:text-3xl font-bold uppercase text-[#141915] mb-3">
+              <h3 className="fd-editorial-title">
                 Why We Built Frame Drop
               </h3>
-              <p className="text-sm text-[#555C54] leading-relaxed">
+              <p className="fd-editorial-desc">
                 Read our engineering story on why we replaced rigid full-site templates with modular, WCAG-audited sections and true design token harmony.
               </p>
             </div>
 
             <Link
               href="/blog/introducing-frame-drop-framer-canvas"
-              className="inline-flex items-center gap-2 rounded-full bg-[#141915] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs hover:bg-[#0C3823] transition-colors shrink-0"
+              className="fd-editorial-btn"
             >
               <span>Read the Story</span>
-              <ArrowUpRight className="w-4 h-4" />
+              <ArrowUpRight className="fd-icon-sm" />
             </Link>
           </div>
         </div>
       </section>
 
       {/* 6. FAQ SECTION */}
-      <section className="py-16 sm:py-20 lg:py-24">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-16">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#0C3823]/15 bg-white/70 px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest text-[#0C3823] mb-4 shadow-2xs">
+      <section className="fd-faq-section">
+        <div className="fd-faq-container">
+          <div className="fd-faq-header">
+            <span className="fd-faq-tag">
               FREQUENTLY ASKED QUESTIONS
             </span>
-            <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-[#141915]">
+            <h2 className="fd-faq-title">
               Questions About Frame Drop
             </h2>
           </div>
 
-          <div className="space-y-4">
+          <div className="fd-faq-list">
             {faqs.map((faq, idx) => {
               const isOpen = openFaqIndex === idx;
               return (
                 <div
                   key={faq.question}
-                  className="rounded-[24px] border border-[#141915]/10 bg-white overflow-hidden shadow-2xs transition-all"
+                  className={`fd-faq-item ${isOpen ? 'open' : ''}`}
                 >
                   <button
                     type="button"
                     onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                    className="w-full flex items-center justify-between p-6 sm:p-7 text-left cursor-pointer"
+                    className="fd-faq-trigger"
                   >
-                    <span className="font-heading text-base sm:text-lg font-bold uppercase text-[#141915]">
+                    <span className="fd-faq-question">
                       {faq.question}
                     </span>
-                    <ChevronDown
-                      className={cn(
-                        'w-5 h-5 text-[#0C3823] shrink-0 transition-transform duration-300 ml-4',
-                        isOpen && 'rotate-180'
-                      )}
-                    />
+                    <ChevronDown className="fd-faq-chevron" />
                   </button>
 
                   {isOpen && (
-                    <div className="px-6 pb-6 sm:px-7 sm:pb-7 text-sm sm:text-base text-[#555C54] leading-relaxed border-t border-[#141915]/5 pt-4">
+                    <div className="fd-faq-answer">
                       {faq.answer}
                     </div>
                   )}
@@ -277,57 +263,56 @@ export function FrameDropLandingPage() {
       </section>
 
       {/* 7. HIGH-CONVERTING BOTTOM CTA */}
-      <section className="relative py-20 lg:py-28 bg-[#00381F] text-white overflow-hidden">
-        <div className="pointer-events-none absolute -left-32 top-0 h-96 w-96 rounded-full bg-[#164E33]/40 blur-3xl" />
-        <div className="pointer-events-none absolute -right-32 bottom-0 h-96 w-96 rounded-full bg-[#CCFF00]/15 blur-3xl" />
+      <section className="fd-bottom-cta-section">
+        <div className="fd-cta-glow-left" />
+        <div className="fd-cta-glow-right" />
 
-        <div className="relative mx-auto w-full max-w-[1720px] px-4 sm:px-8 md:px-12 lg:px-16 text-center">
-          <div className="max-w-4xl mx-auto bg-white rounded-[36px] sm:rounded-[48px] p-10 sm:p-16 md:p-20 text-[#141915] shadow-2xl border border-white/40">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#0C3823]/15 bg-[#F4EFE6] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[#0C3823] mb-6 shadow-2xs">
-              <span className="h-2 w-2 rounded-full bg-[#CCFF00] animate-pulse" />
+        <div className="fd-container">
+          <div className="fd-bottom-cta-box">
+            <span className="fd-bottom-cta-tag">
+              <span className="fd-pulse-lime" />
               START BUILDING TODAY
             </span>
 
-            <h2 className="font-heading text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight mb-6 leading-tight">
-              Ready to Accelerate Your <br className="hidden sm:inline" />
-              Framer Workflow?
+            <h2 className="fd-bottom-cta-title">
+              Ready to Accelerate Your Framer Workflow?
             </h2>
 
-            <p className="text-base sm:text-lg text-[#555C54] max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
+            <p className="fd-bottom-cta-desc">
               Join forward-thinking founders, design agencies, and creators building pixel-perfect, WCAG-audited landing pages with Frame Drop by Qubtic.
             </p>
 
-            <div className="flex flex-wrap items-center justify-center gap-4">
+            <div className="fd-bottom-cta-actions">
               <button
                 type="button"
                 onClick={openInstall}
-                className="inline-flex items-center gap-2.5 rounded-full bg-[#0C3823] px-8 py-4 text-sm font-semibold text-white shadow-xl hover:bg-[#164E33] hover:-translate-y-0.5 transition-all cursor-pointer"
+                className="fd-bottom-cta-btn-primary"
               >
                 <span>Install on Framer Free</span>
-                <ArrowUpRight className="w-4 h-4" />
+                <ArrowUpRight className="fd-icon-sm" />
               </button>
 
               <Link
                 href="/framer/frame-drop/docs"
-                className="inline-flex items-center gap-2.5 rounded-full border border-[#141915]/20 bg-white px-8 py-4 text-sm font-semibold text-[#141915] hover:bg-[#F4EFE6] hover:-translate-y-0.5 transition-all"
+                className="fd-bottom-cta-btn-secondary"
               >
-                <BookOpen className="w-4 h-4 text-[#0C3823]" />
+                <BookOpen className="fd-icon-sm" />
                 <span>Read Documentation</span>
               </Link>
             </div>
 
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-[#666C64]">
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                No Credit Card Required
+            <div className="fd-bottom-cta-trust">
+              <span className="fd-trust-item">
+                <CheckCircle2 className="fd-icon-sm" />
+                <span>No Credit Card Required</span>
               </span>
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                Atomic Canvas Safety
+              <span className="fd-trust-item">
+                <ShieldCheck className="fd-icon-sm" />
+                <span>Atomic Canvas Safety</span>
               </span>
-              <span className="flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-[#0C3823]" />
-                25+ Curated Sections
+              <span className="fd-trust-item">
+                <Sparkles className="fd-icon-sm" />
+                <span>25+ Curated Sections</span>
               </span>
             </div>
           </div>

@@ -28,9 +28,10 @@ export async function GET() {
       resources: result.resources || [],
       next_cursor: result.next_cursor,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Cloudinary API error:', error);
-    const msg = error?.error?.message || error?.message || '';
+    const err = error as { message?: string; error?: { message?: string } } | null;
+    const msg = err?.error?.message || err?.message || '';
     if (msg.includes('api_secret mismatch')) {
       return NextResponse.json(
         {
@@ -61,9 +62,10 @@ export async function DELETE(request: NextRequest) {
     const result = await cloudinary.uploader.destroy(public_id);
 
     return NextResponse.json({ success: true, result });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { message?: string } | null;
     return NextResponse.json(
-      { error: error?.message || 'Failed to delete resource' },
+      { error: err?.message || 'Failed to delete resource' },
       { status: 500 }
     );
   }

@@ -2,11 +2,7 @@
 
 import * as React from 'react';
 import { 
-  Palette, 
   Type, 
-  Sparkles, 
-  Layers, 
-  Sliders, 
   Sun, 
   Moon, 
   Check, 
@@ -14,11 +10,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+type FontName = 'Inter' | 'Plus Jakarta Sans' | 'Outfit' | 'DM Sans' | 'Syne' | 'Cinzel';
+
 export function FrameDropDesignSystem() {
   const [activeTheme, setActiveTheme] = React.useState<'obsidian' | 'crystal'>('obsidian');
-  const [selectedFont, setSelectedFont] = React.useState<'Inter' | 'Plus Jakarta Sans' | 'Outfit' | 'DM Sans' | 'Syne' | 'Cinzel'>('Plus Jakarta Sans');
+  const [selectedFont, setSelectedFont] = React.useState<FontName>('Plus Jakarta Sans');
 
-  const fonts = [
+  const fonts: { name: FontName; tag: string; sample: string }[] = [
     { name: 'Plus Jakarta Sans', tag: 'Headings & Display', sample: 'High-Converting Precision' },
     { name: 'Inter', tag: 'UI & Body Microcopy', sample: 'Neutral, crisp, legible at 11px' },
     { name: 'Outfit', tag: 'Tech & Modern SaaS', sample: 'Geometric curves and balanced punch' },
@@ -106,7 +104,7 @@ export function FrameDropDesignSystem() {
                 {fonts.map((f) => (
                   <button
                     key={f.name}
-                    onClick={() => setSelectedFont(f.name as any)}
+                    onClick={() => setSelectedFont(f.name)}
                     className={cn(
                       'w-full flex items-center justify-between p-3 rounded-2xl border text-left transition-all cursor-pointer',
                       selectedFont === f.name

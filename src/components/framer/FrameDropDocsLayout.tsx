@@ -5,25 +5,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { 
   BookOpen, 
-  Search, 
   ExternalLink, 
-  Sparkles, 
-  Layers, 
   ShieldCheck, 
-  Palette, 
-  Code2, 
-  Tag, 
-  Share2, 
   ArrowUpRight, 
-  Check, 
-  Copy, 
-  ChevronRight, 
   Menu, 
   X,
-  Terminal,
-  FileCode2,
-  Workflow,
-  Zap
+  Terminal
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FrameDropCatalogExplorer } from '@/components/framer/FrameDropCatalogExplorer';
@@ -88,13 +75,6 @@ const docNavigation = [
 export function FrameDropDocsLayout() {
   const [isInstallModalOpen, setIsInstallModalOpen] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-  const [copiedKey, setCopiedKey] = React.useState<string | null>(null);
-
-  const handleCopy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
-  };
 
   return (
     <div className="relative pt-24 pb-20 sm:pt-28">

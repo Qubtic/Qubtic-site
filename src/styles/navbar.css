@@ -1,0 +1,714 @@
+/* ==========================================================================
+   QUBTIC NAVIGATION BAR: 100% PURE EXTERNAL STYLESHEET
+   Zero Tailwind Utilities · Zero Inline Styles
+   ========================================================================== */
+
+/* Header Root Fixed Wrapper */
+.qubtic-navbar-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 1rem 0.75rem 0;
+  transition: padding 0.5s ease;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .qubtic-navbar-header {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+
+.qubtic-navbar-header--scrolled {
+  padding-top: 0.5rem;
+}
+
+/* Main Navbar Glass Container */
+.qubtic-navbar {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  height: 68px;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 22px;
+  padding: 0 1rem;
+  color: #164E33;
+  max-width: 1500px;
+  width: 100%;
+  transition: max-width 0.5s ease, padding 0.5s ease;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+@media (min-width: 640px) {
+  .qubtic-navbar {
+    padding: 0 1.25rem;
+  }
+}
+
+.qubtic-navbar--scrolled {
+  max-width: 72rem; /* max-w-6xl */
+}
+
+/* Brand Logo */
+.qubtic-navbar__logo-link {
+  position: relative;
+  z-index: 10;
+  display: block;
+  height: 40px;
+  width: 128px;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.qubtic-navbar__logo-img {
+  height: 72px;
+  width: 128px;
+  max-width: none;
+  transform: translateY(-15px);
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.qubtic-navbar__logo-link:hover .qubtic-navbar__logo-img {
+  transform: translateY(-15px) scale(1.03);
+}
+
+/* Desktop Navigation Menu */
+.qubtic-nav-menu {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: none;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (min-width: 768px) {
+  .qubtic-nav-menu {
+    display: flex;
+  }
+}
+
+.qubtic-nav-item {
+  position: relative;
+}
+
+/* Navigation Links & Buttons */
+.qubtic-nav-btn,
+.qubtic-nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 9999px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  color: rgba(22, 78, 51, 0.6);
+  background: transparent;
+  transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+  font-family: inherit;
+}
+
+.qubtic-nav-btn:hover,
+.qubtic-nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.6);
+  color: #164E33;
+}
+
+.qubtic-nav-btn--open {
+  background-color: rgba(255, 255, 255, 0.8);
+  color: #164E33;
+}
+
+.qubtic-nav-btn--active,
+.qubtic-nav-link--active {
+  background-color: #164E33;
+  color: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(12, 56, 35, 0.2);
+}
+
+.qubtic-nav-btn--active:hover,
+.qubtic-nav-link--active:hover {
+  background-color: #164E33;
+  color: #FFFFFF;
+}
+
+.qubtic-nav-chevron {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.3s ease, color 0.3s ease;
+  color: rgba(22, 78, 51, 0.6);
+}
+
+.qubtic-nav-btn:hover .qubtic-nav-chevron {
+  color: #164E33;
+}
+
+.qubtic-nav-btn--open .qubtic-nav-chevron {
+  transform: rotate(180deg);
+  color: #164E33;
+}
+
+.qubtic-nav-btn--active .qubtic-nav-chevron {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ==========================================================================
+   Desktop Product Dropdown Modal
+   ========================================================================== */
+
+.qubtic-dropdown-wrapper {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 100%;
+  padding-top: 8px;
+  z-index: 50;
+  width: 540px;
+  max-width: calc(100vw - 32px);
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+.qubtic-dropdown {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.qubtic-dropdown__card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  background:
+    radial-gradient(circle at 50% -20%, rgba(255, 255, 255, 0.85), transparent 55%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.62) 0%, rgba(247, 244, 237, 0.32) 50%, rgba(255, 255, 255, 0.52) 100%),
+    rgba(247, 244, 237, 0.22);
+  padding: 14px;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(22, 78, 51, 0.06),
+    inset 0 0 24px rgba(255, 255, 255, 0.22),
+    0 24px 60px -10px rgba(12, 56, 35, 0.2),
+    0 12px 28px -6px rgba(0, 0, 0, 0.08);
+  -webkit-backdrop-filter: blur(30px) saturate(190%) contrast(105%);
+  backdrop-filter: blur(30px) saturate(190%) contrast(105%);
+  color: #141915;
+  box-sizing: border-box;
+}
+
+.qubtic-dropdown__card::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.45) 45%, transparent 60%);
+  background-size: 240% 100%;
+  background-position: 140% 0;
+  animation: liquid-glass-sheen 9s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.qubtic-dropdown__card::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 1px;
+  border-radius: calc(22px - 1px);
+  box-shadow:
+    inset 0 0 0 1px rgba(22, 78, 51, 0.04),
+    inset 0 14px 28px rgba(255, 255, 255, 0.28);
+  pointer-events: none;
+}
+
+.qubtic-dropdown__header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 11px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(22, 78, 51, 0.08);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.qubtic-dropdown__header-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(22, 78, 51, 0.78);
+  font-family: var(--font-heading), monospace, sans-serif;
+}
+
+.qubtic-dropdown__header-meta {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: rgba(22, 78, 51, 0.55);
+  letter-spacing: 0.02em;
+}
+
+.qubtic-dropdown__grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 640px) {
+  .qubtic-dropdown__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.qubtic-dropdown__product-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.2) 100%);
+  padding: 15px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow:
+    0 4px 18px rgba(12, 56, 35, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.qubtic-dropdown__product-card:hover {
+  border-color: rgba(22, 78, 51, 0.22);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.5) 100%);
+  box-shadow:
+    0 12px 32px rgba(12, 56, 35, 0.12),
+    inset 0 1px 0 #FFFFFF;
+  transform: translateY(-2px);
+}
+
+.qubtic-dropdown__card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.qubtic-dropdown__product-icon {
+  display: flex;
+  height: 40px;
+  width: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(247, 244, 237, 0.5) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 3px 10px rgba(12, 56, 35, 0.06),
+    inset 0 1px 0 #FFFFFF;
+  padding: 8px;
+  box-sizing: border-box;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.qubtic-dropdown__product-card:hover .qubtic-dropdown__product-icon {
+  transform: scale(1.06);
+  background: #FFFFFF;
+  box-shadow: 0 6px 18px rgba(12, 56, 35, 0.12), inset 0 1px 0 #FFFFFF;
+}
+
+.qubtic-dropdown__product-img {
+  height: 22px;
+  width: 22px;
+  object-fit: contain;
+}
+
+.qubtic-dropdown__badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #0C3823;
+  background: rgba(166, 255, 0, 0.2);
+  border: 1px solid rgba(22, 78, 51, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-family: monospace, sans-serif;
+  letter-spacing: -0.01em;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.qubtic-dropdown__badge--muted {
+  color: #164E33;
+  background: rgba(22, 78, 51, 0.08);
+  border-color: rgba(22, 78, 51, 0.14);
+}
+
+.qubtic-dropdown__product-card:hover .qubtic-dropdown__badge {
+  background: rgba(166, 255, 0, 0.28);
+  border-color: rgba(22, 78, 51, 0.24);
+}
+
+.qubtic-dropdown__product-card:hover .qubtic-dropdown__badge--muted {
+  background: rgba(22, 78, 51, 0.12);
+  border-color: rgba(22, 78, 51, 0.2);
+}
+
+.qubtic-dropdown__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.qubtic-dropdown__title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #141915;
+  font-family: var(--font-heading), sans-serif;
+  letter-spacing: -0.01em;
+  transition: color 0.2s ease;
+  margin: 0;
+}
+
+.qubtic-dropdown__product-card:hover .qubtic-dropdown__title {
+  color: #164E33;
+}
+
+.qubtic-dropdown__arrow {
+  width: 14px;
+  height: 14px;
+  color: rgba(20, 25, 21, 0.35);
+  transition: color 0.2s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qubtic-dropdown__product-card:hover .qubtic-dropdown__arrow {
+  color: #164E33;
+  transform: translate(3px, -3px);
+}
+
+.qubtic-dropdown__desc {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  color: rgba(20, 25, 21, 0.65);
+  line-height: 1.5;
+}
+
+/* CTA Button ("Get in touch") */
+.qubtic-navbar__cta-btn {
+  position: relative;
+  z-index: 10;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  border-radius: 9999px;
+  background-color: #164E33;
+  padding: 12px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #FFFFFF;
+  text-decoration: none;
+  box-shadow: 0 8px 22px rgba(22, 78, 51, 0.18);
+  transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .qubtic-navbar__cta-btn {
+    display: inline-flex;
+  }
+}
+
+.qubtic-navbar__cta-btn:hover {
+  background-color: #0C3823;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(12, 56, 35, 0.25);
+}
+
+.qubtic-navbar__cta-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+}
+
+.qubtic-navbar__cta-btn:hover .qubtic-navbar__cta-icon {
+  transform: translate(2px, -2px);
+}
+
+/* Mobile Toggle Button */
+.qubtic-navbar__mobile-toggle {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  height: 40px;
+  width: 40px;
+  place-items: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(22, 78, 51, 0.15);
+  background-color: rgba(255, 255, 255, 0.55);
+  color: #164E33;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .qubtic-navbar__mobile-toggle {
+    display: none;
+  }
+}
+
+.qubtic-navbar__mobile-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(22, 78, 51, 0.3);
+}
+
+.qubtic-navbar__mobile-toggle-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* ==========================================================================
+   Mobile Navigation Drawer
+   ========================================================================== */
+
+.qubtic-mobile-drawer {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 8px;
+  max-width: 1500px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 24px;
+  padding: 12px;
+  color: #164E33;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .qubtic-mobile-drawer {
+    display: none;
+  }
+}
+
+.qubtic-mobile-nav {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  gap: 4px;
+}
+
+.qubtic-mobile-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 16px;
+  padding: 14px 16px;
+  font-size: 14px;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  color: rgba(22, 78, 51, 0.75);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.qubtic-mobile-link:hover {
+  background-color: rgba(255, 255, 255, 0.6);
+  color: #164E33;
+}
+
+.qubtic-mobile-link--active {
+  background-color: #164E33;
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.qubtic-mobile-link--active:hover {
+  background-color: #164E33;
+  color: #FFFFFF;
+}
+
+.qubtic-mobile-link-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Mobile Product Accordion */
+.qubtic-mobile-product-box {
+  border-radius: 16px;
+  background-color: rgba(255, 255, 255, 0.4);
+  padding: 6px;
+  border: 1px solid rgba(22, 78, 51, 0.1);
+  box-sizing: border-box;
+}
+
+.qubtic-mobile-product-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #164E33;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.qubtic-mobile-product-btn:hover {
+  background-color: rgba(255, 255, 255, 0.6);
+}
+
+.qubtic-mobile-product-btn-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qubtic-mobile-product-pill {
+  border-radius: 9999px;
+  background-color: rgba(22, 78, 51, 0.1);
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #164E33;
+}
+
+.qubtic-mobile-product-chevron {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+}
+
+.qubtic-mobile-product-chevron--open {
+  transform: rotate(180deg);
+}
+
+.qubtic-mobile-accordion-content {
+  overflow: hidden;
+}
+
+.qubtic-mobile-sublist {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 4px 0;
+  border-top: 1px solid rgba(20, 25, 21, 0.06);
+}
+
+.qubtic-mobile-sublink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #555C54;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.qubtic-mobile-sublink:hover {
+  background-color: rgba(255, 255, 255, 0.8);
+  color: #141915;
+}
+
+.qubtic-mobile-sublink--featured {
+  font-weight: 700;
+  color: #141915;
+  background-color: rgba(166, 255, 0, 0.1);
+}
+
+.qubtic-mobile-sublink--featured:hover {
+  background-color: rgba(166, 255, 0, 0.2);
+}
+
+.qubtic-mobile-sublink-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qubtic-mobile-sublink-icon {
+  width: 14px;
+  height: 14px;
+  color: #164E33;
+}
+
+.qubtic-mobile-sublink-img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.qubtic-mobile-sublink-arrow {
+  width: 12px;
+  height: 12px;
+  color: #666C64;
+}
+
+.qubtic-mobile-sublink-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.qubtic-mobile-sublink-badge--new {
+  color: #0C3823;
+  background-color: #A6FF00;
+}
+
+.qubtic-mobile-sublink-badge--live {
+  color: #164E33;
+  background-color: #CCFF00;
+}
+
+.qubtic-mobile-cta {
+  position: relative;
+  z-index: 10;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 16px;
+  background-color: #164E33;
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFFFFF;
+  text-decoration: none;
+  box-sizing: border-box;
+}

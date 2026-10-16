@@ -24,7 +24,7 @@ export default function TechStack() {
         </motion.div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4 lg:gap-8 items-center justify-items-center">
-          {technologies.map((tech, index) => (
+          {technologies.map((tech) => (
             <motion.div
               key={tech}
               initial={false}

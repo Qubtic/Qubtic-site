@@ -102,7 +102,7 @@ export default function AboutPage() {
       <div className="pointer-events-none absolute -right-40 top-20 h-[34rem] w-[34rem] rounded-full bg-[#CCFF00]/15 blur-[120px]" />
 
       <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20 relative z-10">
-        
+
         {/* Split Hero Section featuring Animated about.gif */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center mb-20 lg:mb-24">
           <div className="lg:col-span-7 flex flex-col items-start">
@@ -217,7 +217,7 @@ export default function AboutPage() {
             OUR CORE BELIEF
           </span>
           <p className="text-xl sm:text-2xl md:text-3xl font-heading font-semibold leading-snug max-w-4xl">
-            {"“Great software shouldn't just look beautiful—it must operate flawlessly, convert visitors into customers, and scale reliably for millions of interactions.”"}
+            {"“Great software shouldn't just look beautiful-it must operate flawlessly, convert visitors into customers, and scale reliably for millions of interactions.”"}
           </p>
         </motion.div>
 

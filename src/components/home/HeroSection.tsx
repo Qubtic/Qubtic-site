@@ -30,7 +30,7 @@ export default function HeroSection({ settings }: HeroSectionProps) {
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-12">
           {/* Left Column: Text & CTAs */}
           <div className="flex flex-col items-start text-left lg:col-span-7">
-            {/* Top Watermark Accent: — QUBTIC — */}
+            {/* Top Watermark Accent: - QUBTIC - */}
             <div className="mb-6 flex items-center justify-start gap-4 select-none pointer-events-none sm:gap-6">
               <span className="h-px w-10 sm:w-16 bg-[#164E33]/25" />
               <span className="font-heading text-lg sm:text-2xl font-light uppercase tracking-[0.3em] text-[#164E33]/40">

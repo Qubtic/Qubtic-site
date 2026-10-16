@@ -170,6 +170,15 @@ async function seed() {
     else console.log(`✓ Inquiry synced: from ${inq.name}`);
   }
 
+  // 8. Framer Users
+  console.log('Seeding Framer Marketplace Users...');
+  const framerUsersData = readJson('framer_users.json', []);
+  for (const fu of framerUsersData) {
+    const { error: fuErr } = await supabase.from('framer_users').upsert(fu, { onConflict: 'email,plugin_slug' });
+    if (fuErr) console.warn(`Framer users table sync note (run supabase/framer_users.sql if table does not exist):`, fuErr.message);
+    else console.log(`✓ Framer user synced: ${fu.email} (${fu.plugin_slug})`);
+  }
+
   console.log('--- Seeding Completed Successfully! ---');
 }
 

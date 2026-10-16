@@ -1,0 +1,844 @@
+/* ==========================================================================
+   QUBTIC AUTH: EXTERNAL PURE CSS STYLESHEET
+   100% External CSS — No Tailwind utilities, No Inline Styles
+   Dual-Theme Engine: Full Dark Mode & High-End Light Mode Support
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   THEME VARIABLES
+   -------------------------------------------------------------------------- */
+
+/* Default Dark Mode (Dark Obsidian & Neon Lime / Emerald) */
+:root,
+.qubtic-auth-page[data-theme="dark"],
+.qubtic-auth-page.dark {
+  --qubtic-auth-bg: #070D09;
+  --qubtic-auth-bg-gradient: radial-gradient(ellipse 60% 450px at 50% 0%, rgba(12, 56, 35, 0.45) 0%, transparent 70%);
+  --qubtic-auth-card-bg: rgba(10, 19, 13, 0.94);
+  --qubtic-auth-card-border: rgba(255, 255, 255, 0.1);
+  --qubtic-auth-card-shadow: 0 24px 80px rgba(0, 0, 0, 0.85);
+  --qubtic-auth-border-focus: #A6FF00;
+  --qubtic-auth-focus-ring: rgba(166, 255, 0, 0.22);
+  --qubtic-auth-accent: #A6FF00;
+  --qubtic-auth-accent-hover: #b8ff26;
+  --qubtic-auth-accent-text: #070D09;
+  --qubtic-auth-accent-shadow: 0 4px 18px rgba(166, 255, 0, 0.3);
+  --qubtic-auth-emerald: #0C3823;
+  --qubtic-auth-logo-bg: #0C3823;
+  --qubtic-auth-logo-border: rgba(255, 255, 255, 0.12);
+  --qubtic-auth-header-border: rgba(255, 255, 255, 0.08);
+  --qubtic-auth-text-main: #FFFFFF;
+  --qubtic-auth-text-muted: #8E968F;
+  --qubtic-auth-text-subtle: #5C635D;
+  --qubtic-auth-input-bg: rgba(0, 0, 0, 0.55);
+  --qubtic-auth-input-border: rgba(255, 255, 255, 0.1);
+  --qubtic-auth-input-text: #FFFFFF;
+  --qubtic-auth-input-placeholder: #636A65;
+  --qubtic-auth-input-icon: #717A73;
+  --qubtic-auth-tab-bg: rgba(0, 0, 0, 0.45);
+  --qubtic-auth-tab-border: rgba(255, 255, 255, 0.08);
+  --qubtic-auth-tab-text: #8E968F;
+  --qubtic-auth-tab-active-bg: rgba(255, 255, 255, 0.1);
+  --qubtic-auth-tab-active-text: #FFFFFF;
+  --qubtic-auth-checkbox-text: #CBD5E1;
+  --qubtic-auth-orb-primary-bg: radial-gradient(circle, rgba(166, 255, 0, 0.52) 0%, rgba(12, 56, 35, 0.65) 50%, transparent 80%);
+  --qubtic-auth-orb-secondary-bg: radial-gradient(circle, rgba(12, 56, 35, 0.84) 0%, rgba(8, 36, 23, 0.6) 60%, transparent 80%);
+  --qubtic-auth-orb-center-bg: radial-gradient(ellipse, rgba(166, 255, 0, 0.78) 0%, rgba(12, 56, 35, 0.45) 50%, transparent 80%);
+  --qubtic-auth-grid-color: #1B432C;
+  --qubtic-auth-grid-opacity: 0.22;
+  --qubtic-auth-box-bg: rgba(255, 255, 255, 0.04);
+  --qubtic-auth-box-border: rgba(255, 255, 255, 0.08);
+  --qubtic-auth-pin-bg: rgba(0, 0, 0, 0.5);
+  --qubtic-auth-pin-text: #A6FF00;
+  --qubtic-auth-toggle-bg: rgba(255, 255, 255, 0.06);
+  --qubtic-auth-toggle-border: rgba(255, 255, 255, 0.14);
+  --qubtic-auth-toggle-text: #A6FF00;
+  --qubtic-auth-toggle-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --qubtic-auth-secondary-btn-bg: rgba(255, 255, 255, 0.04);
+  --qubtic-auth-secondary-btn-border: rgba(255, 255, 255, 0.08);
+  --qubtic-auth-secondary-btn-text: #D1D5DB;
+}
+
+/* Light Mode Theme (Warm Ivory & Signature Forest Emerald) */
+.qubtic-auth-page[data-theme="light"],
+.qubtic-auth-page.light {
+  --qubtic-auth-bg: #F4EFE6;
+  --qubtic-auth-bg-gradient: 
+    radial-gradient(ellipse 55% 500px at 0% 0%, rgba(232, 198, 138, 0.85) 0%, rgba(244, 222, 180, 0.4) 45%, transparent 80%),
+    radial-gradient(ellipse 55% 500px at 100% 0%, rgba(230, 195, 135, 0.8) 0%, rgba(244, 222, 180, 0.4) 45%, transparent 80%),
+    radial-gradient(ellipse 70% 350px at 50% 0%, rgba(255, 252, 245, 0.7) 0%, transparent 70%);
+  --qubtic-auth-card-bg: rgba(255, 255, 255, 0.93);
+  --qubtic-auth-card-border: rgba(20, 25, 21, 0.1);
+  --qubtic-auth-card-shadow: 0 24px 64px rgba(12, 56, 35, 0.09), 0 4px 20px rgba(0, 0, 0, 0.04);
+  --qubtic-auth-border-focus: #0C3823;
+  --qubtic-auth-focus-ring: rgba(12, 56, 35, 0.15);
+  --qubtic-auth-accent: #0C3823;
+  --qubtic-auth-accent-hover: #164E33;
+  --qubtic-auth-accent-text: #FFFFFF;
+  --qubtic-auth-accent-shadow: 0 6px 20px rgba(12, 56, 35, 0.22);
+  --qubtic-auth-emerald: #0C3823;
+  --qubtic-auth-logo-bg: #0C3823;
+  --qubtic-auth-logo-border: rgba(12, 56, 35, 0.18);
+  --qubtic-auth-header-border: rgba(20, 25, 21, 0.08);
+  --qubtic-auth-text-main: #141915;
+  --qubtic-auth-text-muted: #5F6660;
+  --qubtic-auth-text-subtle: #7A827C;
+  --qubtic-auth-input-bg: #FFFFFF;
+  --qubtic-auth-input-border: rgba(20, 25, 21, 0.16);
+  --qubtic-auth-input-text: #141915;
+  --qubtic-auth-input-placeholder: #8C948E;
+  --qubtic-auth-input-icon: #757D77;
+  --qubtic-auth-tab-bg: rgba(20, 25, 21, 0.06);
+  --qubtic-auth-tab-border: rgba(20, 25, 21, 0.08);
+  --qubtic-auth-tab-text: #5F6660;
+  --qubtic-auth-tab-active-bg: #FFFFFF;
+  --qubtic-auth-tab-active-text: #141915;
+  --qubtic-auth-checkbox-text: #373E38;
+  --qubtic-auth-orb-primary-bg: radial-gradient(circle, rgba(232, 198, 138, 0.75) 0%, rgba(204, 255, 0, 0.18) 50%, transparent 80%);
+  --qubtic-auth-orb-secondary-bg: radial-gradient(circle, rgba(12, 56, 35, 0.22) 0%, rgba(22, 78, 51, 0.12) 60%, transparent 80%);
+  --qubtic-auth-orb-center-bg: radial-gradient(ellipse, rgba(244, 222, 180, 0.6) 0%, rgba(12, 56, 35, 0.08) 50%, transparent 80%);
+  --qubtic-auth-grid-color: rgba(20, 25, 21, 0.1);
+  --qubtic-auth-grid-opacity: 0.35;
+  --qubtic-auth-box-bg: rgba(20, 25, 21, 0.04);
+  --qubtic-auth-box-border: rgba(20, 25, 21, 0.08);
+  --qubtic-auth-pin-bg: rgba(20, 25, 21, 0.04);
+  --qubtic-auth-pin-text: #0C3823;
+  --qubtic-auth-toggle-bg: rgba(255, 255, 255, 0.92);
+  --qubtic-auth-toggle-border: rgba(20, 25, 21, 0.14);
+  --qubtic-auth-toggle-text: #0C3823;
+  --qubtic-auth-toggle-shadow: 0 4px 16px rgba(12, 56, 35, 0.12), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --qubtic-auth-secondary-btn-bg: rgba(20, 25, 21, 0.05);
+  --qubtic-auth-secondary-btn-border: rgba(20, 25, 21, 0.1);
+  --qubtic-auth-secondary-btn-text: #141915;
+}
+
+/* --------------------------------------------------------------------------
+   BASE PAGE LAYOUT
+   -------------------------------------------------------------------------- */
+.qubtic-auth-page {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--qubtic-auth-bg);
+  background-image: var(--qubtic-auth-bg-gradient);
+  color: var(--qubtic-auth-text-main);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  overflow: hidden;
+  font-family: var(--font-body), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: 1.5rem 1rem;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Top corner theme toggle bar */
+.qubtic-auth-top-bar {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 30;
+}
+
+.qubtic-auth-theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--qubtic-auth-toggle-bg);
+  border: 1px solid var(--qubtic-auth-toggle-border);
+  color: var(--qubtic-auth-toggle-text);
+  box-shadow: var(--qubtic-auth-toggle-shadow);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 0;
+}
+
+.qubtic-auth-theme-toggle:hover {
+  transform: scale(1.08);
+  border-color: var(--qubtic-auth-border-focus);
+}
+
+.qubtic-auth-theme-toggle:active {
+  transform: scale(0.96);
+}
+
+/* --------------------------------------------------------------------------
+   ANIMATED BACKGROUND COLOR EFFECT (PURE CSS KEYFRAMES)
+   -------------------------------------------------------------------------- */
+.qubtic-auth-bg-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.qubtic-auth-grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--qubtic-auth-grid-color) 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+  opacity: var(--qubtic-auth-grid-opacity);
+  transition: opacity 0.3s ease;
+}
+
+/* Floating Orb 1: Top-Left */
+.qubtic-auth-orb-primary {
+  position: absolute;
+  top: -15%;
+  left: -15%;
+  width: 580px;
+  height: 580px;
+  border-radius: 50%;
+  background: var(--qubtic-auth-orb-primary-bg);
+  filter: blur(140px);
+  -webkit-filter: blur(140px);
+  animation: qubticOrbFloat1 14s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+  transition: background 0.4s ease;
+}
+
+/* Floating Orb 2: Bottom-Right */
+.qubtic-auth-orb-secondary {
+  position: absolute;
+  bottom: -20%;
+  right: -20%;
+  width: 650px;
+  height: 650px;
+  border-radius: 50%;
+  background: var(--qubtic-auth-orb-secondary-bg);
+  filter: blur(160px);
+  -webkit-filter: blur(160px);
+  animation: qubticOrbFloat2 16s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+  transition: background 0.4s ease;
+}
+
+/* Ambient Center Pulse behind Card */
+.qubtic-auth-orb-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 720px;
+  height: 480px;
+  border-radius: 50%;
+  background: var(--qubtic-auth-orb-center-bg);
+  filter: blur(150px);
+  -webkit-filter: blur(150px);
+  animation: qubticPulseCenter 10s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+  transition: background 0.4s ease;
+}
+
+@keyframes qubticOrbFloat1 {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(60px, -40px) scale(1.15);
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(-30px, 30px) scale(0.95);
+    opacity: 0.4;
+  }
+}
+
+@keyframes qubticOrbFloat2 {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translate(-70px, 50px) scale(1.2);
+    opacity: 0.65;
+  }
+  100% {
+    transform: translate(40px, -30px) scale(0.9);
+    opacity: 0.5;
+  }
+}
+
+@keyframes qubticPulseCenter {
+  0% {
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 0.2;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.38;
+  }
+}
+
+.qubtic-auth-spacer {
+  width: 100%;
+  height: 1.5rem;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   GLASSMORPHIC CARD & CONTENT
+   -------------------------------------------------------------------------- */
+.qubtic-auth-main {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 440px;
+  margin: auto 0;
+  box-sizing: border-box;
+}
+
+.qubtic-auth-card {
+  position: relative;
+  background: var(--qubtic-auth-card-bg);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid var(--qubtic-auth-card-border);
+  border-radius: 24px;
+  padding: 2rem 1.75rem;
+  box-shadow: var(--qubtic-auth-card-shadow);
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Header */
+.qubtic-auth-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--qubtic-auth-header-border);
+}
+
+.qubtic-auth-logo-box {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background-color: var(--qubtic-auth-logo-bg);
+  border: 1px solid var(--qubtic-auth-logo-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.qubtic-auth-logo-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.qubtic-auth-title {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--qubtic-auth-text-main);
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Canvas Target Pill (if project param passed) */
+.qubtic-auth-project-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--qubtic-auth-box-bg);
+  border: 1px solid var(--qubtic-auth-box-border);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  color: var(--qubtic-auth-text-muted);
+  margin-bottom: 1rem;
+}
+
+.qubtic-auth-project-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--qubtic-auth-accent);
+  box-shadow: 0 0 8px var(--qubtic-auth-accent);
+}
+
+.qubtic-auth-project-name {
+  font-family: monospace;
+  color: var(--qubtic-auth-accent);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Switcher Tabs */
+.qubtic-auth-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  background: var(--qubtic-auth-tab-bg);
+  border: 1px solid var(--qubtic-auth-tab-border);
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.qubtic-auth-tab {
+  background: transparent;
+  border: none;
+  padding: 0.5rem 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--qubtic-auth-tab-text);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.qubtic-auth-tab:hover {
+  color: var(--qubtic-auth-text-main);
+}
+
+.qubtic-auth-tab.active {
+  background: var(--qubtic-auth-tab-active-bg);
+  color: var(--qubtic-auth-tab-active-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Error Banner */
+.qubtic-auth-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem 0.85rem;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  color: #DC2626;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
+
+.qubtic-auth-error-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Form */
+.qubtic-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.qubtic-auth-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.qubtic-auth-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--qubtic-auth-text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.qubtic-auth-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.qubtic-auth-magic-link-btn {
+  background: none;
+  border: none;
+  color: var(--qubtic-auth-accent);
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  font-family: inherit;
+  font-weight: 600;
+}
+
+.qubtic-auth-magic-link-btn:hover {
+  filter: brightness(1.2);
+}
+
+.qubtic-auth-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.qubtic-auth-input-icon {
+  position: absolute;
+  left: 0.85rem;
+  color: var(--qubtic-auth-input-icon);
+  pointer-events: none;
+  width: 16px;
+  height: 16px;
+}
+
+.qubtic-auth-input {
+  width: 100%;
+  padding: 0.68rem 0.85rem 0.68rem 2.5rem;
+  background: var(--qubtic-auth-input-bg);
+  border: 1px solid var(--qubtic-auth-input-border);
+  border-radius: 12px;
+  color: var(--qubtic-auth-input-text);
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.qubtic-auth-input::placeholder {
+  color: var(--qubtic-auth-input-placeholder);
+}
+
+.qubtic-auth-input:focus {
+  outline: none;
+  border-color: var(--qubtic-auth-border-focus);
+  box-shadow: 0 0 0 3px var(--qubtic-auth-focus-ring);
+}
+
+.qubtic-auth-input.has-eye {
+  padding-right: 2.5rem;
+}
+
+.qubtic-auth-eye-btn {
+  position: absolute;
+  right: 0.85rem;
+  background: none;
+  border: none;
+  color: var(--qubtic-auth-input-icon);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qubtic-auth-eye-btn:hover {
+  color: var(--qubtic-auth-text-main);
+}
+
+.qubtic-auth-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--qubtic-auth-checkbox-text);
+  cursor: pointer;
+  user-select: none;
+  padding-top: 0.15rem;
+}
+
+.qubtic-auth-checkbox {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--qubtic-auth-accent);
+  cursor: pointer;
+}
+
+/* Primary Submit Button */
+.qubtic-auth-submit-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.85rem 1rem;
+  background-color: var(--qubtic-auth-accent);
+  color: var(--qubtic-auth-accent-text);
+  border: none;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.2s ease, background-color 0.2s ease;
+  box-shadow: var(--qubtic-auth-accent-shadow);
+  font-family: inherit;
+}
+
+.qubtic-auth-submit-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.qubtic-auth-submit-btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.qubtic-auth-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.qubtic-auth-spinner {
+  width: 16px;
+  height: 16px;
+  animation: qubticSpin 1s linear infinite;
+}
+
+@keyframes qubticSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   SUCCESS & HANDSHAKE VIEW
+   -------------------------------------------------------------------------- */
+.qubtic-auth-success {
+  text-align: center;
+  padding: 0.5rem 0;
+  animation: qubticFadeIn 0.3s ease-out;
+}
+
+@keyframes qubticFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.qubtic-auth-success-badge {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: var(--qubtic-auth-emerald);
+  border: 1px solid rgba(166, 255, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+.qubtic-auth-success-badge-icon {
+  width: 36px;
+  height: 36px;
+  color: #CCFF00;
+}
+
+.qubtic-auth-success-title {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--qubtic-auth-text-main);
+  margin: 0 0 0.25rem 0;
+}
+
+.qubtic-auth-success-desc {
+  font-size: 0.75rem;
+  color: var(--qubtic-auth-text-muted);
+  max-width: 320px;
+  margin: 0 auto 1.25rem auto;
+  line-height: 1.45;
+}
+
+.qubtic-auth-success-email {
+  color: var(--qubtic-auth-accent);
+  font-weight: 600;
+}
+
+.qubtic-auth-success-box {
+  background: var(--qubtic-auth-box-bg);
+  border: 1px solid var(--qubtic-auth-box-border);
+  border-radius: 12px;
+  padding: 0.85rem;
+  margin-bottom: 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+}
+
+.qubtic-auth-success-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.qubtic-auth-success-row:last-child {
+  margin-bottom: 0;
+}
+
+.qubtic-auth-success-label {
+  color: var(--qubtic-auth-text-muted);
+}
+
+.qubtic-auth-success-val {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--qubtic-auth-accent);
+  font-family: monospace;
+  font-weight: 600;
+}
+
+.qubtic-auth-plan-tag {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  background-color: var(--qubtic-auth-emerald);
+}
+
+/* Manual 6-Digit PIN Box */
+.qubtic-auth-pin-box {
+  background: var(--qubtic-auth-pin-bg);
+  border: 1px solid var(--qubtic-auth-box-border);
+  border-radius: 12px;
+  padding: 0.85rem;
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+
+.qubtic-auth-pin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.qubtic-auth-pin-title {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--qubtic-auth-text-muted);
+}
+
+.qubtic-auth-copy-btn {
+  background: none;
+  border: none;
+  color: var(--qubtic-auth-accent);
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  font-family: inherit;
+  font-weight: 600;
+}
+
+.qubtic-auth-copy-btn:hover {
+  text-decoration: underline;
+}
+
+.qubtic-auth-pin-code {
+  font-family: monospace;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  color: var(--qubtic-auth-pin-text);
+  background: var(--qubtic-auth-box-bg);
+  padding: 0.5rem;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid var(--qubtic-auth-box-border);
+}
+
+.qubtic-auth-pin-hint {
+  font-size: 0.65rem;
+  color: var(--qubtic-auth-text-subtle);
+  text-align: center;
+  margin: 0.4rem 0 0 0;
+}
+
+/* Success Actions */
+.qubtic-auth-success-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.qubtic-auth-btn-secondary {
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  background: var(--qubtic-auth-secondary-btn-bg);
+  border: 1px solid var(--qubtic-auth-secondary-btn-border);
+  border-radius: 10px;
+  color: var(--qubtic-auth-secondary-btn-text);
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: background-color 0.2s ease;
+  font-family: inherit;
+}
+
+.qubtic-auth-btn-secondary:hover {
+  filter: brightness(1.08);
+}
+
+/* --------------------------------------------------------------------------
+   FOOTER
+   -------------------------------------------------------------------------- */
+.qubtic-auth-footer {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.qubtic-auth-footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--qubtic-auth-text-subtle);
+}
+
+.qubtic-auth-footer-link {
+  color: var(--qubtic-auth-text-subtle);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.qubtic-auth-footer-link:hover {
+  color: var(--qubtic-auth-text-main);
+}
+
+.qubtic-auth-footer-copy {
+  font-size: 0.6875rem;
+  color: var(--qubtic-auth-text-subtle);
+  margin: 0;
+}

@@ -29,10 +29,13 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   }
 
   // Format process items to match Step interface { title, description }
-  const formattedProcess = (service.process || []).map((step) => ({
-    title: (step as any).name || (step as any).title || '',
-    description: step.description || '',
-  }));
+  const formattedProcess = (service.process || []).map((step) => {
+    const s = step as { name?: string; title?: string; description?: string };
+    return {
+      title: s.name || s.title || '',
+      description: s.description || '',
+    };
+  });
 
   // Format long description as array of paragraphs
   const longDescArray = service.longDescription

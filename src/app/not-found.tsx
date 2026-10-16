@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, Home, Briefcase, FolderGit2, Mail, Search } from 'lucide-react';
+import { Home, Briefcase, FolderGit2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { NotFoundAnimation } from '@/components/404/NotFoundAnimation';
 
@@ -14,7 +14,7 @@ export default function NotFound() {
       {/* Ambient background glow elements */}
       <div className="pointer-events-none absolute -left-40 top-1/4 h-[32rem] w-[32rem] rounded-full bg-[#E8C48A]/30 blur-[120px]" />
       <div className="pointer-events-none absolute -right-40 top-1/3 h-[32rem] w-[32rem] rounded-full bg-[#0C3823]/10 blur-[120px]" />
-      
+
       <div className="relative mx-auto w-full max-w-5xl">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-center">
           {/* Lottie Animation Column */}
@@ -29,7 +29,7 @@ export default function NotFound() {
           <div className="lg:col-span-6 order-2 lg:order-1 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#0C3823]/15 bg-white/60 backdrop-blur-md px-3.5 py-1.5 text-xs font-semibold text-[#0C3823] tracking-widest uppercase mb-6 shadow-sm">
               <span className="h-2 w-2 rounded-full bg-[#CCFF00] animate-pulse" />
-              Error 404 — Page Not Found
+              Error 404 - Page Not Found
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-[#141915] font-heading tracking-tight leading-[1.1] mb-5">

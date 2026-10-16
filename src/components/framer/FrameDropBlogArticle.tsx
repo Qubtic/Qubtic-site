@@ -3,16 +3,10 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { 
-  BookOpen, 
   Clock, 
   User, 
-  ArrowUpRight, 
-  Check, 
-  ShieldCheck, 
-  Zap, 
-  Palette 
+  ArrowUpRight 
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface FrameDropBlogArticleProps {
   onInstallClick?: () => void;

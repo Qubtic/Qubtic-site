@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
 import { ArrowUpRight, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CloudImage } from '@/components/ui/CloudImage';

@@ -4,24 +4,32 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TechLoader } from '@/components/ui/TechLoader';
 
+const emptySubscribe = () => () => {};
+
 export function SitePreloader() {
-  const [showLoader, setShowLoader] = useState(true);
+  const isPreloaderSeen = React.useSyncExternalStore(
+    emptySubscribe,
+    () => sessionStorage.getItem('qubtic_preloader_seen') === 'true',
+    () => true
+  );
+  const [timerExpired, setTimerExpired] = useState(false);
 
   useEffect(() => {
-    // Check if session preloader already ran in current tab session
-    const hasLoaded = sessionStorage.getItem('qubtic_preloader_seen');
-    if (hasLoaded) {
-      setShowLoader(false);
-      return;
-    }
+    if (isPreloaderSeen) return;
 
     const timer = setTimeout(() => {
-      setShowLoader(false);
-      sessionStorage.setItem('qubtic_preloader_seen', 'true');
+      setTimerExpired(true);
+      try {
+        sessionStorage.setItem('qubtic_preloader_seen', 'true');
+      } catch {
+        // Ignore storage exceptions
+      }
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [isPreloaderSeen]);
+
+  const showLoader = !isPreloaderSeen && !timerExpired;
 
   return (
     <AnimatePresence>

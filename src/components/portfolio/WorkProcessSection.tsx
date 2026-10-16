@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Compass, Code2, ShieldCheck, Rocket, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
@@ -32,8 +32,6 @@ const steps = [
 ];
 
 export default function WorkProcessSection() {
-  const reduceMotion = useReducedMotion();
-
   return (
     <section className="relative overflow-hidden py-20 md:py-28 bg-[#141915] text-white rounded-[32px] md:rounded-[44px] my-16 shadow-2xl">
       {/* Background Gradients */}
@@ -56,7 +54,7 @@ export default function WorkProcessSection() {
 
         {/* Steps Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
-          {steps.map((step, idx) => {
+          {steps.map((step) => {
             const Icon = step.icon;
             return (
               <motion.div

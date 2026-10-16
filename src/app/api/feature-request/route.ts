@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       success: true,
       message: 'Feature request submitted successfully! Our Framer plugin team will review it during weekly triage.',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error handling feature request form submission:', error);
 
     if (error instanceof z.ZodError) {

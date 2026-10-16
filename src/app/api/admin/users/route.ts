@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const users = await getAdminUsersDb();
     return NextResponse.json(users);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch admin users' }, { status: 500 });
   }
 }

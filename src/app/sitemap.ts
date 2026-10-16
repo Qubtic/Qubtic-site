@@ -14,6 +14,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/terms-of-service',
     '/privacy-policy',
     '/refund-policy',
+    '/framer/qube-auth',
+    '/framer/qube-auth/docs',
+    '/framer/frame-drop',
+    '/framer/frame-drop/docs',
+    '/framer/auth-bridge',
+    '/feature-request',
   ];
 
   const servicePages = [
@@ -36,19 +42,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...staticPages.map((route) => ({
       url: `${baseUrl}${route}`,
       lastModified: new Date().toISOString(),
-      changeFrequency: (route === '' ? 'weekly' : 'monthly') as any,
+      changeFrequency: (route === '' ? 'weekly' : 'monthly') as 'weekly' | 'monthly',
       priority: route === '' ? 1.0 : 0.8,
     })),
     ...servicePages.map((route) => ({
       url: `${baseUrl}${route}`,
       lastModified: new Date().toISOString(),
-      changeFrequency: 'monthly' as any,
+      changeFrequency: 'monthly' as const,
       priority: 0.9,
     })),
     ...blogSlugs.map((slug) => ({
       url: `${baseUrl}/blog/${slug}`,
       lastModified: new Date().toISOString(),
-      changeFrequency: 'monthly' as any,
+      changeFrequency: 'monthly' as const,
       priority: 0.7,
     })),
   ];

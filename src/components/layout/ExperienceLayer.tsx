@@ -1,14 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { usePathname } from 'next/navigation';
 import { motion, useMotionValue, useReducedMotion, useScroll, useSpring } from 'framer-motion';
 
 const interactiveSelector = 'a, button, [role="button"], [data-cursor="interactive"], input[type="submit"], input[type="button"]';
 const textInputSelector = 'input:not([type="button"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]), textarea, select, [contenteditable="true"]';
 
 export function ExperienceLayer() {
-  const pathname = usePathname();
   const reduceMotion = useReducedMotion();
   const [enabled, setEnabled] = React.useState(false);
   const [visible, setVisible] = React.useState(false);

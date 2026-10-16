@@ -4,9 +4,11 @@ export const mainNavLinks = [
     label: 'Product', 
     href: '/framer/frame-drop',
     subItems: [
+      { label: 'Qube Auth', href: '/framer/qube-auth', badge: 'v1.0.0 New' },
       { label: 'Frame Drop', href: '/framer/frame-drop', badge: 'v0.2.0' },
-      { label: 'Documentation', href: '/framer/frame-drop/docs' },
-      { label: 'Component Catalog', href: '/framer/frame-drop#catalog' },
+      { label: 'Qube Auth Docs', href: '/framer/qube-auth/docs' },
+      { label: 'Frame Drop Docs', href: '/framer/frame-drop/docs' },
+      { label: 'Component Catalog', href: '/framer/qube-auth#components' },
       { label: 'Feature Request', href: '/feature-request' }
     ]
   },
@@ -29,8 +31,9 @@ export const footerLinks = {
     { label: 'SaaS Development', href: '/services/saas-development' },
     { label: 'Shopify Apps', href: '/services/shopify-apps' },
     { label: 'Framer Development', href: '/services/framer-development' },
+    { label: 'Qube Auth (Framer Suite)', href: '/framer/qube-auth' },
     { label: 'Frame Drop (Framer Plugin)', href: '/framer/frame-drop/docs' },
-    { label: 'Feature Request (Frame Drop)', href: '/feature-request' }
+    { label: 'Feature Request', href: '/feature-request' }
   ],
   legal: [
     { label: 'Privacy Policy', href: '/privacy-policy' },

@@ -21,15 +21,14 @@ import {
   ShieldAlert,
   Sparkles,
   FolderOpen,
-  ChevronRight,
   Globe,
-  Code2,
   Zap,
   Inbox,
   Users,
   Mail,
 } from 'lucide-react';
 import { ProjectItem, ServiceItem, PricingData, PricingPlan, BlogPostItem, SiteSettings, InquiryItem, AdminUserItem } from '@/lib/store';
+import { FramerUserRecord } from '@/lib/framer-auth';
 import { CloudinaryUploader } from './CloudinaryUploader';
 import { MediaLibraryModal } from './MediaLibraryModal';
 import { MarkdownEditor } from './MarkdownEditor';
@@ -48,7 +47,7 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'services' | 'pricing' | 'blog' | 'inquiries' | 'media' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'services' | 'pricing' | 'blog' | 'inquiries' | 'media' | 'settings' | 'framer_users'>('overview');
 
   // Data States
   const [projects, setProjects] = useState<ProjectItem[]>([]);
@@ -59,6 +58,12 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [adminUsers, setAdminUsers] = useState<AdminUserItem[]>([]);
   const [currentUser, setCurrentUser] = useState<{ name: string; email: string; role?: string } | null>(null);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
+
+  // Framer Users State
+  const [framerUsers, setFramerUsers] = useState<FramerUserRecord[]>([]);
+  const [framerStats, setFramerStats] = useState({ total: 0, qubeAuth: 0, frameDrop: 0, proCount: 0, activeToday: 0 });
+  const [framerPluginFilter, setFramerPluginFilter] = useState<'all' | 'qube-auth' | 'frame-drop'>('all');
+  const [framerSearchQuery, setFramerSearchQuery] = useState('');
 
   // Status & Feedback
   const [loading, setLoading] = useState(true);
@@ -72,11 +77,16 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [editingPricingPlan, setEditingPricingPlan] = useState<{ plan: Partial<PricingPlan>; index: number } | null>(null);
   const [editingBlogPost, setEditingBlogPost] = useState<Partial<BlogPostItem> | null>(null);
 
+  const showFeedback = (type: 'success' | 'error', message: string) => {
+    setFeedback({ type, message });
+    setTimeout(() => setFeedback(null), 4000);
+  };
+
   // Load All Store Data
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [projRes, servRes, priceRes, blogRes, inqRes, authRes, usersRes, setRes] = await Promise.all([
+      const [projRes, servRes, priceRes, blogRes, inqRes, authRes, usersRes, setRes, framerRes] = await Promise.all([
         fetch('/api/admin/projects'),
         fetch('/api/admin/services'),
         fetch('/api/admin/pricing'),
@@ -85,6 +95,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         fetch('/api/auth/check'),
         fetch('/api/admin/users'),
         fetch('/api/admin/settings'),
+        fetch('/api/framer-auth/users'),
       ]);
 
       if (projRes.ok) setProjects(await projRes.json());
@@ -98,7 +109,14 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       }
       if (usersRes.ok) setAdminUsers(await usersRes.json());
       if (setRes.ok) setSettings(await setRes.json());
-    } catch (err) {
+      if (framerRes.ok) {
+        const fData = await framerRes.json();
+        if (fData.success) {
+          setFramerUsers(fData.users || []);
+          if (fData.stats) setFramerStats(fData.stats);
+        }
+      }
+    } catch {
       showFeedback('error', 'Failed to sync live database');
     } finally {
       setLoading(false);
@@ -106,13 +124,56 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   };
 
   useEffect(() => {
-    fetchAllData();
-  }, []);
+    let ignore = false;
+    async function initData() {
+      try {
+        const [projRes, servRes, priceRes, blogRes, inqRes, authRes, usersRes, setRes, framerRes] = await Promise.all([
+          fetch('/api/admin/projects'),
+          fetch('/api/admin/services'),
+          fetch('/api/admin/pricing'),
+          fetch('/api/admin/blog'),
+          fetch('/api/admin/inquiries'),
+          fetch('/api/auth/check'),
+          fetch('/api/admin/users'),
+          fetch('/api/admin/settings'),
+          fetch('/api/framer-auth/users'),
+        ]);
 
-  const showFeedback = (type: 'success' | 'error', message: string) => {
-    setFeedback({ type, message });
-    setTimeout(() => setFeedback(null), 4000);
-  };
+        if (ignore) return;
+        if (projRes.ok) setProjects(await projRes.json());
+        if (servRes.ok) setServices(await servRes.json());
+        if (priceRes.ok) setPricing(await priceRes.json());
+        if (blogRes.ok) setBlogPosts(await blogRes.json());
+        if (inqRes.ok) setInquiries(await inqRes.json());
+        if (authRes.ok) {
+          const authData = await authRes.json();
+          if (authData.user) setCurrentUser(authData.user);
+        }
+        if (usersRes.ok) setAdminUsers(await usersRes.json());
+        if (setRes.ok) setSettings(await setRes.json());
+        if (framerRes.ok) {
+          const fData = await framerRes.json();
+          if (fData.success) {
+            setFramerUsers(fData.users || []);
+            if (fData.stats) setFramerStats(fData.stats);
+          }
+        }
+      } catch {
+        if (!ignore) {
+          showFeedback('error', 'Failed to sync live database');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    }
+
+    initData();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   // --- PROJECT ACTIONS ---
   const handleSaveProject = async (e: React.FormEvent) => {
@@ -140,7 +201,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setEditingProject(null);
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to save project');
     }
   };
@@ -157,7 +218,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         showFeedback('success', 'Project deleted');
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to delete project');
     }
   };
@@ -185,7 +246,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setEditingService(null);
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to save service');
     }
   };
@@ -202,7 +263,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         showFeedback('success', 'Service deleted');
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to delete service');
     }
   };
@@ -233,7 +294,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setEditingPricingPlan(null);
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to save pricing plan');
     }
   };
@@ -254,7 +315,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         showFeedback('success', 'Pricing plan deleted');
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to delete pricing plan');
     }
   };
@@ -283,7 +344,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         setEditingBlogPost(null);
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to save blog post');
     }
   };
@@ -300,7 +361,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         showFeedback('success', 'Blog post deleted');
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to delete blog post');
     }
   };
@@ -318,7 +379,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         showFeedback('success', 'Inquiry deleted');
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to delete inquiry');
     }
   };
@@ -339,13 +400,28 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         showFeedback('success', 'Site settings & customizations saved live to Supabase!');
         fetchAllData();
       }
-    } catch (err) {
+    } catch {
       showFeedback('error', 'Failed to save settings');
+    }
+  };
+
+  // --- FRAMER USER ACTIONS ---
+  const handleDeleteFramerUser = async (id: string) => {
+    if (!confirm('Are you sure you want to revoke and delete this Framer user session?')) return;
+    try {
+      const res = await fetch(`/api/framer-auth/users?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (res.ok) {
+        showFeedback('success', 'Framer user revoked & deleted');
+        fetchAllData();
+      }
+    } catch {
+      showFeedback('error', 'Failed to delete Framer user');
     }
   };
 
   const navTabs = [
     { id: 'overview', label: 'Overview & Stats', icon: LayoutDashboard },
+    { id: 'framer_users', label: 'Framer Users', icon: Users, count: framerUsers.length },
     { id: 'projects', label: 'Projects Manager', icon: Briefcase, count: projects.length },
     { id: 'services', label: 'Services Manager', icon: Layers, count: services.length },
     { id: 'pricing', label: 'Pricing Plans', icon: Tag },
@@ -1618,6 +1694,191 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                   </div>
                 </div>
               </form>
+            </div>
+          )}
+
+          {/* 9. FRAMER USERS TAB */}
+          {activeTab === 'framer_users' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-bold uppercase font-heading text-[#141915]">
+                    Framer Plugin Members ({framerUsers.length})
+                  </h3>
+                  <p className="text-xs text-[#666C64]">
+                    User accounts authenticated across Qubtic Framer plugins (Frame Drop, Qube Auth, and future extensions) stored in Supabase.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <a
+                    href="/framer/auth-bridge"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 py-2 rounded-xl bg-white border border-[#E5E0D8] text-[#0C3823] text-xs font-bold uppercase tracking-wider hover:bg-[#F0EDE5] transition-all inline-flex items-center gap-2 shadow-xs"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-[#0C3823]" />
+                    <span>Test Auth Bridge</span>
+                  </a>
+                  <button
+                    onClick={fetchAllData}
+                    className="px-4 py-2 rounded-xl bg-[#0C3823] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#164E33] transition-all inline-flex items-center gap-2 shadow-xs"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-[#CCFF00]" />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Metric Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white border border-[#E5E0D8] rounded-2xl p-4 shadow-xs">
+                  <div className="text-[11px] font-bold text-[#666C64] uppercase tracking-wider">Total Framer Users</div>
+                  <div className="text-2xl font-bold font-heading text-[#0C3823] mt-1">{framerStats.total}</div>
+                </div>
+                <div className="bg-white border border-[#E5E0D8] rounded-2xl p-4 shadow-xs">
+                  <div className="text-[11px] font-bold text-[#666C64] uppercase tracking-wider">Qube Auth Users</div>
+                  <div className="text-2xl font-bold font-heading text-[#0C3823] mt-1">{framerStats.qubeAuth}</div>
+                </div>
+                <div className="bg-white border border-[#E5E0D8] rounded-2xl p-4 shadow-xs">
+                  <div className="text-[11px] font-bold text-[#666C64] uppercase tracking-wider">Frame Drop Users</div>
+                  <div className="text-2xl font-bold font-heading text-[#0C3823] mt-1">{framerStats.frameDrop}</div>
+                </div>
+                <div className="bg-white border border-[#E5E0D8] rounded-2xl p-4 shadow-xs">
+                  <div className="text-[11px] font-bold text-[#666C64] uppercase tracking-wider">Active Pro Licenses</div>
+                  <div className="text-2xl font-bold font-heading text-[#0C3823] mt-1">{framerStats.proCount}</div>
+                </div>
+              </div>
+
+              {/* Filters & Search */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white border border-[#E5E0D8] rounded-2xl p-3 shadow-xs">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={() => setFramerPluginFilter('all')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${
+                      framerPluginFilter === 'all'
+                        ? 'bg-[#0C3823] text-white shadow-xs'
+                        : 'bg-[#F4F1EA] text-[#666C64] hover:text-[#141915]'
+                    }`}
+                  >
+                    All Plugins
+                  </button>
+                  <button
+                    onClick={() => setFramerPluginFilter('qube-auth')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${
+                      framerPluginFilter === 'qube-auth'
+                        ? 'bg-[#0C3823] text-white shadow-xs'
+                        : 'bg-[#F4F1EA] text-[#666C64] hover:text-[#141915]'
+                    }`}
+                  >
+                    Qube Auth
+                  </button>
+                  <button
+                    onClick={() => setFramerPluginFilter('frame-drop')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${
+                      framerPluginFilter === 'frame-drop'
+                        ? 'bg-[#0C3823] text-white shadow-xs'
+                        : 'bg-[#F4F1EA] text-[#666C64] hover:text-[#141915]'
+                    }`}
+                  >
+                    Frame Drop
+                  </button>
+                </div>
+
+                <div className="w-full sm:w-72">
+                  <input
+                    type="text"
+                    value={framerSearchQuery}
+                    onChange={(e) => setFramerSearchQuery(e.target.value)}
+                    placeholder="Search by email or name..."
+                    className="w-full px-3.5 py-1.5 text-xs rounded-xl bg-[#F4F1EA] border border-[#E5E0D8] text-[#141915] placeholder-[#666C64] focus:outline-none focus:border-[#0C3823]"
+                  />
+                </div>
+              </div>
+
+              {/* Users Table */}
+              <div className="bg-white border border-[#E5E0D8] rounded-[28px] overflow-hidden shadow-xs">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#F0EDE5] text-[#0C3823] font-bold uppercase">
+                    <tr>
+                      <th className="px-6 py-4">User Details</th>
+                      <th className="px-6 py-4">Plugin</th>
+                      <th className="px-6 py-4">Tier / Plan</th>
+                      <th className="px-6 py-4">Auth Token</th>
+                      <th className="px-6 py-4">Last Active</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E5E0D8]">
+                    {framerUsers
+                      .filter((u) => {
+                        if (framerPluginFilter !== 'all' && u.plugin_slug !== framerPluginFilter) return false;
+                        if (framerSearchQuery) {
+                          const q = framerSearchQuery.toLowerCase();
+                          return u.email.toLowerCase().includes(q) || (u.name && u.name.toLowerCase().includes(q));
+                        }
+                        return true;
+                      })
+                      .map((u) => (
+                        <tr key={u.id} className="hover:bg-[#F8F6F0]/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="font-bold text-[#141915] text-sm">{u.name || 'Anonymous User'}</div>
+                            <div className="text-[#666C64] font-mono text-[11px] mt-0.5">{u.email}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 ${
+                                u.plugin_slug === 'qube-auth'
+                                  ? 'bg-[#0C3823] text-[#CCFF00]'
+                                  : 'bg-[#00F5A0]/20 text-[#0C3823]'
+                              }`}
+                            >
+                              <span>{u.plugin_name || u.plugin_slug}</span>
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                u.plan === 'pro'
+                                  ? 'bg-[#CCFF00]/25 text-[#0C3823] border border-[#CCFF00]/50'
+                                  : 'bg-zinc-100 text-zinc-600'
+                              }`}
+                            >
+                              {u.plan}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-mono text-[11px] text-zinc-500 truncate max-w-[140px]" title={u.auth_token}>
+                              {u.auth_token.slice(0, 14)}...
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-[#666C64] font-mono text-[11px]">
+                            {new Date(u.last_login_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button
+                              onClick={() => handleDeleteFramerUser(u.id)}
+                              className="p-2 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+                              title="Delete Session"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    {framerUsers.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-12 text-center text-[#666C64]">
+                          No Framer users registered yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

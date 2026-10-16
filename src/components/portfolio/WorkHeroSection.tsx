@@ -3,11 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowDown, ArrowUpRight, Users, CheckCircle2, Award } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
 
 export default function WorkHeroSection() {
-  const reduceMotion = useReducedMotion();
-
   return (
     <section className="relative overflow-hidden pt-32 pb-16 md:pt-40 md:pb-24 bg-[#FAF8F5]">
       {/* Background Glows */}

@@ -42,7 +42,6 @@ export default function ProjectCard({
   metric,
   techStack = [],
   image,
-  liveUrl,
   index,
 }: ProjectCardProps) {
   const reduceMotion = useReducedMotion();

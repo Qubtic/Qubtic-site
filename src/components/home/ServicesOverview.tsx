@@ -4,7 +4,7 @@ import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 const services = [
   { number: '01', title: 'Web Design', slug: 'web-development', description: 'Fast, expressive websites built to turn attention into meaningful action.' },
@@ -15,7 +15,6 @@ const services = [
 
 export default function ServicesOverview() {
   const [activeService, setActiveService] = React.useState(0);
-  const reduceMotion = useReducedMotion();
 
   return (
     <section className="px-3 py-3 sm:px-5 sm:py-5">
