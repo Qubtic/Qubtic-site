@@ -217,6 +217,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
     try {
       const storedToken = localStorage.getItem('qubtic_framer_token');
       if (storedToken && pairingStatus === 'idle') {
+        setPairingStatus('confirming');
         fetch('/api/framer-auth/pair/confirm', {
           method: 'POST',
           headers: {
@@ -230,10 +231,20 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
             if (data && data.success) {
               setPairingStatus('confirmed');
               setStatusMessage('Framer plugin paired successfully with your active account!');
+              if (data.user) {
+                setSuccessData({
+                  token: storedToken,
+                  sessionCode: data.sessionCode || 'FD-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+                  user: data.user,
+                  isNew: false,
+                });
+              }
+            } else {
+              setPairingStatus('idle');
             }
           })
           .catch(() => {
-            // ignore
+            setPairingStatus('idle');
           });
       }
     } catch {
@@ -805,6 +816,15 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                   <span className="qubtic-auth-project-pulse" />
                   <span>Target Canvas:</span>
                   <span className="qubtic-auth-project-name">{framerProjectId}</span>
+                </div>
+              )}
+
+              {/* Pairing Session Pill if present */}
+              {pairingCode && (
+                <div className="qubtic-auth-project-pill">
+                  <span className="qubtic-auth-project-pulse" />
+                  <span>Pairing Session:</span>
+                  <span className="qubtic-auth-project-name">{pairingCode.trim().toUpperCase()}</span>
                 </div>
               )}
 

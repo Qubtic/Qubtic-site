@@ -97,7 +97,21 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { success: true, message: result.message || 'Plugin paired successfully' },
+      {
+        success: true,
+        message: result.message || 'Plugin paired successfully',
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          plan: user.plan,
+          company_name: user.company_name,
+          website_url: user.website_url,
+          plugin_slug: user.plugin_slug,
+          is_early_bird: Boolean(user.is_early_bird),
+        },
+      },
       {
         status: 200,
         headers: { 'Access-Control-Allow-Origin': '*' },

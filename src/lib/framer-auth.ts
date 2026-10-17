@@ -1103,6 +1103,17 @@ export async function resolvePairingSession(
   }
 
   if (session.status === 'consumed') {
+    // Anti-replay grace period: if the session was confirmed and consumed within the last 120s,
+    // allow the originating device_code to reliably read the token to prevent race condition drops.
+    const consumedTime = session.updated_at ? new Date(session.updated_at).getTime() : 0;
+    if (customNow - consumedTime < 120000 && session.auth_token && session.user_data) {
+      return {
+        success: true,
+        status: 'success',
+        auth_token: session.auth_token,
+        user: session.user_data,
+      };
+    }
     return {
       success: false,
       status: 410,
