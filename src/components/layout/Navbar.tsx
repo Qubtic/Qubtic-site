@@ -408,7 +408,7 @@ export function Navbar() {
                                 </Link>
 
                                 <Link
-                                  href="/framer/frame-drop#catalog"
+                                  href="/framer/frame-drop/docs#catalog"
                                   onClick={() => setIsOpen(false)}
                                   className="qubtic-mobile-sublink"
                                 >

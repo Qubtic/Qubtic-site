@@ -469,12 +469,79 @@ const categories = [
   'CTAs & Footer',
 ] as const;
 
+const hashToCategory: Record<string, string> = {
+  '#catalog': 'All Sections',
+  '#catalog-all': 'All Sections',
+  '#catalog-heroes': 'Heroes',
+  '#catalog-navigation': 'Navigation',
+  '#catalog-bento': 'Bento Grids',
+  '#catalog-features': 'Features & Process',
+  '#catalog-services': 'Services',
+  '#catalog-social': 'Social Proof & Stats',
+  '#catalog-portfolio': 'Portfolio & Work',
+  '#catalog-pricing': 'Pricing',
+  '#catalog-faq': 'FAQs & Support',
+  '#catalog-cta': 'CTAs & Footer',
+};
+
+const categoryToHash: Record<string, string> = {
+  'All Sections': '#catalog',
+  'Heroes': '#catalog-heroes',
+  'Navigation': '#catalog-navigation',
+  'Bento Grids': '#catalog-bento',
+  'Features & Process': '#catalog-features',
+  'Services': '#catalog-services',
+  'Social Proof & Stats': '#catalog-social',
+  'Portfolio & Work': '#catalog-portfolio',
+  'Pricing': '#catalog-pricing',
+  'FAQs & Support': '#catalog-faq',
+  'CTAs & Footer': '#catalog-cta',
+};
+
 export function FrameDropCatalogExplorer() {
   const [selectedCategory, setSelectedCategory] = React.useState<string>('All Sections');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [activeCodeId, setActiveCodeId] = React.useState<string | null>(null);
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
   const [droppedId, setDroppedId] = React.useState<string | null>(null);
+
+  const categoryCounts = React.useMemo(() => {
+    const counts: Record<string, number> = {
+      'All Sections': catalogData.length,
+    };
+    for (const item of catalogData) {
+      counts[item.category] = (counts[item.category] || 0) + 1;
+    }
+    return counts;
+  }, []);
+
+  React.useEffect(() => {
+    const syncFromHash = () => {
+      if (typeof window === 'undefined') return;
+      const hash = window.location.hash.toLowerCase();
+      if (hash && hashToCategory[hash]) {
+        setSelectedCategory(hashToCategory[hash]);
+        if (hash.startsWith('#catalog-')) {
+          const el = document.getElementById('catalog');
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
+      }
+    };
+
+    syncFromHash();
+    window.addEventListener('hashchange', syncFromHash);
+    return () => window.removeEventListener('hashchange', syncFromHash);
+  }, []);
+
+  const handleSelectCategory = (cat: string) => {
+    setSelectedCategory(cat);
+    const hash = categoryToHash[cat];
+    if (hash && typeof window !== 'undefined') {
+      window.history.replaceState(null, '', hash);
+    }
+  };
 
   const filteredItems = catalogData.filter((item) => {
     const matchesCategory =
@@ -530,27 +597,63 @@ export function FrameDropCatalogExplorer() {
           </div>
         </div>
 
-        {/* Category Pills */}
+        {/* Category Pills with Authentic Section Count Badges */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 mb-10 overflow-x-auto pb-2">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={cn(
-                'rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer shrink-0 border',
-                selectedCategory === cat
-                  ? 'bg-[#0C3823] text-white border-[#0C3823] shadow-xs'
-                  : 'bg-white text-[#666C64] border-[#141915]/10 hover:bg-[#F4EFE6] hover:text-[#141915]'
-              )}
-            >
-              {cat}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const count = categoryCounts[cat] || 0;
+            const isSelected = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => handleSelectCategory(cat)}
+                className={cn(
+                  'rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer shrink-0 border flex items-center gap-2',
+                  isSelected
+                    ? 'bg-[#0C3823] text-white border-[#0C3823] shadow-xs'
+                    : 'bg-white text-[#666C64] border-[#141915]/10 hover:bg-[#F4EFE6] hover:text-[#141915]'
+                )}
+              >
+                <span>{cat}</span>
+                <span
+                  className={cn(
+                    'text-[10px] font-mono px-1.5 py-0.5 rounded-full',
+                    isSelected ? 'bg-white/20 text-[#CCFF00]' : 'bg-[#141915]/5 text-[#666C64]'
+                  )}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Component Grid */}
+        {/* Component Grid or Empty State */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 items-stretch">
-          {filteredItems.map((item) => {
+          {filteredItems.length === 0 ? (
+            <div className="col-span-full rounded-[28px] border border-[#141915]/10 bg-white p-12 text-center shadow-sm">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F4EFE6] text-[#0C3823] mb-4">
+                <Search className="w-6 h-6" />
+              </div>
+              <h3 className="font-heading text-xl font-bold uppercase text-[#141915] mb-2">
+                No Sections Found
+              </h3>
+              <p className="text-sm text-[#555C54] max-w-md mx-auto mb-6">
+                No components match your search term &ldquo;{searchQuery}&rdquo; in category &ldquo;{selectedCategory}&rdquo;.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  handleSelectCategory('All Sections');
+                }}
+                className="inline-flex items-center gap-2 rounded-full bg-[#0C3823] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#164E33] transition-colors cursor-pointer"
+              >
+                Reset Filters
+              </button>
+            </div>
+          ) : (
+            filteredItems.map((item) => {
             const isCodeOpen = activeCodeId === item.id;
             const isCopied = copiedId === item.id;
             const isDropped = droppedId === item.id;
@@ -683,7 +786,7 @@ export function FrameDropCatalogExplorer() {
                 </div>
               </div>
             );
-          })}
+          }))}
         </div>
 
       </div>

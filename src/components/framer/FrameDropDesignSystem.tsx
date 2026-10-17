@@ -92,11 +92,11 @@ export function FrameDropDesignSystem() {
               <div className="flex items-center gap-2 mb-4">
                 <Type className="w-5 h-5 text-[#0C3823]" />
                 <h3 className="font-heading text-xl font-bold uppercase text-[#141915]">
-                  Curated Typography Suite
+                  Curated Typography Suite (13 Presets)
                 </h3>
               </div>
               <p className="text-xs text-[#555C54] mb-5">
-                Select a font to preview how Frame Drop components adapt in real time.
+                Preview 6 flagship pairings from Frame Drop’s 13 native typography presets (including Inter, Plus Jakarta Sans, Outfit, DM Sans, Syne, and Cinzel).
               </p>
 
               <div className="space-y-2">

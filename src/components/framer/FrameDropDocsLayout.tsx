@@ -26,17 +26,23 @@ const docNavigation = [
     items: [
       { title: 'Overview & Architecture', href: '#overview' },
       { title: 'Installation & Setup', href: '#installation' },
-      { title: 'Atomic Canvas Safety', href: '#canvas-safety' },
+      { title: 'Non-Destructive Safety', href: '#canvas-safety' },
     ],
   },
   {
-    group: 'Component Library',
+    group: 'Component Library (34 Sections)',
     items: [
-      { title: 'Interactive Catalog (34+)', href: '#catalog' },
-      { title: 'Hero Sections', href: '#catalog' },
-      { title: 'Floating Navbars', href: '#catalog' },
-      { title: 'Bento Grids', href: '#catalog' },
-      { title: 'Pricing Matrices', href: '#catalog' },
+      { title: 'All Sections (34)', href: '#catalog' },
+      { title: 'Heroes (6)', href: '#catalog-heroes' },
+      { title: 'Navigation (2)', href: '#catalog-navigation' },
+      { title: 'Bento Grids (3)', href: '#catalog-bento' },
+      { title: 'Features & Process (4)', href: '#catalog-features' },
+      { title: 'Services & Capabilities (3)', href: '#catalog-services' },
+      { title: 'Social Proof & Stats (6)', href: '#catalog-social' },
+      { title: 'Portfolio & Work (2)', href: '#catalog-portfolio' },
+      { title: 'Pricing Matrices (2)', href: '#catalog-pricing' },
+      { title: 'FAQs & Support (2)', href: '#catalog-faq' },
+      { title: 'CTAs & Footers (4)', href: '#catalog-cta' },
     ],
   },
   {
@@ -44,7 +50,7 @@ const docNavigation = [
     items: [
       { title: 'Liquid Glassmorphism', href: '#design-system' },
       { title: 'Obsidian & Crystal Palettes', href: '#design-system' },
-      { title: 'Typography Suite', href: '#design-system' },
+      { title: 'Typography Suite (13 Presets)', href: '#design-system' },
     ],
   },
   {
@@ -75,6 +81,18 @@ const docNavigation = [
 export function FrameDropDocsLayout() {
   const [isInstallModalOpen, setIsInstallModalOpen] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [activeHash, setActiveHash] = React.useState('#overview');
+
+  React.useEffect(() => {
+    const updateHash = () => {
+      if (typeof window !== 'undefined' && window.location.hash) {
+        setActiveHash(window.location.hash.toLowerCase());
+      }
+    };
+    updateHash();
+    window.addEventListener('hashchange', updateHash);
+    return () => window.removeEventListener('hashchange', updateHash);
+  }, []);
 
   return (
     <div className="relative pt-24 pb-20 sm:pt-28">
@@ -164,17 +182,28 @@ export function FrameDropDocsLayout() {
                       {group.group}
                     </h4>
                     <ul className="space-y-1.5 text-xs">
-                      {group.items.map((item) => (
-                        <li key={item.title}>
-                          <a
-                            href={item.href}
-                            onClick={() => setMobileMenuOpen(false)}
-                            className="block rounded-lg px-2.5 py-1.5 text-[#555C54] hover:bg-[#F4EFE6] hover:text-[#0C3823] transition-colors font-medium"
-                          >
-                            {item.title}
-                          </a>
-                        </li>
-                      ))}
+                      {group.items.map((item) => {
+                        const isActive = activeHash === item.href.toLowerCase();
+                        return (
+                          <li key={item.title}>
+                            <a
+                              href={item.href}
+                              onClick={() => {
+                                setActiveHash(item.href.toLowerCase());
+                                setMobileMenuOpen(false);
+                              }}
+                              className={cn(
+                                'block rounded-lg px-2.5 py-1.5 transition-colors font-medium',
+                                isActive
+                                  ? 'bg-[#0C3823] text-white font-semibold shadow-2xs'
+                                  : 'text-[#555C54] hover:bg-[#F4EFE6] hover:text-[#0C3823]'
+                              )}
+                            >
+                              {item.title}
+                            </a>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 ))}
