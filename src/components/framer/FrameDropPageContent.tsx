@@ -46,7 +46,7 @@ export function FrameDropPageContent() {
       {/* WCAG AA & Contrast Preflight Engine */}
       <FrameDropPreflightEngine />
 
-      {/* Release Notes / Changelog v0.2.0 */}
+      {/* Release Notes / Changelog v0.2.1 */}
       <FrameDropChangelog />
 
       {/* Official Launch Article / Blog Post */}

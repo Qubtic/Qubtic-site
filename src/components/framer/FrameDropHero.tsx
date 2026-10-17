@@ -109,7 +109,7 @@ export function FrameDropHero({ onInstallClick, onExploreCatalog }: FrameDropHer
           <div className="fd-hero-status-pills">
             <span className="fd-status-pill-blue">
               <span className="fd-pulse-cyan" />
-              <span>v0.2.0 Available on Framer Marketplace</span>
+              <span>v0.2.1 Available on Framer Marketplace</span>
             </span>
             <span className="fd-status-pill-subtle">
               Verified Plugin

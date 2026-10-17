@@ -440,7 +440,7 @@ export function Navbar() {
                                     />
                                     <span>Frame Drop Overview</span>
                                   </div>
-                                  <span className="qubtic-mobile-sublink-badge qubtic-mobile-sublink-badge--live">v0.2.0</span>
+                                  <span className="qubtic-mobile-sublink-badge qubtic-mobile-sublink-badge--live">v0.2.1</span>
                                 </Link>
 
                                 <Link

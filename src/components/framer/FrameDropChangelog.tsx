@@ -44,10 +44,10 @@ export function FrameDropChangelog() {
       icon: ShieldCheck,
     },
     {
-      title: 'Passwordless OTP Sign-in',
-      badge: 'Qubtic Auth',
+      title: 'RFC 8628 Browser Pairing',
+      badge: 'Zero-PII Auth',
       description:
-        'Instant, secure authentication via Qubtic Auth for Early Bird & Pro members.',
+        'Secure external browser pairing on Qubtic with zero passwords or personal data transmitted from Framer.',
       icon: KeyRound,
     },
     {
@@ -69,7 +69,7 @@ export function FrameDropChangelog() {
             <div className="flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0C3823] px-3.5 py-1 text-xs font-mono font-bold text-white">
                 <Tag className="w-3.5 h-3.5 text-[#CCFF00]" />
-                Release v0.2.0
+                Release v0.2.1
               </span>
               <span className="inline-flex items-center gap-1.5 text-xs text-[#666C64] font-medium">
                 <Calendar className="w-3.5 h-3.5" />

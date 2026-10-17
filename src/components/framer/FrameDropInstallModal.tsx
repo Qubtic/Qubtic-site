@@ -57,7 +57,7 @@ export function FrameDropInstallModal({ isOpen, onClose }: FrameDropInstallModal
               </span>
               <span className="fd-modal-version">
                 <span className="fd-pulse-lime" />
-                <span>Framer Native Plugin · v0.2.0</span>
+                <span>Framer Native Plugin · v0.2.1</span>
               </span>
             </div>
           </div>

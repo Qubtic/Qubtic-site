@@ -13,7 +13,7 @@ export function FrameDropSubnav() {
     { label: 'Version Control', href: '/framer/frame-drop/version-control' },
     { label: 'Design System', href: '#design-system' },
     { label: 'Preflight (WCAG)', href: '#preflight-engine' },
-    { label: 'Changelog v0.2.0', href: '#changelog' },
+    { label: 'Changelog v0.2.1', href: '#changelog' },
     { label: 'Feature Request', href: '/feature-request' },
     { label: 'Engineering Story', href: '#engineering-story' },
     { label: 'Press Kit', href: '#marketing-toolbox' },

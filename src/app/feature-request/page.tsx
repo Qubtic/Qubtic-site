@@ -221,7 +221,7 @@ export default function FeatureRequestPage() {
                     <span>Frame Drop Studio</span>
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#0066FF] bg-[#0066FF]/10 px-2 py-0.5 rounded-full">
-                    v0.2.0
+                    v0.2.1
                   </span>
                 </div>
 

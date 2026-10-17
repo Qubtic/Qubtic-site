@@ -64,7 +64,7 @@ const docNavigation = [
   {
     group: 'Releases & Changelog',
     items: [
-      { title: 'Release v0.2.0 Notes', href: '#changelog' },
+      { title: 'Release v0.2.1 Notes', href: '#changelog' },
       { title: 'Product Roadmap & Trajectory', href: '/framer/frame-drop/roadmap' },
       { title: 'Version Control & Rollback', href: '/framer/frame-drop/version-control' },
       { title: 'Feature Request & Community', href: '/feature-request' },
@@ -126,7 +126,7 @@ export function FrameDropDocsLayout() {
             </div>
 
             <span className="rounded-full bg-[#0C3823]/10 px-2.5 py-0.5 text-[10px] font-mono font-bold text-[#0C3823]">
-              v0.2.0
+              v0.2.1
             </span>
           </div>
 
@@ -383,7 +383,7 @@ export function FrameDropDocsLayout() {
             {/* WCAG & Quality Preflight Engine */}
             <FrameDropPreflightEngine />
 
-            {/* Release Changelog v0.2.0 */}
+            {/* Release Changelog v0.2.1 */}
             <FrameDropChangelog />
 
             {/* Press Kit & Marketing Toolbox */}

@@ -37,6 +37,28 @@ export interface RoadmapItem {
 }
 
 const roadmapData: RoadmapItem[] = [
+  // Shipped (v0.2.1)
+  {
+    id: 'feat-external-web-pairing',
+    title: 'Browser Pairing Authentication on Qubtic',
+    category: 'Canvas Engine',
+    status: 'shipped',
+    milestone: 'v0.2.1 (Stable)',
+    description: 'RFC 8628 pairing flow handing off authentication securely to qubtic.tech without collecting passwords, emails, or PII inside the plugin.',
+    highlights: ['1-Click browser handoff', 'Auto-sync pairing code', 'Early Bird Pro entitlement'],
+    votes: 362,
+  },
+  {
+    id: 'feat-marketplace-security',
+    title: 'Marketplace Security & Strict DOM Sanitization',
+    category: 'Canvas Engine',
+    status: 'shipped',
+    milestone: 'v0.2.1 (Stable)',
+    description: 'Immutable API endpoint lockdown to qubtic.tech, complete removal of health check polling, and zero raw innerHTML or dangerouslySetInnerHTML sinks.',
+    highlights: ['API endpoint locked', '0 innerHTML sinks', 'Zero health check pings'],
+    votes: 310,
+  },
+
   // Shipped (v0.2.0)
   {
     id: 'feat-catalog-34',
@@ -78,24 +100,14 @@ const roadmapData: RoadmapItem[] = [
     highlights: ['Zero code overwrite', 'Namespace sandboxing', 'Automated node teardown'],
     votes: 264,
   },
-  {
-    id: 'feat-external-web-pairing',
-    title: 'Browser Pairing Authentication on Qubtic',
-    category: 'Canvas Engine',
-    status: 'shipped',
-    milestone: 'v0.2.0 (Stable)',
-    description: 'RFC 8628 pairing flow handing off authentication securely to qubtic.tech without collecting passwords or PII inside the plugin.',
-    highlights: ['1-Click browser handoff', 'Auto-sync pairing code', 'Early Bird Pro entitlement'],
-    votes: 198,
-  },
 
-  // In Development (v0.2.1)
+  // In Development (v0.2.2)
   {
     id: 'feat-canvas-sync',
     title: 'Bi-Directional Canvas Node Sync',
     category: 'Canvas Engine',
     status: 'in-progress',
-    milestone: 'v0.2.1 (Q4 2026)',
+    milestone: 'v0.2.2 (Q4 2026)',
     description: 'Read live property overrides directly from the active Framer canvas tree and reflect customized token values back into the plugin UI.',
     highlights: ['Active node inspection', 'Live token reflection', 'Zero re-import latency'],
     votes: 412,
@@ -168,8 +180,8 @@ const roadmapData: RoadmapItem[] = [
 
 const statusTabs = [
   { label: 'All Milestones', value: 'all' },
-  { label: 'Shipped (v0.2.0)', value: 'shipped' },
-  { label: 'In Development (v0.2.1)', value: 'in-progress' },
+  { label: 'Shipped (v0.2.1)', value: 'shipped' },
+  { label: 'In Development (v0.2.2)', value: 'in-progress' },
   { label: 'Planned (v0.3.0)', value: 'planned' },
   { label: 'Under Consideration', value: 'under-review' },
 ] as const;
@@ -252,7 +264,7 @@ export function FrameDropRoadmap() {
               <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                 Active Release
               </span>
-              <span className="font-mono text-xs font-bold text-[#0C3823]">v0.2.0</span>
+              <span className="font-mono text-xs font-bold text-[#0C3823]">v0.2.1</span>
             </div>
             <h3 className="font-heading text-lg font-bold uppercase text-[#141915] mb-1">
               Production Foundation

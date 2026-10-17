@@ -5,7 +5,7 @@ export const mainNavLinks = [
     href: '/framer/frame-drop',
     subItems: [
       { label: 'Qube Auth', href: '/framer/qube-auth', badge: 'v1.0.0 New' },
-      { label: 'Frame Drop', href: '/framer/frame-drop', badge: 'v0.2.0' },
+      { label: 'Frame Drop', href: '/framer/frame-drop', badge: 'v0.2.1' },
       { label: 'Qube Auth Docs', href: '/framer/qube-auth/docs' },
       { label: 'Frame Drop Docs', href: '/framer/frame-drop/docs' },
       { label: 'Component Catalog', href: '/framer/qube-auth#components' },

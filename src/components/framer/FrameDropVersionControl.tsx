@@ -72,13 +72,25 @@ export function FrameDropVersionControl() {
 
   const releases = [
     {
-      version: 'v0.2.0',
+      version: 'v0.2.1',
       badge: 'Current Stable',
       date: 'October 2026',
-      summary: '34 Production Section Presets, RFC 8628 Web-Based Pairing Flow on Qubtic, and WCAG Preflight Engine.',
+      summary: 'Framer Marketplace Security Hardening, Zero-PII Browser Pairing on Qubtic, and Strict DOM Sanitization.',
+      changes: [
+        'Eliminated all in-plugin personal identity fields (email, name, OTP) in favor of RFC 8628 OAuth 2.0 Device Pairing on qubtic.tech.',
+        'Permanently locked backend API endpoint to https://qubtic.tech with zero arbitrary URL configuration or local storage overrides.',
+        'Removed all external health check probes, /api/health requests, and background interval polling.',
+        'Enforced strict DOM and element sanitization with zero raw innerHTML or dangerouslySetInnerHTML sinks.',
+        'Added dynamic brand logo customization with vector emblem and image URL support.',
+      ],
+    },
+    {
+      version: 'v0.2.0',
+      badge: 'Previous Milestone',
+      date: 'October 2026',
+      summary: '34 Production Section Presets, Liquid Glassmorphism Design System, and WCAG Preflight Engine.',
       changes: [
         'Added 34 production-grade section presets across 10 core page categories.',
-        'Implemented zero-PII pairing code authentication on qubtic.tech.',
         'Integrated automated WCAG AA preflight contrast checker (>= 4.5:1 ratio).',
         'Built-in non-destructive canvas architecture with transactional rollback on insertion interrupts.',
         'Curated 13-preset typography suite including Plus Jakarta Sans, Syne, and Cinzel.',
