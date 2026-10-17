@@ -946,6 +946,80 @@
 }
 
 /* --------------------------------------------------------------------------
+   SIGN UP EMAIL OTP VERIFICATION STEP
+   -------------------------------------------------------------------------- */
+.qubtic-auth-verify-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--qubtic-auth-box-bg);
+  border: 1px solid var(--qubtic-auth-box-border);
+  border-radius: 12px;
+  margin-bottom: 1.15rem;
+}
+
+.qubtic-auth-verify-notice-icon {
+  color: var(--qubtic-auth-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.qubtic-auth-verify-notice-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.qubtic-auth-verify-notice-title {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--qubtic-auth-text-main);
+  letter-spacing: -0.01em;
+  font-family: var(--font-heading), sans-serif;
+}
+
+.qubtic-auth-verify-notice-desc {
+  font-size: 0.75rem;
+  color: var(--qubtic-auth-text-muted);
+  line-height: 1.45;
+}
+
+.qubtic-auth-verify-notice-desc strong {
+  color: var(--qubtic-auth-accent);
+  font-weight: 600;
+}
+
+.qubtic-auth-resend-countdown {
+  font-size: 0.725rem;
+  color: var(--qubtic-auth-text-subtle);
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.qubtic-auth-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  margin-top: 0.35rem;
+  color: var(--qubtic-auth-text-muted);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.qubtic-auth-back-link:hover {
+  color: var(--qubtic-auth-text-main);
+}
+
+/* --------------------------------------------------------------------------
    FOOTER
    -------------------------------------------------------------------------- */
 .qubtic-auth-footer {

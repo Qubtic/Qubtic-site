@@ -23,6 +23,8 @@ import {
   Globe,
   KeyRound,
   Users,
+  MailCheck,
+  ArrowLeft,
 } from 'lucide-react';
 import { getPluginMetadata, FramerPluginMetadata } from '@/lib/plugins-registry';
 import '@/styles/qubtic-auth.css';
@@ -155,6 +157,11 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
   // OTP flow state (Feature F7)
   const [otpCode, setOtpCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
+
+  // Sign Up Email OTP verification flow state
+  const [signupOtpCode, setSignupOtpCode] = useState('');
+  const [signupOtpSent, setSignupOtpSent] = useState(false);
+  const [signupResendCountdown, setSignupResendCountdown] = useState(0);
 
   // Password reset flow state (Feature F7)
   const [resetCode, setResetCode] = useState('');
@@ -324,6 +331,49 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
     };
   }, [successData, plugin.slug, returnUrlParam]);
 
+  // Resend countdown timer for signup OTP
+  useEffect(() => {
+    if (signupResendCountdown <= 0) return;
+    const timer = setTimeout(() => {
+      setSignupResendCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [signupResendCountdown]);
+
+  const handleResendSignupOtp = async () => {
+    if (!email || !email.includes('@')) {
+      setErrorMessage('Please enter a valid email address.');
+      return;
+    }
+    setIsLoading(true);
+    setErrorMessage('');
+    setStatusMessage('');
+    try {
+      const res = await fetch('/api/framer-auth/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send',
+          email: email.trim(),
+          plugin: plugin.slug,
+          mode: 'signup',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setErrorMessage(data.message || 'Failed to dispatch verification code.');
+        setIsLoading(false);
+        return;
+      }
+      setSignupResendCountdown(30);
+      setStatusMessage(data.message || `New verification code sent to ${email.trim()}.`);
+      setIsLoading(false);
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Network error resending verification code.');
+      setIsLoading(false);
+    }
+  };
+
   const handleSendOtp = async () => {
     if (!email || !email.includes('@')) {
       setErrorMessage('Please enter a valid email address.');
@@ -400,12 +450,129 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
       return;
     }
 
-    if (activeTab === 'signin' && (!password || password.length < 6)) {
-      setErrorMessage('Password must be at least 6 characters.');
-      return;
+    if (activeTab === 'signup') {
+      if (!signupOtpSent) {
+        if (!password || password.length < 6) {
+          setErrorMessage('Password must be at least 6 characters.');
+          return;
+        }
+
+        setIsLoading(true);
+        try {
+          const res = await fetch('/api/framer-auth/otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'send',
+              email: email.trim(),
+              plugin: plugin.slug,
+              mode: 'signup',
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            if (data.alreadyExists) {
+              setErrorMessage(data.message || 'An account with this email already exists. Switched to Sign In.');
+              setActiveTab('signin');
+              setSignupOtpSent(false);
+              setStatusMessage('An account with this email already exists. Please enter your password to sign in.');
+            } else {
+              setErrorMessage(data.message || 'Failed to dispatch verification code.');
+            }
+            setIsLoading(false);
+            return;
+          }
+
+          setSignupOtpSent(true);
+          setSignupResendCountdown(30);
+          setStatusMessage(data.message || `A 6-digit verification code has been sent to ${email.trim()}.`);
+          setIsLoading(false);
+          return;
+        } catch (err: unknown) {
+          setErrorMessage(err instanceof Error ? err.message : 'Network error sending verification code.');
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // If signup OTP is already sent, verify the 6-digit code to complete registration
+      if (!signupOtpCode || signupOtpCode.trim().length !== 6) {
+        setErrorMessage('Please enter the 6-digit verification code sent to your email.');
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/framer-auth/otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'verify-signup',
+            email: email.trim(),
+            code: signupOtpCode.trim(),
+            password,
+            name: name ? name.trim() : email.split('@')[0],
+            company_name: companyName ? companyName.trim() : undefined,
+            website_url: websiteUrl ? websiteUrl.trim() : undefined,
+            plugin: plugin.slug,
+            pairing_code: pairingCode ? pairingCode.trim() : undefined,
+            framerUserId,
+            framerProjectId,
+            plan: 'pro',
+            mode: 'signup',
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          setErrorMessage(data.message || 'Invalid or expired verification code.');
+          setIsLoading(false);
+          return;
+        }
+
+        try {
+          localStorage.setItem('qubtic_framer_token', data.token);
+        } catch {
+          // ignore
+        }
+
+        if (pairingCode && pairingCode.trim()) {
+          try {
+            const pairRes = await fetch('/api/framer-auth/pair/confirm', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${data.token}`,
+              },
+              body: JSON.stringify({
+                user_code: pairingCode.trim().toUpperCase(),
+              }),
+            });
+            const pairData = await pairRes.json();
+            if (pairRes.ok && pairData.success) {
+              setPairingStatus('confirmed');
+            }
+          } catch (pairErr) {
+            console.warn('Pairing confirm background attempt:', pairErr);
+          }
+        }
+
+        setSuccessData({
+          token: data.token,
+          sessionCode: data.sessionCode,
+          user: data.user,
+          isNew: Boolean(data.isNew),
+        });
+        setIsLoading(false);
+        return;
+      } catch (err: unknown) {
+        setErrorMessage(err instanceof Error ? err.message : 'Network error verifying registration code.');
+        setIsLoading(false);
+        return;
+      }
     }
 
-    if (activeTab === 'signup' && (!password || password.length < 6)) {
+    if (activeTab === 'signin' && (!password || password.length < 6)) {
       setErrorMessage('Password must be at least 6 characters.');
       return;
     }
@@ -488,7 +655,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
           }),
         });
       } else {
-        // Sign In or Sign Up
+        // Sign In
         res = await fetch('/api/framer-auth/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -521,7 +688,12 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
         if (data.requiresSignup) {
           setErrorMessage(data.message || 'No account found with this email. Please sign up first.');
           setActiveTab('signup');
+          setSignupOtpSent(false);
           setStatusMessage('No account found for this email. Switched to Sign Up so you can create your account.');
+        } else if (data.requiresSignin) {
+          setErrorMessage(data.message || 'An account with this email already exists. Please sign in.');
+          setActiveTab('signin');
+          setStatusMessage('An account with this email already exists. Please enter your password to sign in.');
         } else {
           setErrorMessage(data.message || data.error || 'Authentication failed. Please try again.');
         }
@@ -678,26 +850,28 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
 
               {/* Form Body */}
               <form onSubmit={handleSubmit} className="qubtic-auth-form">
-                {/* Email Address - Common to all views */}
-                <div className="qubtic-auth-group">
-                  <label htmlFor="qubtic-auth-email" className="qubtic-auth-label">
-                    Email Address
-                  </label>
-                  <div className="qubtic-auth-input-wrapper">
-                    <Mail className="qubtic-auth-input-icon" />
-                    <input
-                      id="qubtic-auth-email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@domain.com"
-                      className="qubtic-auth-input"
-                    />
+                {/* Email Address - Hidden during signup OTP step to focus on the code */}
+                {!(activeTab === 'signup' && signupOtpSent) && (
+                  <div className="qubtic-auth-group">
+                    <label htmlFor="qubtic-auth-email" className="qubtic-auth-label">
+                      Email Address
+                    </label>
+                    <div className="qubtic-auth-input-wrapper">
+                      <Mail className="qubtic-auth-input-icon" />
+                      <input
+                        id="qubtic-auth-email"
+                        name="email"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@domain.com"
+                        className="qubtic-auth-input"
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* --- 1. SIGN IN TAB --- */}
                 {activeTab === 'signin' && (
@@ -746,95 +920,170 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                   </>
                 )}
 
-                {/* --- 2. SIGN UP TAB (With Feature F6 Onboarding Fields) --- */}
+                {/* --- 2. SIGN UP TAB (With Feature F6 Onboarding Fields & Email OTP Verification) --- */}
                 {activeTab === 'signup' && (
                   <>
-                    <div className="qubtic-auth-group">
-                      <label htmlFor="qubtic-auth-name" className="qubtic-auth-label">
-                        Full Name
-                      </label>
-                      <div className="qubtic-auth-input-wrapper">
-                        <User className="qubtic-auth-input-icon" />
-                        <input
-                          id="qubtic-auth-name"
-                          name="name"
-                          type="text"
-                          autoComplete="name"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          placeholder="e.g. Alex Vance"
-                          className="qubtic-auth-input"
-                        />
-                      </div>
-                    </div>
+                    {signupOtpSent ? (
+                      /* Step 2: 6-Digit Email OTP Verification */
+                      <>
+                        <div className="qubtic-auth-verify-notice">
+                          <div className="qubtic-auth-verify-notice-icon">
+                            <MailCheck size={20} />
+                          </div>
+                          <div className="qubtic-auth-verify-notice-content">
+                            <div className="qubtic-auth-verify-notice-title">
+                              Verify Your Email Address
+                            </div>
+                            <div className="qubtic-auth-verify-notice-desc">
+                              We sent a 6-digit verification code to <strong>{email}</strong>. Enter it below to activate your account.
+                            </div>
+                          </div>
+                        </div>
 
-                    <div className="qubtic-auth-group">
-                      <label htmlFor="qubtic-auth-password" className="qubtic-auth-label">
-                        Password
-                      </label>
-                      <div className="qubtic-auth-input-wrapper">
-                        <Lock className="qubtic-auth-input-icon" />
-                        <input
-                          id="qubtic-auth-password"
-                          name="password"
-                          type={showPassword ? 'text' : 'password'}
-                          autoComplete="new-password"
-                          required
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          placeholder="••••••••••••"
-                          className="qubtic-auth-input has-eye"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="qubtic-auth-eye-btn"
-                          aria-label="Toggle password visibility"
-                        >
-                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-                    </div>
+                        <div className="qubtic-auth-group">
+                          <div className="qubtic-auth-label-row">
+                            <label htmlFor="qubtic-auth-signup-otp" className="qubtic-auth-label">
+                              6-Digit Verification Code
+                            </label>
+                            {signupResendCountdown > 0 ? (
+                              <span className="qubtic-auth-resend-countdown">
+                                Resend in {signupResendCountdown}s
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={handleResendSignupOtp}
+                                disabled={isLoading}
+                                className="qubtic-auth-magic-link-btn"
+                              >
+                                Resend code
+                              </button>
+                            )}
+                          </div>
+                          <div className="qubtic-auth-input-wrapper">
+                            <KeyRound className="qubtic-auth-input-icon" />
+                            <input
+                              id="qubtic-auth-signup-otp"
+                              name="signup_otp_code"
+                              type="text"
+                              inputMode="numeric"
+                              autoComplete="one-time-code"
+                              maxLength={6}
+                              value={signupOtpCode}
+                              onChange={(e) => setSignupOtpCode(e.target.value.replace(/\D/g, ''))}
+                              placeholder="123456"
+                              className="qubtic-auth-input qubtic-auth-input-code"
+                              autoFocus
+                            />
+                          </div>
+                        </div>
 
-                    {/* Company Name (Optional) */}
-                    <div className="qubtic-auth-group">
-                      <label htmlFor="qubtic-auth-company" className="qubtic-auth-label">
-                        Company Name (Optional)
-                      </label>
-                      <div className="qubtic-auth-input-wrapper">
-                        <Building className="qubtic-auth-input-icon" />
-                        <input
-                          id="qubtic-auth-company"
-                          name="company_name"
-                          type="text"
-                          autoComplete="organization"
-                          value={companyName}
-                          onChange={(e) => setCompanyName(e.target.value)}
-                          placeholder="Company Name (Optional)"
-                          className="qubtic-auth-input"
-                        />
-                      </div>
-                    </div>
+                        <div className="qubtic-auth-action-row-end">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSignupOtpSent(false);
+                              setErrorMessage('');
+                              setStatusMessage('');
+                            }}
+                            className="qubtic-auth-back-link"
+                          >
+                            <ArrowLeft size={13} />
+                            <span>Edit registration details</span>
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      /* Step 1: Initial Registration Form Details */
+                      <>
+                        <div className="qubtic-auth-group">
+                          <label htmlFor="qubtic-auth-name" className="qubtic-auth-label">
+                            Full Name
+                          </label>
+                          <div className="qubtic-auth-input-wrapper">
+                            <User className="qubtic-auth-input-icon" />
+                            <input
+                              id="qubtic-auth-name"
+                              name="name"
+                              type="text"
+                              autoComplete="name"
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              placeholder="e.g. Alex Vance"
+                              className="qubtic-auth-input"
+                            />
+                          </div>
+                        </div>
 
-                    {/* Website URL (Optional) */}
-                    <div className="qubtic-auth-group">
-                      <label htmlFor="qubtic-auth-website" className="qubtic-auth-label">
-                        Website URL (Optional)
-                      </label>
-                      <div className="qubtic-auth-input-wrapper">
-                        <Globe className="qubtic-auth-input-icon" />
-                        <input
-                          id="qubtic-auth-website"
-                          name="website_url"
-                          type="url"
-                          autoComplete="url"
-                          value={websiteUrl}
-                          onChange={(e) => setWebsiteUrl(e.target.value)}
-                          placeholder="Website URL (Optional)"
-                          className="qubtic-auth-input"
-                        />
-                      </div>
-                    </div>
+                        <div className="qubtic-auth-group">
+                          <label htmlFor="qubtic-auth-password" className="qubtic-auth-label">
+                            Password
+                          </label>
+                          <div className="qubtic-auth-input-wrapper">
+                            <Lock className="qubtic-auth-input-icon" />
+                            <input
+                              id="qubtic-auth-password"
+                              name="password"
+                              type={showPassword ? 'text' : 'password'}
+                              autoComplete="new-password"
+                              required
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              placeholder="••••••••••••"
+                              className="qubtic-auth-input has-eye"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="qubtic-auth-eye-btn"
+                              aria-label="Toggle password visibility"
+                            >
+                              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Company Name (Optional) */}
+                        <div className="qubtic-auth-group">
+                          <label htmlFor="qubtic-auth-company" className="qubtic-auth-label">
+                            Company Name (Optional)
+                          </label>
+                          <div className="qubtic-auth-input-wrapper">
+                            <Building className="qubtic-auth-input-icon" />
+                            <input
+                              id="qubtic-auth-company"
+                              name="company_name"
+                              type="text"
+                              autoComplete="organization"
+                              value={companyName}
+                              onChange={(e) => setCompanyName(e.target.value)}
+                              placeholder="Company Name (Optional)"
+                              className="qubtic-auth-input"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Website URL (Optional) */}
+                        <div className="qubtic-auth-group">
+                          <label htmlFor="qubtic-auth-website" className="qubtic-auth-label">
+                            Website URL (Optional)
+                          </label>
+                          <div className="qubtic-auth-input-wrapper">
+                            <Globe className="qubtic-auth-input-icon" />
+                            <input
+                              id="qubtic-auth-website"
+                              name="website_url"
+                              type="url"
+                              autoComplete="url"
+                              value={websiteUrl}
+                              onChange={(e) => setWebsiteUrl(e.target.value)}
+                              placeholder="Website URL (Optional)"
+                              className="qubtic-auth-input"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
 
@@ -1019,7 +1268,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                 )}
 
                 {/* Remember Me */}
-                {(activeTab === 'signin' || activeTab === 'signup') && (
+                {(activeTab === 'signin' || (activeTab === 'signup' && !signupOtpSent)) && (
                   <label className="qubtic-auth-checkbox-row">
                     <input
                       id="qubtic-auth-remember"
@@ -1046,7 +1295,9 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                         {activeTab === 'signin'
                           ? 'Signing in...'
                           : activeTab === 'signup'
-                          ? 'Creating account...'
+                          ? signupOtpSent
+                            ? 'Verifying code & activating account...'
+                            : 'Sending verification code...'
                           : activeTab === 'otp'
                           ? otpSent
                             ? 'Verifying code...'
@@ -1064,7 +1315,9 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                         {activeTab === 'signin'
                           ? `Sign In to ${plugin.name}`
                           : activeTab === 'signup'
-                          ? `Create Account & Connect`
+                          ? signupOtpSent
+                            ? `Verify Email & Complete Sign Up`
+                            : `Continue to Email Verification`
                           : activeTab === 'otp'
                           ? otpSent
                             ? `Verify Code & Connect`

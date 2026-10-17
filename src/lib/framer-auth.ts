@@ -1,14 +1,12 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import nodemailer from 'nodemailer';
 import { supabase } from './supabase';
 import { getPluginMetadata } from './plugins-registry';
 import {
   sendVerificationEmail,
   sendPasswordResetEmail,
   sendNewUserTeamNotification,
-  sendTeamInviteEmail,
 } from './email-service';
 
 export interface FramerUserRecord {
@@ -23,7 +21,7 @@ export interface FramerUserRecord {
   framer_project_id?: string;
   plan: 'free' | 'pro' | 'enterprise' | 'trial';
   auth_token: string;
-  status: 'active' | 'inactive' | 'suspended';
+  status: 'active' | 'inactive' | 'suspended' | 'pending_verification';
   metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -226,6 +224,8 @@ export async function createOrUpdateFramerUser(params: {
         const hasValidWebsite = typeof rawWebsite === 'string' && rawWebsite.trim().length > 0;
         const websiteToSave = hasValidWebsite ? rawWebsite.trim() : existing.website_url;
 
+        const wasPending = existing.status === 'pending_verification';
+
         // Evaluate Early Bird Pro entitlement for existing user
         const wasEarlyBird =
           existing.is_early_bird === true ||
@@ -246,6 +246,7 @@ export async function createOrUpdateFramerUser(params: {
           plugin_name: plugin.name,
           auth_token: token,
           plan: resolvedPlan,
+          status: 'active',
           last_login_at: now,
           updated_at: now,
           framer_user_id: params.framerUserId || existing.framer_user_id,
@@ -253,6 +254,7 @@ export async function createOrUpdateFramerUser(params: {
           metadata: {
             ...(existing.metadata || {}),
             ...(params.metadata || {}),
+            email_verified: true,
             ...(hasValidCompany ? { company_name: companyToSave } : {}),
             ...(hasValidWebsite ? { website_url: websiteToSave } : {}),
             is_early_bird: resolvedIsEarlyBird,
@@ -274,6 +276,14 @@ export async function createOrUpdateFramerUser(params: {
             early_bird_granted_at: resolvedEarlyBirdGrantedAt,
           } as FramerUserRecord);
           syncUserLocally(userWithAttrs);
+
+          if (wasPending) {
+            sendNewUserTeamNotification(userWithAttrs, params.metadata, pluginSlug).catch((err) => {
+              console.warn('[Team Alert] Error sending team notification:', err);
+            });
+            return { user: userWithAttrs, isNew: true, token };
+          }
+
           return { user: userWithAttrs, isNew: false, token };
         } else if (updateErr) {
           console.warn('Supabase framer_users update error:', updateErr);
@@ -344,6 +354,7 @@ export async function createOrUpdateFramerUser(params: {
 
   if (existingIdx >= 0) {
     const existing = localList[existingIdx];
+    const wasPending = existing.status === 'pending_verification';
     existing.name = params.name || existing.name;
     const rawCompany = params.company_name;
     const hasValidCompany = typeof rawCompany === 'string' && rawCompany.trim().length > 0;
@@ -356,6 +367,7 @@ export async function createOrUpdateFramerUser(params: {
       existing.website_url = rawWebsite.trim();
     }
     existing.auth_token = token;
+    existing.status = 'active';
     existing.last_login_at = now;
     existing.updated_at = now;
     if (params.framerUserId) existing.framer_user_id = params.framerUserId;
@@ -377,6 +389,7 @@ export async function createOrUpdateFramerUser(params: {
     existing.metadata = {
       ...(existing.metadata || {}),
       ...(params.metadata || {}),
+      email_verified: true,
       ...(hasValidCompany ? { company_name: existing.company_name } : {}),
       ...(hasValidWebsite ? { website_url: existing.website_url } : {}),
       is_early_bird: existing.is_early_bird,
@@ -387,6 +400,14 @@ export async function createOrUpdateFramerUser(params: {
 
     localList[existingIdx] = existing;
     writeLocalUsers(localList);
+
+    if (wasPending) {
+      sendNewUserTeamNotification(existing, params.metadata, pluginSlug).catch((err) => {
+        console.warn('[Team Alert] Error sending team notification:', err);
+      });
+      return { user: existing, isNew: true, token };
+    }
+
     return { user: existing, isNew: false, token };
   } else {
     const earlyBird = evaluateEarlyBirdStatus(now, EARLY_BIRD_CUTOFF_DATE);
@@ -538,7 +559,7 @@ export async function verifyFramerSessionToken(
     }
     const { data: pSession, error: pErr } = await pQuery.maybeSingle();
     if (!pErr && pSession && pSession.user_data) {
-      const uData = pSession.user_data as any;
+      const uData = pSession.user_data as Partial<FramerUserRecord>;
       if (uData.email) {
         try {
           await supabase
@@ -577,7 +598,7 @@ export async function verifyFramerSessionToken(
     return true;
   });
   if (pMatch && pMatch.user_data) {
-    const uData = pMatch.user_data as any;
+    const uData = pMatch.user_data as Partial<FramerUserRecord>;
     return ensureEarlyBirdAttributes({
       id: uData.id || pMatch.id,
       email: uData.email,
@@ -1171,7 +1192,7 @@ export async function sendAuthOtpCode(
     attempts: 0,
   });
 
-  // 2. Persist in Supabase metadata if user exists (or record pending OTP)
+  // 2. Persist in Supabase metadata (for existing or pending registrations)
   try {
     const { data: userRecord } = await supabase
       .from('framer_users')
@@ -1192,9 +1213,76 @@ export async function sendAuthOtpCode(
           },
         })
         .eq('id', userRecord.id);
+    } else {
+      const now = new Date().toISOString();
+      await supabase
+        .from('framer_users')
+        .insert({
+          email: normalizedEmail,
+          name: normalizedEmail.split('@')[0],
+          plugin_slug: plugin.slug,
+          plugin_name: plugin.name,
+          plan: 'pro',
+          status: 'pending_verification',
+          auth_token: generateFramerAuthToken(plugin.slug),
+          metadata: {
+            otp_code: code,
+            otp_expires_at: expiresAt,
+            otp_attempts: 0,
+            email_verified: false,
+            pending_signup: true,
+          },
+          created_at: now,
+          updated_at: now,
+          last_login_at: now,
+        });
     }
   } catch (sbErr) {
     console.warn('[OTP Store] Supabase sync notice:', sbErr);
+  }
+
+  // Also sync locally to guarantee cross-worker persistence
+  try {
+    const localUsers = readLocalUsers();
+    const existingLocal = localUsers.find(
+      (u) => u.email === normalizedEmail && u.plugin_slug === plugin.slug
+    );
+    if (existingLocal) {
+      existingLocal.metadata = {
+        ...(existingLocal.metadata || {}),
+        otp_code: code,
+        otp_expires_at: expiresAt,
+        otp_attempts: 0,
+      };
+      syncUserLocally(existingLocal);
+    } else {
+      const now = new Date().toISOString();
+      syncUserLocally({
+        id: 'usr_pending_' + Date.now(),
+        email: normalizedEmail,
+        name: normalizedEmail.split('@')[0],
+        company_name: '',
+        website_url: '',
+        plugin_slug: plugin.slug,
+        plugin_name: plugin.name,
+        plan: 'pro',
+        auth_token: generateFramerAuthToken(plugin.slug),
+        status: 'pending_verification',
+        is_early_bird: true,
+        metadata: {
+          otp_code: code,
+          otp_expires_at: expiresAt,
+          otp_attempts: 0,
+          email_verified: false,
+          pending_signup: true,
+        },
+        created_at: now,
+        updated_at: now,
+        last_login_at: now,
+      } as FramerUserRecord);
+    }
+  } catch {
+    // ignore
   }
 
   // 3. Dispatch branded verification email via direct Mailgun SMTP
@@ -1244,6 +1332,27 @@ export async function verifyAuthOtpCode(
           code: String(userRecord.metadata.otp_code),
           expiresAt: Number(userRecord.metadata.otp_expires_at),
           attempts: Number(userRecord.metadata.otp_attempts || 0),
+        };
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // Local fallback if neither memory nor Supabase returned a session
+  if (!session) {
+    try {
+      const plugin = getPluginMetadata(pluginSlug);
+      const localUsers = readLocalUsers();
+      const localMatch = localUsers.find(
+        (u) => u.email === normalizedEmail && u.plugin_slug === plugin.slug
+      );
+      if (localMatch && localMatch.metadata?.otp_code && localMatch.metadata?.otp_expires_at) {
+        session = {
+          email: normalizedEmail,
+          code: String(localMatch.metadata.otp_code),
+          expiresAt: Number(localMatch.metadata.otp_expires_at),
+          attempts: Number(localMatch.metadata.otp_attempts || 0),
         };
       }
     } catch {
@@ -1302,6 +1411,17 @@ export async function verifyAuthOtpCode(
         .from('framer_users')
         .update({ metadata: updatedMeta })
         .eq('id', userRecord.id);
+    }
+
+    const localUsers = readLocalUsers();
+    const localMatch = localUsers.find(
+      (u) => u.email === normalizedEmail && u.plugin_slug === plugin.slug
+    );
+    if (localMatch && localMatch.metadata) {
+      delete localMatch.metadata.otp_code;
+      delete localMatch.metadata.otp_expires_at;
+      delete localMatch.metadata.otp_attempts;
+      syncUserLocally(localMatch);
     }
   } catch {
     // ignore

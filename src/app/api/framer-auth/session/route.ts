@@ -5,6 +5,8 @@ import {
   findFramerUser,
   generateSessionCode,
   confirmPairingSession,
+  sendAuthOtpCode,
+  verifyAuthOtpCode,
 } from '@/lib/framer-auth';
 import { getPluginMetadata } from '@/lib/plugins-registry';
 
@@ -85,6 +87,68 @@ export async function POST(request: Request) {
           },
         }
       );
+    }
+
+    // Hard Requirement: If user already has an active account, sign-up is not allowed; they must sign in
+    if (mode === 'signup' && existingUser && existingUser.status === 'active' && existingUser.metadata?.password_hash) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'An account with this email already exists. Please sign in instead.',
+          message: 'An account with this email already exists. Please sign in instead.',
+          requiresSignin: true,
+        },
+        {
+          status: 400,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-framer-token',
+          },
+        }
+      );
+    }
+
+    // On sign-up: verify OTP code or dispatch verification email
+    const submittedOtp = body.otp_code || body.code || body.otp;
+    if (mode === 'signup') {
+      if (!submittedOtp) {
+        await sendAuthOtpCode(normalizedEmail, pluginMeta.slug);
+        return NextResponse.json(
+          {
+            success: false,
+            requiresOtp: true,
+            message: `A 6-digit verification code has been sent to ${normalizedEmail}. Please enter it to verify your email.`,
+          },
+          {
+            status: 200,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-framer-token',
+            },
+          }
+        );
+      }
+
+      const verifyResult = await verifyAuthOtpCode(normalizedEmail, String(submittedOtp), pluginMeta.slug);
+      if (!verifyResult.valid) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: verifyResult.message || 'Invalid or expired verification code.',
+            message: verifyResult.message || 'Invalid or expired verification code.',
+          },
+          {
+            status: 400,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-framer-token',
+            },
+          }
+        );
+      }
     }
 
     // On sign-in: verify password against stored metadata.password_hash if it exists
