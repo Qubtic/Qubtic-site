@@ -65,7 +65,9 @@ const docNavigation = [
     group: 'Releases & Changelog',
     items: [
       { title: 'Release v0.2.0 Notes', href: '#changelog' },
-      { title: 'Feature Request & Roadmap', href: '/feature-request' },
+      { title: 'Product Roadmap & Trajectory', href: '/framer/frame-drop/roadmap' },
+      { title: 'Version Control & Rollback', href: '/framer/frame-drop/version-control' },
+      { title: 'Feature Request & Community', href: '/feature-request' },
     ],
   },
   {

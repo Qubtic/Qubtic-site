@@ -11,7 +11,9 @@ import {
   ChevronDown, 
   BookOpen, 
   Layers, 
-  SlidersHorizontal 
+  SlidersHorizontal,
+  Compass,
+  GitBranch
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -280,6 +282,52 @@ export function Navbar() {
                         </p>
                       </div>
                     </Link>
+
+                    {/* Quick Product Links Strip */}
+                    <div className="mt-2.5 pt-2.5 border-t border-[#141915]/10 flex flex-wrap items-center justify-between px-1 text-xs text-[#555C54] col-span-full gap-2">
+                      <div className="flex items-center gap-3">
+                        <Link
+                          href="/framer/frame-drop/docs"
+                          onClick={closeProductMenu}
+                          className="hover:text-[#0C3823] transition-colors font-medium flex items-center gap-1"
+                        >
+                          <BookOpen className="w-3.5 h-3.5" />
+                          <span>Docs</span>
+                        </Link>
+                        <Link
+                          href="/framer/frame-drop/docs#catalog"
+                          onClick={closeProductMenu}
+                          className="hover:text-[#0C3823] transition-colors font-medium flex items-center gap-1"
+                        >
+                          <Layers className="w-3.5 h-3.5" />
+                          <span>Catalog</span>
+                        </Link>
+                        <Link
+                          href="/framer/frame-drop/roadmap"
+                          onClick={closeProductMenu}
+                          className="hover:text-[#0C3823] transition-colors font-medium flex items-center gap-1"
+                        >
+                          <Compass className="w-3.5 h-3.5" />
+                          <span>Roadmap</span>
+                        </Link>
+                        <Link
+                          href="/framer/frame-drop/version-control"
+                          onClick={closeProductMenu}
+                          className="hover:text-[#0C3823] transition-colors font-medium flex items-center gap-1"
+                        >
+                          <GitBranch className="w-3.5 h-3.5" />
+                          <span>Version Control</span>
+                        </Link>
+                      </div>
+                      <Link
+                        href="/feature-request"
+                        onClick={closeProductMenu}
+                        className="text-[#0C3823] hover:underline font-semibold flex items-center gap-1"
+                      >
+                        <span>Requests</span>
+                        <ArrowUpRight className="w-3 h-3" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -415,6 +463,30 @@ export function Navbar() {
                                   <div className="qubtic-mobile-sublink-left">
                                     <Layers className="qubtic-mobile-sublink-icon" />
                                     <span>Component Catalog (34+)</span>
+                                  </div>
+                                  <ArrowUpRight className="qubtic-mobile-sublink-arrow" />
+                                </Link>
+
+                                <Link
+                                  href="/framer/frame-drop/roadmap"
+                                  onClick={() => setIsOpen(false)}
+                                  className="qubtic-mobile-sublink"
+                                >
+                                  <div className="qubtic-mobile-sublink-left">
+                                    <Compass className="qubtic-mobile-sublink-icon" />
+                                    <span>Product Roadmap</span>
+                                  </div>
+                                  <ArrowUpRight className="qubtic-mobile-sublink-arrow" />
+                                </Link>
+
+                                <Link
+                                  href="/framer/frame-drop/version-control"
+                                  onClick={() => setIsOpen(false)}
+                                  className="qubtic-mobile-sublink"
+                                >
+                                  <div className="qubtic-mobile-sublink-left">
+                                    <GitBranch className="qubtic-mobile-sublink-icon" />
+                                    <span>Version Control &amp; Rollback</span>
                                   </div>
                                   <ArrowUpRight className="qubtic-mobile-sublink-arrow" />
                                 </Link>
