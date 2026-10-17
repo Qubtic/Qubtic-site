@@ -303,10 +303,10 @@ export function FrameDropBentoGrid() {
               </div>
 
               <h3 className="fd-card-title">
-                Atomic Canvas Safety
+                Non-Destructive Canvas Architecture
               </h3>
               <p className="fd-card-desc">
-                Never worry about overwriting custom code. Frame Drop checks version hashes, isolates overrides, and executes atomic rollbacks if anything interrupts your insertion.
+                Never worry about overwriting custom code. Frame Drop inspects project files, isolates component exports into dedicated namespaces, and executes an automated transactional rollback if anything interrupts your insertion.
               </p>
             </div>
 
@@ -315,12 +315,12 @@ export function FrameDropBentoGrid() {
               <div className="fd-safety-box-header">
                 <span className="fd-hero-pillar-item">
                   <ShieldAlert className="fd-icon-xs" />
-                  SHA256 Collision Prevention
+                  Code File Isolation &amp; Rollback
                 </span>
                 <span>Active Protection</span>
               </div>
               <p className="fd-safety-box-desc">
-                Each insertion computes a diff tree hash. Custom components in your canvas are quarantined from destructive overwrites.
+                Each insertion verifies project permissions and code namespaces. Generated nodes are tracked and automatically rolled back on error, preserving your existing canvas.
               </p>
             </div>
           </div>

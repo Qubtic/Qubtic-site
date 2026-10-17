@@ -153,7 +153,7 @@ export default function FeatureRequestPage() {
               href="/framer/frame-drop/docs"
               className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-[#141915]/10 bg-white/70 px-3 py-1 text-xs font-medium text-[#141915] hover:bg-white transition-colors"
             >
-              <span>Explore 25+ Drops</span>
+              <span>Explore 34+ Drops</span>
               <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
@@ -239,7 +239,7 @@ export default function FeatureRequestPage() {
 
                 {/* Bottom Bar */}
                 <div className="px-4 py-2.5 bg-[#F8F7F2] border-t border-[#E5E0D8] flex items-center justify-between text-xs text-[#666C64]">
-                  <span>25+ Native Framer Sections</span>
+                  <span>34+ Native Framer Sections</span>
                   <Link href="/framer/frame-drop" className="text-[#0066FF] font-bold hover:underline inline-flex items-center gap-1">
                     Explore Studio &rarr;
                   </Link>

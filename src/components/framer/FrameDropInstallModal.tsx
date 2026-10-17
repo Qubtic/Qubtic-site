@@ -111,7 +111,7 @@ export function FrameDropInstallModal({ isOpen, onClose }: FrameDropInstallModal
                 Drop &amp; Design
               </h4>
               <p className="fd-modal-step-text">
-                Click to install and immediately insert 25+ WCAG-audited sections onto your canvas.
+                Click to install and immediately insert 34+ WCAG-audited sections onto your canvas.
               </p>
             </div>
           </div>

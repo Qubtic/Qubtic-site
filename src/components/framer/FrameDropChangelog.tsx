@@ -17,9 +17,9 @@ export function FrameDropChangelog() {
   const changelogItems = [
     {
       title: 'Expanded Section Catalog',
-      badge: '25+ Sections',
+      badge: '34+ Sections',
       description:
-        'Curated sections across Heroes, Floating Navbars, Bento Grids, Social Proof & Stats, Pricing Matrices, and FAQs.',
+        '34 curated sections across Heroes, Floating Navbars, Bento Grids, Features & Process, Services, Social Proof & Stats, Portfolio, Pricing, and FAQs.',
       icon: Layers,
     },
     {

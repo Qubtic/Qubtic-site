@@ -185,7 +185,7 @@ export function FrameDropHero({ onInstallClick, onExploreCatalog }: FrameDropHer
               onClick={onExploreCatalog}
               className="fd-btn-secondary"
             >
-              <span>Explore 25+ Components</span>
+              <span>Explore 34+ Components</span>
               <ChevronRight className="fd-icon-sm" />
             </a>
 
@@ -210,7 +210,6 @@ export function FrameDropHero({ onInstallClick, onExploreCatalog }: FrameDropHer
             <div
               className="fd-hero-banner-img-box"
               onClick={toggleSound}
-              style={{ cursor: 'pointer' }}
               title={isMuted ? 'Click anywhere on video to unmute sound' : 'Click to mute sound'}
             >
               <video
@@ -257,7 +256,7 @@ export function FrameDropHero({ onInstallClick, onExploreCatalog }: FrameDropHer
         <div className="fd-trust-metrics-bar">
           <div className="fd-metric-col">
             <span className="fd-metric-num">
-              25+
+              34+
             </span>
             <span className="fd-metric-label">
               Production Sections

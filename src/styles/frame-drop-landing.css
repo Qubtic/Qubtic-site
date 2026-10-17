@@ -579,6 +579,7 @@
   overflow: hidden;
   border-radius: 20px;
   background: #020714;
+  cursor: pointer;
 }
 
 @media (min-width: 640px) {
@@ -2543,3 +2544,20 @@
   color: #666C64;
   text-align: center;
 }
+
+/* Design System Token Swatches - Pure External CSS (Zero Inline Styles) */
+.fd-token-swatch {
+  height: 1.5rem;
+  width: 1.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+}
+.fd-token-swatch-obsidian { background-color: #0A0D0C; }
+.fd-token-swatch-surface { background-color: #121615; }
+.fd-token-swatch-crystal { background-color: #F4EFE6; }
+.fd-token-swatch-forest { background-color: #0C3823; }
+.fd-token-swatch-deep-forest { background-color: #164E33; }
+.fd-token-swatch-lime { background-color: #CCFF00; }
+

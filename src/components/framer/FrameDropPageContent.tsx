@@ -37,7 +37,7 @@ export function FrameDropPageContent() {
       {/* 3-Step Workflow ("How It Works") */}
       <FrameDropHowItWorks />
 
-      {/* 25+ Production Section Catalog Explorer */}
+      {/* 34+ Production Section Catalog Explorer */}
       <FrameDropCatalogExplorer />
 
       {/* Design System & Liquid Glassmorphism */}
@@ -106,7 +106,7 @@ export function FrameDropPageContent() {
               </span>
               <span className="flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-[#0C3823]" />
-                25+ Curated Sections
+                34+ Curated Sections
               </span>
             </div>
           </div>

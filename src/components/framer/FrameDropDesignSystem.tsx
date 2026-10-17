@@ -26,12 +26,12 @@ export function FrameDropDesignSystem() {
   ] as const;
 
   const colorTokens = [
-    { name: 'Obsidian Dark', hex: '#0A0D0C', role: 'Default Dark Background' },
-    { name: 'Dark Surface', hex: '#121615', role: 'Glassmorphic Card Elevation' },
-    { name: 'Crystal Light', hex: '#F4EFE6', role: 'Warm Ambient Base' },
-    { name: 'Forest Green', hex: '#0C3823', role: 'Primary Brand Action' },
-    { name: 'Deep Forest', hex: '#164E33', role: 'Hover & Border Accent' },
-    { name: 'Neon Lime', hex: '#CCFF00', role: 'High-Impact Focus Beacon' },
+    { name: 'Obsidian Dark', hex: '#0A0D0C', role: 'Default Dark Background', swatchClass: 'fd-token-swatch-obsidian' },
+    { name: 'Dark Surface', hex: '#121615', role: 'Glassmorphic Card Elevation', swatchClass: 'fd-token-swatch-surface' },
+    { name: 'Crystal Light', hex: '#F4EFE6', role: 'Warm Ambient Base', swatchClass: 'fd-token-swatch-crystal' },
+    { name: 'Forest Green', hex: '#0C3823', role: 'Primary Brand Action', swatchClass: 'fd-token-swatch-forest' },
+    { name: 'Deep Forest', hex: '#164E33', role: 'Hover & Border Accent', swatchClass: 'fd-token-swatch-deep-forest' },
+    { name: 'Neon Lime', hex: '#CCFF00', role: 'High-Impact Focus Beacon', swatchClass: 'fd-token-swatch-lime' },
   ];
 
   return (
@@ -74,8 +74,7 @@ export function FrameDropDesignSystem() {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span
-                        className="h-6 w-6 rounded-full border border-black/10 shadow-xs"
-                        style={{ backgroundColor: token.hex }}
+                        className={cn('fd-token-swatch', token.swatchClass)}
                       />
                       <span className="font-mono text-[11px] font-bold text-[#141915]">
                         {token.hex}

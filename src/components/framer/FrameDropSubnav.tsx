@@ -8,7 +8,7 @@ export function FrameDropSubnav() {
     { label: 'Overview', href: '#overview' },
     { label: 'Pillars & Bento', href: '#features' },
     { label: 'How It Works', href: '#how-it-works' },
-    { label: 'Catalog (25+)', href: '#catalog' },
+    { label: 'Catalog (34+)', href: '#catalog' },
     { label: 'Design System', href: '#design-system' },
     { label: 'Preflight (WCAG)', href: '#preflight-engine' },
     { label: 'Changelog v0.2.0', href: '#changelog' },

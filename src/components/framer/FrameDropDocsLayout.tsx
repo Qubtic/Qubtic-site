@@ -32,7 +32,7 @@ const docNavigation = [
   {
     group: 'Component Library',
     items: [
-      { title: 'Interactive Catalog (25+)', href: '#catalog' },
+      { title: 'Interactive Catalog (34+)', href: '#catalog' },
       { title: 'Hero Sections', href: '#catalog' },
       { title: 'Floating Navbars', href: '#catalog' },
       { title: 'Bento Grids', href: '#catalog' },
@@ -229,7 +229,7 @@ export function FrameDropDocsLayout() {
                 {/* Quick Feature Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-[#141915]/10">
                   <div className="p-4 rounded-2xl bg-[#F8F6F0] border border-[#141915]/5">
-                    <span className="font-heading text-xl font-bold text-[#141915] block">25+ Sections</span>
+                    <span className="font-heading text-xl font-bold text-[#141915] block">34+ Sections</span>
                     <span className="text-xs text-[#666C64]">Heroes, Bentos, Navbars &amp; Pricing</span>
                   </div>
                   <div className="p-4 rounded-2xl bg-[#F8F6F0] border border-[#141915]/5">
@@ -316,7 +316,7 @@ export function FrameDropDocsLayout() {
               </div>
             </section>
 
-            {/* Atomic Canvas Safety Section */}
+            {/* Non-Destructive Canvas Architecture Section */}
             <section id="canvas-safety" className="scroll-mt-36 rounded-[32px] border border-[#141915]/10 bg-white p-8 sm:p-12 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <ShieldCheck className="w-5 h-5 text-[#0C3823]" />
@@ -325,20 +325,20 @@ export function FrameDropDocsLayout() {
                 </span>
               </div>
               <h2 className="font-heading text-2xl sm:text-3xl font-bold uppercase text-[#141915] mb-4">
-                Atomic Canvas Safety &amp; Non-Destructive Code
+                Non-Destructive Canvas Architecture &amp; Rollback
               </h2>
 
               <p className="text-sm sm:text-base text-[#555C54] leading-relaxed mb-6">
-                Never worry about overwriting custom code. Frame Drop checks version hashes, isolates overrides, and executes atomic rollbacks if anything interrupts your insertion.
+                Never worry about overwriting custom code. Frame Drop inspects project files, isolates component exports into safe namespaces, and executes automated transactional rollbacks if anything interrupts your insertion.
               </p>
 
               <div className="rounded-2xl bg-[#082417] p-5 text-white font-mono text-xs border border-white/10 space-y-3">
                 <div className="flex items-center justify-between text-[#CCFF00] pb-2 border-b border-white/10">
-                  <span>SHA256 Collision Verification</span>
+                  <span>File Isolation &amp; Transactional Rollback</span>
                   <span>Active</span>
                 </div>
                 <p className="text-white/80 font-sans text-xs leading-relaxed">
-                  Before any component tree is written, Frame Drop reads the target node hash. If a duplicate identifier or custom user component override is detected, the plugin assigns an isolated namespace node, preventing collision or loss of custom work.
+                  Before any component tree is written, Frame Drop verifies project permissions and isolates code files (e.g. frame-dropSection.tsx), preventing collision with custom code. If an insertion fails, all generated canvas nodes are immediately removed, preserving your project state.
                 </p>
               </div>
             </section>

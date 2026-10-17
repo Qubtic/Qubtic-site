@@ -276,7 +276,7 @@ export function Navbar() {
                           <ArrowUpRight className="qubtic-dropdown__arrow" />
                         </div>
                         <p className="qubtic-dropdown__desc">
-                          Native Framer component studio with 25+ responsive section drops.
+                          Native Framer component studio with 34+ responsive section drops.
                         </p>
                       </div>
                     </Link>
@@ -414,7 +414,7 @@ export function Navbar() {
                                 >
                                   <div className="qubtic-mobile-sublink-left">
                                     <Layers className="qubtic-mobile-sublink-icon" />
-                                    <span>Component Catalog (25+)</span>
+                                    <span>Component Catalog (34+)</span>
                                   </div>
                                   <ArrowUpRight className="qubtic-mobile-sublink-arrow" />
                                 </Link>

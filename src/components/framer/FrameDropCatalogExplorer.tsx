@@ -15,235 +15,458 @@ import { cn } from '@/lib/utils';
 export interface CatalogItem {
   id: string;
   name: string;
-  category: 'Heroes' | 'Floating Navbars' | 'Bento Grids' | 'Social Proof & Stats' | 'Pricing Matrices' | 'FAQs & Support';
+  category: string;
   description: string;
   wcagContrast: string;
   responsiveBreakpoints: string[];
   slots: number;
+  tier: 'free' | 'pro';
   previewGradient: string;
   codeSnippet: string;
 }
 
 const catalogData: CatalogItem[] = [
-  // Heroes
+  // Heroes (6)
   {
-    id: 'hero-01',
-    name: 'Liquid Glass Split Media Hero',
+    id: 'hero-studio',
+    name: 'Studio / 01',
     category: 'Heroes',
-    description: 'Hero layout with backdrop-blur cards, dual CTAs, trust metric bar, and interactive 3D media container.',
-    wcagContrast: '5.2:1',
-    responsiveBreakpoints: ['Desktop (1440px)', 'Tablet (810px)', 'Mobile (390px)'],
-    slots: 4,
+    description: 'An image-led opening with a clear point of view and sculptural composition.',
+    wcagContrast: '6.2:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 2,
+    tier: 'free',
     previewGradient: 'from-[#0C3823] to-[#082417]',
-    codeSnippet: `<HeroSection theme="obsidian" backdropBlur="24px" ctaPrimary="Install Free" />`,
+    codeSnippet: `<FrameDropSection kind="hero" variant="image" brandName="Minimal Studio" />`,
   },
   {
-    id: 'hero-02',
-    name: 'Minimalist Typography SaaS Hero',
+    id: 'hero-product',
+    name: 'Product / 02',
     category: 'Heroes',
-    description: 'Ultra-clean editorial headline with animated watermark, email capture input, and client badge ticker.',
-    wcagContrast: '7.1:1',
-    responsiveBreakpoints: ['Desktop', 'Tablet', 'Mobile'],
+    description: 'A focused headline with room for your collaborative product interface and tour.',
+    wcagContrast: '5.8:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
     slots: 3,
-    previewGradient: 'from-[#141915] to-[#1c221d]',
-    codeSnippet: `<MinimalHero heading="Design. Drop. Deploy." captureEmail={true} />`,
-  },
-  {
-    id: 'hero-03',
-    name: 'Bento Showcase Launchpad Hero',
-    category: 'Heroes',
-    description: 'Dynamic multi-card hero featuring floating live stats, code preview snippet, and responsive video reel.',
-    wcagContrast: '4.9:1',
-    responsiveBreakpoints: ['Desktop', 'Tablet', 'Mobile'],
-    slots: 5,
-    previewGradient: 'from-[#0A0D0C] to-[#164E33]',
-    codeSnippet: `<BentoHero layout="3-col" interactiveWidgets={true} />`,
-  },
-  {
-    id: 'hero-04',
-    name: 'Editorial Studio Portfolio Hero',
-    category: 'Heroes',
-    description: 'Asymmetric typography layout with oversized numerals, custom hover cursors, and project preview reel.',
-    wcagContrast: '6.4:1',
-    responsiveBreakpoints: ['Desktop', 'Tablet', 'Mobile'],
-    slots: 3,
+    tier: 'free',
     previewGradient: 'from-[#164E33] to-[#0C3823]',
-    codeSnippet: `<StudioHero watermark="QUBTIC" studioMode={true} />`,
+    codeSnippet: `<FrameDropSection kind="hero" variant="light" cta="Get started" secondaryCta="Watch product tour" />`,
+  },
+  {
+    id: 'hero-minimal',
+    name: 'Studio / 03',
+    category: 'Heroes',
+    description: 'High-contrast typographic headline with dual conversion CTAs and subtle metrics.',
+    wcagContrast: '7.4:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 3,
+    tier: 'pro',
+    previewGradient: 'from-[#141915] to-[#1c221d]',
+    codeSnippet: `<FrameDropSection kind="hero" variant="dark" cta="Start free trial" />`,
+  },
+  {
+    id: 'hero-cards',
+    name: 'Showcase / 05',
+    category: 'Heroes',
+    description: 'Hero with staggered 3D avatar columns, team credits, and conversion action buttons.',
+    wcagContrast: '5.4:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 5,
+    tier: 'free',
+    previewGradient: 'from-[#0A0D0C] to-[#164E33]',
+    codeSnippet: `<FrameDropSection kind="hero" variant="light" layout="cards" />`,
+  },
+  {
+    id: 'hero-editorial',
+    name: 'Agency / 04',
+    category: 'Heroes',
+    description: 'Full-bleed imagery with architectural poise, quiet geometry, and monograph links.',
+    wcagContrast: '6.8:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 2,
+    tier: 'free',
+    previewGradient: 'from-[#1c221d] to-[#0A0D0C]',
+    codeSnippet: `<FrameDropSection kind="hero" variant="image" cta="View monograph" />`,
+  },
+  {
+    id: 'hero-agency-glass',
+    name: 'Agency / Glass Spatial 06',
+    category: 'Heroes',
+    description: 'Spatial liquid glass agency hero with live commission status pulse, rotating aura glow, floating glass metric cards, and conversion CTAs.',
+    wcagContrast: '5.1:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 4,
+    tier: 'pro',
+    previewGradient: 'from-[#0C3823] to-[#082417]',
+    codeSnippet: `<FrameDropSection kind="hero" layout="agency-hero" variant="dark" />`,
   },
 
-  // Floating Navbars
+  // Navigation (2)
   {
-    id: 'nav-01',
-    name: 'Refractive Glass Capsule Navbar',
-    category: 'Floating Navbars',
-    description: 'Floating pill navigation with real-time blur saturation, active route glow, and mobile drawer.',
-    wcagContrast: '4.8:1',
+    id: 'nav-simple',
+    name: 'Essential navigation',
+    category: 'Navigation',
+    description: 'A sleek full-width studio header bar with responsive typography, anchor links, and primary action.',
+    wcagContrast: '8.1:1',
+    responsiveBreakpoints: ['All Breakpoints'],
+    slots: 4,
+    tier: 'free',
+    previewGradient: 'from-[#141915] to-[#164E33]',
+    codeSnippet: `<FrameDropSection kind="navigation" variant="light" />`,
+  },
+  {
+    id: 'nav-pill',
+    name: 'Floating dock navigation',
+    category: 'Navigation',
+    description: 'A floating glass dock capsule with frosted backdrop blur, segmented links, and quick actions.',
+    wcagContrast: '4.9:1',
+    responsiveBreakpoints: ['All Breakpoints'],
+    slots: 5,
+    tier: 'pro',
+    previewGradient: 'from-[#0C3823]/80 to-[#141915]/90',
+    codeSnippet: `<FrameDropSection kind="navigation" align="center" variant="light" />`,
+  },
+
+  // Social Proof & Stats (6)
+  {
+    id: 'logos',
+    name: 'In good company',
+    category: 'Social Proof & Stats',
+    description: 'A quiet, responsive brand strip of partner and customer logo marks.',
+    wcagContrast: '6.5:1',
+    responsiveBreakpoints: ['All Breakpoints'],
+    slots: 4,
+    tier: 'free',
+    previewGradient: 'from-[#141915] to-[#1a1f1b]',
+    codeSnippet: `<FrameDropSection kind="logos" variant="light" />`,
+  },
+  {
+    id: 'quote',
+    name: 'Words that matter',
+    category: 'Social Proof & Stats',
+    description: 'A single customer story front and center with author verification and portrait image.',
+    wcagContrast: '6.0:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 2,
+    tier: 'free',
+    previewGradient: 'from-[#0C3823] to-[#103F29]',
+    codeSnippet: `<FrameDropSection kind="testimonial" variant="light" />`,
+  },
+  {
+    id: 'quote-executive',
+    name: 'Executive endorsement',
+    category: 'Social Proof & Stats',
+    description: 'A prominent high-profile endorsement emphasizing strategic impact, enterprise scale, and trust.',
+    wcagContrast: '7.2:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 2,
+    tier: 'pro',
+    previewGradient: 'from-[#0A0D0C] to-[#141915]',
+    codeSnippet: `<FrameDropSection kind="testimonial" variant="dark" />`,
+  },
+  {
+    id: 'stats',
+    name: 'By the numbers',
+    category: 'Social Proof & Stats',
+    description: 'Three concise proof points with large numeric values and descriptive labels.',
+    wcagContrast: '7.6:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 3,
+    tier: 'free',
+    previewGradient: 'from-[#141915] to-[#0A0D0C]',
+    codeSnippet: `<FrameDropSection kind="stats" variant="dark" />`,
+  },
+  {
+    id: 'stats-impact',
+    name: 'Key milestones',
+    category: 'Social Proof & Stats',
+    description: 'Three bold statistic cards celebrating measurable business milestones and pipeline generated.',
+    wcagContrast: '6.4:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 3,
+    tier: 'pro',
+    previewGradient: 'from-[#0C3823] to-[#082417]',
+    codeSnippet: `<FrameDropSection kind="stats" variant="light" />`,
+  },
+  {
+    id: 'stats-agency-glass',
+    name: 'Agency / Business Growth 03',
+    category: 'Social Proof & Stats',
+    description: 'Obsidian glass stats cards with rotating conic border glow, animated trend vectors, and measurable business proof.',
+    wcagContrast: '5.2:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 4,
+    tier: 'pro',
+    previewGradient: 'from-[#0A0D0C] to-[#121615]',
+    codeSnippet: `<FrameDropSection kind="stats" layout="agency-stats" variant="dark" />`,
+  },
+
+  // Features & Process (4)
+  {
+    id: 'features',
+    name: 'Three good reasons',
+    category: 'Features & Process',
+    description: 'Three core benefits with a consistent visual rhythm, clear typography, and subtle icons.',
+    wcagContrast: '6.5:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 3,
+    tier: 'free',
+    previewGradient: 'from-[#164E33] to-[#0C3823]',
+    codeSnippet: `<FrameDropSection kind="features" variant="light" />`,
+  },
+  {
+    id: 'features-steps',
+    name: 'Three-step process',
+    category: 'Features & Process',
+    description: 'A clear step-by-step methodology explaining how you deliver results from discovery to scale.',
+    wcagContrast: '6.1:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 3,
+    tier: 'free',
+    previewGradient: 'from-[#0C3823] to-[#103F29]',
+    codeSnippet: `<FrameDropSection kind="features" variant="light" />`,
+  },
+  {
+    id: 'features-cards',
+    name: 'Product capabilities',
+    category: 'Features & Process',
+    description: 'Structured card matrix highlighting core platform advantages with status badges and performance metrics.',
+    wcagContrast: '7.0:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 3,
+    tier: 'pro',
+    previewGradient: 'from-[#141915] to-[#1a1f1b]',
+    codeSnippet: `<FrameDropSection kind="features" variant="dark" />`,
+  },
+  {
+    id: 'features-agency-pipeline',
+    name: 'Agency / Process Pipeline 04',
+    category: 'Features & Process',
+    description: 'Interactive 4-stage agency execution pipeline with glowing laser connectors, animated milestone cards, and sprint checklists.',
+    wcagContrast: '5.5:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 4,
+    tier: 'free',
+    previewGradient: 'from-[#0C3823] to-[#141915]',
+    codeSnippet: `<FrameDropSection kind="features" layout="agency-pipeline" variant="light" />`,
+  },
+
+  // Services & Capabilities (3)
+  {
+    id: 'services-carousel',
+    name: 'Services Carousel / 01',
+    category: 'Services',
+    description: 'Interactive service cards carousel with watermark brand marks, right edge fade mask, and modern slide animation.',
+    wcagContrast: '5.8:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 4,
+    tier: 'free',
+    previewGradient: 'from-[#F4EFE6] to-[#E5E0D8]',
+    codeSnippet: `<FrameDropSection kind="services" variant="light" />`,
+  },
+  {
+    id: 'services-carousel-dark',
+    name: 'Services Carousel / 02',
+    category: 'Services',
+    description: 'Obsidian dark glass service cards carousel with luminous outline brand marks and modern hover motion.',
+    wcagContrast: '7.3:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 4,
+    tier: 'pro',
+    previewGradient: 'from-[#0A0D0C] to-[#141915]',
+    codeSnippet: `<FrameDropSection kind="services" variant="dark" />`,
+  },
+  {
+    id: 'services-agency-glass',
+    name: 'Agency / Services Matrix 03',
+    category: 'Services',
+    description: 'Interactive agency service cards with multi-stop glass reflection, floating service indices, animated hover reveal, and deliverables tags.',
+    wcagContrast: '6.2:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 4,
+    tier: 'free',
+    previewGradient: 'from-[#0C3823] to-[#082417]',
+    codeSnippet: `<FrameDropSection kind="services" layout="agency-matrix" variant="light" />`,
+  },
+
+  // Bento Grids (3)
+  {
+    id: 'bento',
+    name: 'The bigger picture',
+    category: 'Bento Grids',
+    description: 'An asymmetric feature grid with a visual anchor, photography spotlight, and cohesive detail cards.',
+    wcagContrast: '5.9:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 4,
+    tier: 'free',
+    previewGradient: 'from-[#141915] to-[#1c221d]',
+    codeSnippet: `<FrameDropSection kind="bento" variant="light" />`,
+  },
+  {
+    id: 'bento-creative',
+    name: 'Visual bento grid',
+    category: 'Bento Grids',
+    description: 'An asymmetric bento layout featuring a primary visual spotlight and secondary detail cards with micro-motion.',
+    wcagContrast: '6.3:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 4,
+    tier: 'pro',
+    previewGradient: 'from-[#164E33] to-[#0C3823]',
+    codeSnippet: `<FrameDropSection kind="bento" variant="light" />`,
+  },
+  {
+    id: 'bento-agency-glass',
+    name: 'Agency / Glass Bento 03',
+    category: 'Bento Grids',
+    description: 'Asymmetric dark glass bento matrix with interactive hover depth, animated border beams, live performance radars, and conversion telemetry.',
+    wcagContrast: '5.0:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 4,
+    tier: 'pro',
+    previewGradient: 'from-[#0A0D0C] to-[#141915]',
+    codeSnippet: `<FrameDropSection kind="bento" layout="agency-bento" variant="dark" />`,
+  },
+
+  // Portfolio & Work (2)
+  {
+    id: 'work',
+    name: 'Selected work',
+    category: 'Portfolio & Work',
+    description: 'A two-column project showcase with high-res imagery, typography tags, and case study links.',
+    wcagContrast: '6.7:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 3,
+    tier: 'free',
+    previewGradient: 'from-[#0C3823] to-[#103F29]',
+    codeSnippet: `<FrameDropSection kind="work" variant="light" />`,
+  },
+  {
+    id: 'work-showcase',
+    name: 'Featured projects / 02',
+    category: 'Portfolio & Work',
+    description: 'A two-column editorial portfolio layout with high-impact project visuals and dark mode elegance.',
+    wcagContrast: '7.1:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 3,
+    tier: 'pro',
+    previewGradient: 'from-[#141915] to-[#0A0D0C]',
+    codeSnippet: `<FrameDropSection kind="work" variant="dark" />`,
+  },
+
+  // Pricing Plans (2)
+  {
+    id: 'pricing',
+    name: 'Room to grow',
+    category: 'Pricing',
+    description: 'Three clear plans with one highlighted option, feature lists, and straightforward billing tiers.',
+    wcagContrast: '6.0:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 3,
+    tier: 'free',
+    previewGradient: 'from-[#0C3823] to-[#082417]',
+    codeSnippet: `<FrameDropSection kind="pricing" variant="light" />`,
+  },
+  {
+    id: 'pricing-compare',
+    name: 'Startup & Scale plans',
+    category: 'Pricing',
+    description: 'Three tailored tiers with featured growth tier for SaaS and digital creators, badge flags, and SLA guarantees.',
+    wcagContrast: '7.2:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 3,
+    tier: 'pro',
+    previewGradient: 'from-[#0A0D0C] to-[#164E33]',
+    codeSnippet: `<FrameDropSection kind="pricing" variant="dark" />`,
+  },
+
+  // FAQs (2)
+  {
+    id: 'faq',
+    name: 'Before you ask',
+    category: 'FAQs & Support',
+    description: 'A clean, accessible accordion for answering initial onboarding and client questions.',
+    wcagContrast: '8.0:1',
     responsiveBreakpoints: ['All Breakpoints'],
     slots: 3,
-    previewGradient: 'from-[#0C3823]/80 to-[#141915]/90',
-    codeSnippet: `<GlassNavbar style="capsule" blur={28} sheenAnimation={true} />`,
+    tier: 'free',
+    previewGradient: 'from-[#141915] to-[#1a1f1b]',
+    codeSnippet: `<FrameDropSection kind="faq" variant="light" />`,
   },
   {
-    id: 'nav-02',
-    name: 'Enterprise Sticky Split Header',
-    category: 'Floating Navbars',
-    description: 'Header with mega-menu dropdown support, multi-currency switcher, and notification beacon.',
-    wcagContrast: '5.5:1',
-    responsiveBreakpoints: ['Desktop', 'Tablet', 'Mobile'],
-    slots: 4,
-    previewGradient: 'from-[#141915] to-[#0A0D0C]',
-    codeSnippet: `<EnterpriseHeader sticky={true} megaMenu={true} />`,
-  },
-  {
-    id: 'nav-03',
-    name: 'Minimal Clean Brand Header',
-    category: 'Floating Navbars',
-    description: 'Zero-clutter brand bar with inline contact CTA and hamburger menu for mobile devices.',
-    wcagContrast: '8.0:1',
-    responsiveBreakpoints: ['Desktop', 'Tablet', 'Mobile'],
-    slots: 2,
-    previewGradient: 'from-[#164E33] to-[#141915]',
-    codeSnippet: `<BrandHeader contactLink="/contact" />`,
-  },
-
-  // Bento Grids
-  {
-    id: 'bento-01',
-    name: 'Obsidian 6-Pack Architecture Bento',
-    category: 'Bento Grids',
-    description: 'Calibrated asymmetric grid featuring dark glass surfaces, neon accents, and interactive feature cards.',
-    wcagContrast: '5.1:1',
-    responsiveBreakpoints: ['Desktop', 'Tablet', 'Mobile'],
-    slots: 6,
-    previewGradient: 'from-[#0A0D0C] to-[#141915]',
-    codeSnippet: `<BentoGrid columns={12} theme="obsidian" pillars={6} />`,
-  },
-  {
-    id: 'bento-02',
-    name: 'Interactive Chart & Metric Bento',
-    category: 'Bento Grids',
-    description: 'Feature bento with live animated counters, simulated sparkline charts, and user retention indicators.',
-    wcagContrast: '4.7:1',
-    responsiveBreakpoints: ['Desktop', 'Tablet', 'Mobile'],
-    slots: 4,
-    previewGradient: 'from-[#0C3823] to-[#103F29]',
-    codeSnippet: `<MetricsBento chartType="sparkline" animateOnScroll={true} />`,
-  },
-  {
-    id: 'bento-03',
-    name: 'Crystal Light Agency Bento',
-    category: 'Bento Grids',
-    description: 'Warm cream aesthetic with subtle shadows, notched card corners, and high-contrast typography.',
-    wcagContrast: '6.8:1',
-    responsiveBreakpoints: ['Desktop', 'Tablet', 'Mobile'],
-    slots: 5,
-    previewGradient: 'from-[#F4EFE6] to-[#E5E0D8]',
-    codeSnippet: `<AgencyBento theme="crystal" notchedCorners={true} />`,
-  },
-
-  // Social Proof & Stats
-  {
-    id: 'proof-01',
-    name: 'Animated Milestone Counter Bar',
-    category: 'Social Proof & Stats',
-    description: 'Fast-loading stats row with dynamic numeric count-up and localized currency formatting.',
+    id: 'faq-extended',
+    name: 'Answers & clarity',
+    category: 'FAQs & Support',
+    description: 'Organized FAQ accordion addressing licensing, customization, responsive design, and custom code support.',
     wcagContrast: '7.5:1',
     responsiveBreakpoints: ['All Breakpoints'],
-    slots: 4,
-    previewGradient: 'from-[#0C3823] to-[#082417]',
-    codeSnippet: `<StatsCounter counters={[{ label: "Projects", value: 150 }]} />`,
-  },
-  {
-    id: 'proof-02',
-    name: 'Infinite Seamless Logo Cloud',
-    category: 'Social Proof & Stats',
-    description: 'Smooth CSS hardware-accelerated marquee supporting SVG client logos with subtle monochrome tint.',
-    wcagContrast: '4.6:1',
-    responsiveBreakpoints: ['Desktop', 'Tablet', 'Mobile'],
-    slots: 8,
-    previewGradient: 'from-[#141915] to-[#1a1f1b]',
-    codeSnippet: `<LogoCloud speed={30} pauseOnHover={true} />`,
-  },
-  {
-    id: 'proof-03',
-    name: 'Masonry Testimonial Wall of Love',
-    category: 'Social Proof & Stats',
-    description: 'Verified customer cards with avatar badges, star ratings, and company logo watermarks.',
-    wcagContrast: '5.9:1',
-    responsiveBreakpoints: ['Desktop', 'Tablet', 'Mobile'],
-    slots: 6,
-    previewGradient: 'from-[#0A0D0C] to-[#121615]',
-    codeSnippet: `<TestimonialWall masonry={true} verifiedBadges={true} />`,
+    slots: 3,
+    tier: 'pro',
+    previewGradient: 'from-[#0C3823] to-[#103F29]',
+    codeSnippet: `<FrameDropSection kind="faq" variant="dark" />`,
   },
 
-  // Pricing Matrices
+  // Calls to Action & Footers (4)
   {
-    id: 'price-01',
-    name: '3-Tier SaaS Pricing Matrix with Annual Toggle',
-    category: 'Pricing Matrices',
-    description: 'Clear pricing tiers with discount badge, feature checklist, recommended highlight, and Stripe checkout hooks.',
-    wcagContrast: '5.3:1',
-    responsiveBreakpoints: ['Desktop', 'Tablet', 'Mobile'],
-    slots: 3,
-    previewGradient: 'from-[#0C3823] to-[#082417]',
-    codeSnippet: `<PricingMatrix annualDiscount={20} recommendedTier="Pro" />`,
-  },
-  {
-    id: 'price-02',
-    name: 'Enterprise Feature Comparison Grid',
-    category: 'Pricing Matrices',
-    description: 'Comprehensive column comparison with sticky header, check/cross icons, and custom tier tooltips.',
-    wcagContrast: '6.2:1',
-    responsiveBreakpoints: ['Desktop', 'Tablet', 'Mobile'],
-    slots: 4,
-    previewGradient: 'from-[#141915] to-[#0A0D0C]',
-    codeSnippet: `<ComparisonTable stickyHeader={true} tooltips={true} />`,
-  },
-  {
-    id: 'price-03',
-    name: 'Single Product Lifetime Deal Card',
-    category: 'Pricing Matrices',
-    description: 'High-converting single card with countdown timer, early bird counter, and instant purchase button.',
-    wcagContrast: '5.0:1',
+    id: 'cta',
+    name: 'The next chapter',
+    category: 'CTAs & Footer',
+    description: 'A focused closing invitation with direct email and contact links.',
+    wcagContrast: '7.4:1',
     responsiveBreakpoints: ['All Breakpoints'],
     slots: 2,
+    tier: 'free',
     previewGradient: 'from-[#164E33] to-[#0C3823]',
-    codeSnippet: `<LifetimeDealCard price="$149" seatsRemaining={12} />`,
+    codeSnippet: `<FrameDropSection kind="cta" variant="dark" />`,
   },
-
-  // FAQs & Support
   {
-    id: 'faq-01',
-    name: 'Accordion FAQ with Category Filters',
-    category: 'FAQs & Support',
-    description: 'Accessible disclosure widgets with smooth height animations, search filtering, and schema.org FAQ markup.',
-    wcagContrast: '7.8:1',
+    id: 'cta-impact',
+    name: 'High-conversion banner',
+    category: 'CTAs & Footer',
+    description: 'A dark closing banner with radial glow, dual buttons, and instant setup guarantees.',
+    wcagContrast: '7.6:1',
     responsiveBreakpoints: ['All Breakpoints'],
-    slots: 6,
-    previewGradient: 'from-[#141915] to-[#1a1f1b]',
-    codeSnippet: `<AccordionFAQ schemaOrg={true} searchEnabled={true} />`,
+    slots: 3,
+    tier: 'pro',
+    previewGradient: 'from-[#0A0D0C] to-[#082417]',
+    codeSnippet: `<FrameDropSection kind="cta" variant="dark" />`,
   },
   {
-    id: 'faq-02',
-    name: 'Two-Column Editorial FAQ Layout',
-    category: 'FAQs & Support',
-    description: 'Side-by-side questions and answers with direct contact trigger and live chat support integration.',
-    wcagContrast: '6.5:1',
-    responsiveBreakpoints: ['Desktop', 'Tablet', 'Mobile'],
-    slots: 6,
-    previewGradient: 'from-[#0C3823] to-[#103F29]',
-    codeSnippet: `<EditorialFAQ layout="2-column" contactCta={true} />`,
+    id: 'resources',
+    name: 'Notes & perspectives',
+    category: 'CTAs & Footer',
+    description: 'Three editorial stories with photography; includes a native Framer CMS blueprint.',
+    wcagContrast: '6.4:1',
+    responsiveBreakpoints: ['375px', '768px', '1200px', '1440px'],
+    slots: 3,
+    tier: 'free',
+    previewGradient: 'from-[#141915] to-[#164E33]',
+    codeSnippet: `<FrameDropSection kind="resources" variant="light" />`,
+  },
+  {
+    id: 'footer',
+    name: 'A considered ending',
+    category: 'CTAs & Footer',
+    description: 'Brand details, copyright metadata, and essential navigational links.',
+    wcagContrast: '8.2:1',
+    responsiveBreakpoints: ['All Breakpoints'],
+    slots: 4,
+    tier: 'free',
+    previewGradient: 'from-[#0C3823] to-[#082417]',
+    codeSnippet: `<FrameDropSection kind="footer" variant="light" />`,
   },
 ];
 
 const categories = [
   'All Sections',
   'Heroes',
-  'Floating Navbars',
+  'Navigation',
   'Bento Grids',
+  'Features & Process',
+  'Services',
   'Social Proof & Stats',
-  'Pricing Matrices',
+  'Portfolio & Work',
+  'Pricing',
   'FAQs & Support',
+  'CTAs & Footer',
 ] as const;
 
 export function FrameDropCatalogExplorer() {
@@ -259,7 +482,8 @@ export function FrameDropCatalogExplorer() {
     const matchesSearch =
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase());
+      item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.id.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -283,13 +507,13 @@ export function FrameDropCatalogExplorer() {
           <div className="max-w-3xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-[#0C3823]/15 bg-white/70 px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest text-[#0C3823] mb-4 shadow-2xs backdrop-blur-md">
               <span className="h-2 w-2 rounded-full bg-[#CCFF00] animate-pulse" />
-              25+ PRODUCTION PRESETS
+              34+ PRODUCTION PRESETS
             </span>
             <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-tight text-[#141915] leading-[1.05]">
               Interactive Component Catalog
             </h2>
             <p className="mt-4 text-base sm:text-lg text-[#555C54] leading-relaxed">
-              Explore production-ready Framer sections across all core page archetypes. Each component features responsive container queries, dark/light token duality, and automated WCAG AA compliance.
+              Explore 34 production-ready Framer sections across all core page archetypes. Each component features responsive container queries, dark/light token duality, and automated WCAG AA compliance.
             </p>
           </div>
 
@@ -298,7 +522,7 @@ export function FrameDropCatalogExplorer() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#666C64]" />
             <input
               type="text"
-              placeholder="Search 25+ sections..."
+              placeholder="Search 34+ sections..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 rounded-full bg-white border border-[#141915]/15 text-sm text-[#141915] placeholder:text-[#666C64] focus:border-[#0C3823] transition-colors shadow-2xs"
@@ -337,12 +561,24 @@ export function FrameDropCatalogExplorer() {
                 className="group relative flex flex-col justify-between overflow-hidden rounded-[28px] border border-[#141915]/10 bg-white p-6 sm:p-7 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
               >
                 <div>
-                  {/* Top Bar with Category & Contrast Score */}
+                  {/* Top Bar with Category, Plan Tier & Contrast Score */}
                   <div className="flex items-center justify-between gap-2 mb-4">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#0C3823] bg-[#0C3823]/10 px-2.5 py-1 rounded-full">
-                      {item.category}
-                    </span>
-                    <span className="flex items-center gap-1 text-[11px] font-mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#0C3823] bg-[#0C3823]/10 px-2.5 py-1 rounded-full">
+                        {item.category}
+                      </span>
+                      <span
+                        className={cn(
+                          'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border',
+                          item.tier === 'pro'
+                            ? 'bg-amber-100 text-amber-900 border-amber-300'
+                            : 'bg-neutral-100 text-neutral-700 border-neutral-300'
+                        )}
+                      >
+                        {item.tier === 'pro' ? 'Early Bird Pro' : 'Free'}
+                      </span>
+                    </div>
+                    <span className="flex items-center gap-1 text-[11px] font-mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
                       <ShieldCheck className="w-3 h-3 text-emerald-600" />
                       WCAG {item.wcagContrast}
                     </span>

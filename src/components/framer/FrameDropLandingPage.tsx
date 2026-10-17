@@ -25,39 +25,39 @@ export function FrameDropLandingPage() {
 
   const featuredSections = [
     {
-      name: 'Liquid Glass Split Media Hero',
+      name: 'Spatial Liquid Glass Agency Hero',
       category: 'Heroes',
-      desc: 'Backdrop-blur cards with dual CTAs, trust metric bar, and interactive 3D container.',
+      desc: 'Spatial liquid glass agency hero with commission status pulse, rotating aura glow, floating metric cards, and dual conversion CTAs.',
       gradientKey: 'hero',
     },
     {
-      name: 'Refractive Glass Capsule Navbar',
-      category: 'Floating Navbars',
-      desc: 'Floating pill navigation with real-time blur saturation and responsive drawer.',
+      name: 'Floating Glass Dock Navigation',
+      category: 'Navigation',
+      desc: 'Floating pill navigation with real-time blur saturation, segmented routes, and responsive mobile drawer.',
       gradientKey: 'navbar',
     },
     {
-      name: 'Obsidian 6-Pack Architecture Bento',
+      name: 'Agency Dark Glass Bento Matrix',
       category: 'Bento Grids',
-      desc: 'Calibrated asymmetric grid featuring dark glass surfaces and neon accents.',
+      desc: 'Asymmetric dark glass bento matrix with interactive hover depth, animated border beams, and conversion telemetry.',
       gradientKey: 'bento',
     },
     {
-      name: 'Masonry Testimonial Wall of Love',
-      category: 'Social Proof',
-      desc: 'Verified customer cards with avatar badges, star ratings, and company logo marks.',
+      name: 'Obsidian Business Growth Stats',
+      category: 'Social Proof & Stats',
+      desc: 'Obsidian glass metrics cards with rotating conic border glow, animated trend vectors, and measurable business proof.',
       gradientKey: 'social',
     },
     {
-      name: '3-Tier SaaS Pricing Matrix',
+      name: 'Startup & Scale Pricing Matrix',
       category: 'Pricing',
-      desc: 'Clear tiers with annual discount switch, feature checklists, and checkout hooks.',
+      desc: 'Three tailored tiers with featured scale plan, annual discount switch, feature checklists, and checkout hooks.',
       gradientKey: 'pricing',
     },
     {
-      name: 'Accordion FAQ with Category Filters',
+      name: 'Accessible Accordion FAQ',
       category: 'FAQs & Support',
-      desc: 'Accessible disclosure widgets with smooth height animations and Schema.org markup.',
+      desc: 'Accessible disclosure widgets with smooth height animations, category sorting, and semantic markup.',
       gradientKey: 'faq',
     },
   ];
@@ -66,12 +66,12 @@ export function FrameDropLandingPage() {
     {
       question: 'Is Frame Drop free to get started?',
       answer:
-        'Yes! Frame Drop is available directly inside the Framer Plugin Marketplace. You can start free with our essential core components or upgrade to Frame Drop Pro for unlimited access to all 25+ production-ready sections, Studio Composer, and advanced design tokens.',
+        'Yes! Frame Drop is available directly inside the Framer Plugin Marketplace. You can start free with our essential core components or claim Frame Drop Pro for unlimited access to all 34+ production-ready sections, Studio Composer, and advanced design tokens.',
     },
     {
-      question: 'How does atomic canvas safety prevent code overwrites?',
+      question: 'How does non-destructive canvas safety prevent code overwrites?',
       answer:
-        'Frame Drop computes a SHA256 checksum diff tree before every insertion. It verifies existing component IDs in your Framer project, ensuring that existing custom code overrides and components are completely quarantined from accidental overwrites. If any operation is interrupted, an atomic rollback restores your canvas instantly.',
+        'Frame Drop uses a non-destructive canvas architecture. It inspects existing component files in your Framer project, isolates code exports into safe namespaces, and inserts sections without modifying your existing canvas nodes. If any insertion is interrupted or fails compilation, an automated transactional rollback immediately cleans up generated nodes, preserving your project state.',
     },
     {
       question: 'Can I customize brand colors and fonts?',
@@ -126,7 +126,7 @@ export function FrameDropLandingPage() {
               href="/framer/frame-drop/docs#catalog"
               className="fd-presets-link-btn"
             >
-              <span>Explore All 25+ Sections in Docs</span>
+              <span>Explore All 34+ Sections in Docs</span>
               <ArrowUpRight className="fd-icon-sm" />
             </Link>
           </div>
@@ -312,7 +312,7 @@ export function FrameDropLandingPage() {
               </span>
               <span className="fd-trust-item">
                 <Sparkles className="fd-icon-sm" />
-                <span>25+ Curated Sections</span>
+                <span>34+ Curated Sections</span>
               </span>
             </div>
           </div>

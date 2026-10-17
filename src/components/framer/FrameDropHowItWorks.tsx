@@ -30,18 +30,18 @@ export function FrameDropHowItWorks() {
       title: 'Browse & Compose',
       tag: 'Pick Your Stack',
       description:
-        'Explore curated categories tailored for SaaS, Studios, Portfolios, and Ecommerce, or assemble a complete page flow in the Studio Composer.',
+        'Explore 34+ production sections across 10 categories, choose from 7 full-page recipes (Studio, SaaS, Portfolio, Service, Agency Flagship), or assemble a custom multi-slot flow in the Studio Composer.',
       icon: Compass,
-      highlights: ['25+ Production Presets', 'SaaS, Portfolio & Ecommerce', 'Drag & Reorder Multi-slots'],
+      highlights: ['34+ Production Sections', '7 Full-Page Recipes', 'Up to 30 Studio Slots'],
     },
     {
       num: '02',
       title: 'Tune Your Brand & Preflight',
       tag: 'Customize & Audit',
       description:
-        'Adjust typography, brand colors, and layout spacing. Run the automated preflight audit to guarantee compliance and mobile responsiveness.',
+        'Adjust typography, brand colors, radius, and spacing. Run the automated preflight audit to guarantee contrast compliance, heading semantics, and mobile responsiveness.',
       icon: SlidersHorizontal,
-      highlights: ['Dynamic Palette Propagation', '6 Curated Modern Fonts', 'Real-time WCAG AA Audit'],
+      highlights: ['Dynamic Token Sync', '13 Curated Typography Styles', 'Real-time WCAG AA Audit'],
     },
     {
       num: '03',
@@ -50,7 +50,7 @@ export function FrameDropHowItWorks() {
       description:
         'Click "Add to Canvas" and watch your production-ready section insert with full Framer property controls, ready to publish immediately.',
       icon: ArrowDownToLine,
-      highlights: ['Instant Native Insertion', 'Full Property Controls in Framer', 'Zero Code Overwrite Risk'],
+      highlights: ['Native Framer Code Insertion', 'Auto-Breakpoints (375px to 1440px)', 'Non-Destructive Rollback Safe'],
     },
   ];
 

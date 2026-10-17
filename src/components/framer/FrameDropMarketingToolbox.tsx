@@ -41,7 +41,7 @@ We’ve officially launched Frame Drop-our native Framer component suite and pag
 Frame Drop eliminates layout friction by letting you browse, customize, and drop production-grade sections directly onto your Framer canvas with complete responsive layout support and zero code lock-in.
 
 Key Highlights:
-✨ 25+ Production-ready sections (Heroes, Bento Grids, Pricing & Social Proof)
+✨ 34+ Production-ready sections (Heroes, Bento Grids, Pricing & Social Proof)
 🎨 Liquid Glassmorphism design tokens (Dark & Light duality)
 🛡️ Built-in WCAG AA accessibility audit engine
 ⚡ Page Studio Composer for assembling full layouts before dropping
