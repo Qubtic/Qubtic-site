@@ -28,10 +28,17 @@ const serviceLinks = [
   { name: 'SaaS Engineering', href: '/services/saas-development' },
   { name: 'Shopify Apps & Stores', href: '/services/shopify-apps' },
   { name: 'Framer Sites & Plugins', href: '/services/framer-development' },
-  { name: 'Qube Auth (Framer Suite)', href: '/framer/qube-auth' },
-  { name: 'Frame Drop (Framer Plugin)', href: '/framer/frame-drop' },
-  { name: 'Feature Requests', href: '/feature-request' },
   { name: 'Dedicated Retainers', href: '/pricing' },
+];
+
+const productLinks = [
+  { name: 'Frame Drop (Plugin)', href: '/framer/frame-drop' },
+  { name: 'Frame Drop Docs', href: '/framer/frame-drop/docs' },
+  { name: 'Product Roadmap', href: '/framer/frame-drop/roadmap' },
+  { name: 'Version Control & Safety', href: '/framer/frame-drop/version-control' },
+  { name: 'Qube Auth (Framer Suite)', href: '/framer/qube-auth' },
+  { name: 'Qube Auth Docs', href: '/framer/qube-auth/docs' },
+  { name: 'Feature Requests', href: '/feature-request' },
 ];
 
 const socialLinks = [
@@ -94,7 +101,7 @@ export function Footer() {
           </div>
 
           {/* Nav Columns */}
-          <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-8">
+          <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-8">
             
             {/* MENU Column */}
             <div className="flex flex-col gap-4">
@@ -122,6 +129,25 @@ export function Footer() {
               </h4>
               <ul className="flex flex-col gap-2.5 text-sm text-white/80">
                 {serviceLinks.map((link) => (
+                  <li key={link.name}>
+                    <Link 
+                      href={link.href} 
+                      className="hover:text-white hover:translate-x-1 inline-flex items-center gap-1.5 transition-all duration-200"
+                    >
+                      <span>{link.name}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* PRODUCTS Column */}
+            <div className="flex flex-col gap-4">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-[#CCFF00] font-mono">
+                PRODUCTS
+              </h4>
+              <ul className="flex flex-col gap-2.5 text-sm text-white/80">
+                {productLinks.map((link) => (
                   <li key={link.name}>
                     <Link 
                       href={link.href} 
@@ -167,7 +193,7 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="border-t border-white/15 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/70">
-          <p>&copy; {currentYear} QUIBTIC. All Rights Reserved.</p>
+          <p>&copy; {currentYear} QUBTIC. All Rights Reserved.</p>
           <div className="flex flex-wrap items-center gap-3.5">
             <Link href="/terms" className="hover:text-[#CCFF00] transition-colors">
               Terms of Service
