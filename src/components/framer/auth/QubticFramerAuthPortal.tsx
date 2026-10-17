@@ -472,11 +472,12 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
           const data = await res.json();
           if (!res.ok || !data.success) {
             if (data.alreadyExists) {
-              setErrorMessage(data.message || 'An account with this email already exists. Switched to Sign In.');
+              setErrorMessage('');
               setActiveTab('signin');
               setSignupOtpSent(false);
               setStatusMessage('An account with this email already exists. Please enter your password to sign in.');
             } else {
+              setStatusMessage('');
               setErrorMessage(data.message || 'Failed to dispatch verification code.');
             }
             setIsLoading(false);
@@ -686,15 +687,16 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
 
       if (!res.ok || !data.success) {
         if (data.requiresSignup) {
-          setErrorMessage(data.message || 'No account found with this email. Please sign up first.');
+          setErrorMessage('');
           setActiveTab('signup');
           setSignupOtpSent(false);
           setStatusMessage('No account found for this email. Switched to Sign Up so you can create your account.');
         } else if (data.requiresSignin) {
-          setErrorMessage(data.message || 'An account with this email already exists. Please sign in.');
+          setErrorMessage('');
           setActiveTab('signin');
           setStatusMessage('An account with this email already exists. Please enter your password to sign in.');
         } else {
+          setStatusMessage('');
           setErrorMessage(data.message || data.error || 'Authentication failed. Please try again.');
         }
         setIsLoading(false);
@@ -841,7 +843,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
               )}
 
               {/* Error Banner */}
-              {errorMessage && (
+              {errorMessage && !statusMessage && (
                 <div className="qubtic-auth-error">
                   <AlertCircle className="qubtic-auth-error-icon" />
                   <span>{errorMessage}</span>
