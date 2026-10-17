@@ -42,7 +42,11 @@ export function getMailTransporter() {
   const port = parseInt(process.env.SMTP_PORT || '587', 10);
   const secure = process.env.SMTP_SECURE === 'true' || port === 465;
   const user = process.env.SMTP_USER || 'hello@qubtic.tech';
-  const rawPass = process.env.SMTP_PASS || '9iEggBuT#Xq-Ca*';
+  const envPass = process.env.SMTP_PASS?.trim();
+  const rawPass =
+    envPass && !envPass.startsWith('680842d7860d24c147412b9f0128d431')
+      ? envPass
+      : '9iEggBuT#Xq-Ca*';
   const pass = rawPass.replace(/^"|"$/g, '');
 
   return nodemailer.createTransport({
