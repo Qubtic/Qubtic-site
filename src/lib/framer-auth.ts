@@ -728,7 +728,8 @@ export async function initiatePairingSession(params?: {
   if (lockedUrl === 'https://qubtic.tech' || lockedUrl === 'http://qubtic.tech') {
     lockedUrl = 'https://www.qubtic.tech';
   }
-  const verificationUri = `${lockedUrl}/auth/framedrop`;
+  const authSlug = pluginSlug === 'frame-drop' || pluginSlug === 'framedrop' ? 'frame-drop' : pluginSlug;
+  const verificationUri = `${lockedUrl}/auth/${authSlug}`;
   const verificationUriComplete = `${verificationUri}?code=${userCode}`;
 
   return {

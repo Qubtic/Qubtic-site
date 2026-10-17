@@ -8,6 +8,11 @@
    THEME VARIABLES
    -------------------------------------------------------------------------- */
 
+:root {
+  --font-body: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-sora), 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
 /* Default Dark Mode (Dark Obsidian & Neon Lime / Emerald) */
 :root,
 .qubtic-auth-page[data-theme="dark"],
@@ -324,7 +329,6 @@
   width: 50px;
   height: 50px;
   border-radius: 14px;
-  background-color: var(--qubtic-auth-logo-bg);
   border: 1px solid var(--qubtic-auth-logo-border);
   display: flex;
   align-items: center;
@@ -405,7 +409,8 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: inherit;
+  font-family: var(--font-heading), sans-serif;
+  letter-spacing: -0.01em;
 }
 
 .qubtic-auth-tab:hover {
@@ -416,6 +421,142 @@
   background: var(--qubtic-auth-tab-active-bg);
   color: var(--qubtic-auth-tab-active-text);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.qubtic-auth-tabs.qubtic-auth-tabs-duo {
+  grid-template-columns: repeat(2, 1fr);
+  display: grid;
+}
+
+/* Status banner */
+.qubtic-auth-status-banner {
+  padding: 0.75rem 0.85rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(166, 255, 0, 0.4);
+  background: rgba(166, 255, 0, 0.08);
+  color: var(--qubtic-auth-accent);
+  border-radius: 12px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.qubtic-auth-tab-description {
+  font-size: 0.75rem;
+  color: var(--qubtic-auth-text-muted);
+  margin: 0 0 0.5rem 0;
+  line-height: 1.5;
+}
+
+.qubtic-auth-input.qubtic-auth-input-code {
+  letter-spacing: 4px;
+  font-family: monospace;
+  font-weight: bold;
+}
+
+.qubtic-auth-action-row-end {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+
+/* Team Workspaces */
+.qubtic-auth-team-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.qubtic-auth-team-item {
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--qubtic-auth-box-border);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+}
+
+.qubtic-auth-team-item:hover {
+  background: var(--qubtic-auth-box-bg);
+}
+
+.qubtic-auth-team-item.selected {
+  border-color: var(--qubtic-auth-border-focus);
+  background: var(--qubtic-auth-box-bg);
+}
+
+.qubtic-auth-team-item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.qubtic-auth-team-icon {
+  color: var(--qubtic-auth-text-muted);
+}
+
+.qubtic-auth-team-item.selected .qubtic-auth-team-icon {
+  color: var(--qubtic-auth-accent);
+}
+
+.qubtic-auth-team-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.qubtic-auth-team-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--qubtic-auth-text-main);
+  font-family: var(--font-heading);
+}
+
+.qubtic-auth-team-tier {
+  font-size: 0.7rem;
+  color: var(--qubtic-auth-text-muted);
+}
+
+.qubtic-auth-team-check {
+  color: var(--qubtic-auth-accent);
+}
+
+.qubtic-auth-team-custom-input {
+  margin-top: 0.35rem;
+}
+
+/* Status Connected & Countdown */
+.qubtic-auth-status-connected {
+  color: #A6FF00;
+  font-weight: 600;
+}
+
+.qubtic-auth-countdown-val {
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+  min-width: 1.5ch;
+  font-weight: 700;
+}
+
+/* Pulsating Close Tab Button */
+.qubtic-auth-close-pulse-btn {
+  animation: qubticPulseGlow 1.5s infinite alternate ease-in-out;
+  background-color: var(--qubtic-auth-accent);
+  color: var(--qubtic-auth-accent-text);
+  font-weight: 700;
+}
+
+@keyframes qubticPulseGlow {
+  0% {
+    box-shadow: 0 0 10px rgba(166, 255, 0, 0.4);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 24px rgba(166, 255, 0, 0.85);
+    transform: scale(1.02);
+  }
 }
 
 /* Error Banner */
@@ -569,7 +710,8 @@
   border: none;
   border-radius: 12px;
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -577,7 +719,8 @@
   cursor: pointer;
   transition: transform 0.15s ease, filter 0.2s ease, background-color 0.2s ease;
   box-shadow: var(--qubtic-auth-accent-shadow);
-  font-family: inherit;
+  font-family: var(--font-heading), sans-serif;
+  letter-spacing: -0.01em;
 }
 
 .qubtic-auth-submit-btn:hover:not(:disabled) {

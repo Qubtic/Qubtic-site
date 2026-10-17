@@ -67,6 +67,26 @@ export async function POST(request: Request) {
     const normalizedEmail = email.toLowerCase().trim();
     const existingUser = await findFramerUser(normalizedEmail, pluginMeta.slug);
 
+    // Hard Requirement: If user does not have an account beforehand, they must sign up first; sign-in is strictly not allowed
+    if (mode === 'signin' && !existingUser) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'No account found with this email. Please sign up first.',
+          message: 'No account found with this email. Please sign up first before signing in.',
+          requiresSignup: true,
+        },
+        {
+          status: 404,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-framer-token',
+          },
+        }
+      );
+    }
+
     // On sign-in: verify password against stored metadata.password_hash if it exists
     if (existingUser?.metadata && typeof existingUser.metadata.password_hash === 'string') {
       const storedHash = existingUser.metadata.password_hash;
@@ -127,7 +147,7 @@ export async function POST(request: Request) {
     const rawPairingCode = body.pairing_code || body.pairingCode || body.user_code || body.userCode || body.code;
     if (rawPairingCode && typeof rawPairingCode === 'string' && rawPairingCode.trim().length > 0) {
       try {
-        await confirmPairingSession(rawPairingCode.trim(), user);
+        await confirmPairingSession(rawPairingCode.trim().toUpperCase(), user);
       } catch (confirmErr) {
         console.warn('Auto-confirm pairing error in session route:', confirmErr);
       }

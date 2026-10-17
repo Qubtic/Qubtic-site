@@ -306,8 +306,12 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
             redirectUrl.searchParams.set('token', successData.token);
             redirectUrl.searchParams.set('email', successData.user.email);
             window.location.href = redirectUrl.toString();
-          } else if (typeof window !== 'undefined' && window.opener && window.opener !== window) {
-            window.close();
+          } else if (typeof window !== 'undefined') {
+            try {
+              window.close();
+            } catch (e) {
+              console.warn('Auto window.close error:', e);
+            }
           }
           return 0;
         }
@@ -515,7 +519,13 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        setErrorMessage(data.message || 'Authentication failed. Please try again.');
+        if (data.requiresSignup) {
+          setErrorMessage(data.message || 'No account found with this email. Please sign up first.');
+          setActiveTab('signup');
+          setStatusMessage('No account found for this email. Switched to Sign Up so you can create your account.');
+        } else {
+          setErrorMessage(data.message || data.error || 'Authentication failed. Please try again.');
+        }
         setIsLoading(false);
         return;
       }
@@ -537,7 +547,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
               Authorization: `Bearer ${data.token}`,
             },
             body: JSON.stringify({
-              user_code: pairingCode.trim(),
+              user_code: pairingCode.trim().toUpperCase(),
             }),
           });
           const pairData = await pairRes.json();
@@ -631,13 +641,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
               )}
 
               {/* Switcher Tabs */}
-              <div
-                className="qubtic-auth-tabs"
-                style={{
-                  gridTemplateColumns: 'repeat(2, 1fr)',
-                  display: 'grid',
-                }}
-              >
+              <div className="qubtic-auth-tabs qubtic-auth-tabs-duo">
                 <button
                   type="button"
                   onClick={() => {
@@ -664,21 +668,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
 
               {/* Status Success Banner */}
               {statusMessage && (
-                <div
-                  className="qubtic-auth-box"
-                  style={{
-                    padding: '0.75rem 0.85rem',
-                    marginBottom: '1rem',
-                    border: '1px solid rgba(166, 255, 0, 0.4)',
-                    background: 'rgba(166, 255, 0, 0.08)',
-                    color: 'var(--qubtic-auth-accent)',
-                    borderRadius: '12px',
-                    fontSize: '0.75rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.6rem',
-                  }}
-                >
+                <div className="qubtic-auth-box qubtic-auth-status-banner">
                   <CheckCircle2 size={16} />
                   <span>{statusMessage}</span>
                 </div>
@@ -857,7 +847,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                 {/* --- 3. OTP VERIFICATION CODE TAB --- */}
                 {activeTab === 'otp' && (
                   <>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--qubtic-auth-text-muted)', margin: '0 0 0.5rem 0', lineHeight: 1.5 }}>
+                    <p className="qubtic-auth-tab-description">
                       Sign in securely without a password using a 6-digit one-time code sent directly to your inbox.
                     </p>
 
@@ -886,8 +876,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                             value={otpCode}
                             onChange={(e) => setOtpCode(e.target.value)}
                             placeholder="123456"
-                            className="qubtic-auth-input"
-                            style={{ letterSpacing: '4px', fontFamily: 'monospace', fontWeight: 'bold' }}
+                            className="qubtic-auth-input qubtic-auth-input-code"
                           />
                         </div>
                       </div>
@@ -898,7 +887,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                 {/* --- 4. FORGOT / RESET PASSWORD TAB --- */}
                 {activeTab === 'reset' && (
                   <>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--qubtic-auth-text-muted)', margin: '0 0 0.5rem 0', lineHeight: 1.5 }}>
+                    <p className="qubtic-auth-tab-description">
                       {!resetSent
                         ? 'Enter your account email to receive a 6-digit password reset verification code.'
                         : 'Enter the 6-digit code sent to your email along with your new password.'}
@@ -920,8 +909,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                               value={resetCode}
                               onChange={(e) => setResetCode(e.target.value)}
                               placeholder="123456"
-                              className="qubtic-auth-input"
-                              style={{ letterSpacing: '4px', fontFamily: 'monospace', fontWeight: 'bold' }}
+                              className="qubtic-auth-input qubtic-auth-input-code"
                             />
                           </div>
                         </div>
@@ -954,7 +942,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                       </>
                     )}
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+                    <div className="qubtic-auth-action-row-end">
                       <button
                         type="button"
                         onClick={() => {
@@ -976,7 +964,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                     <label className="qubtic-auth-label">
                       Select Target Team Workspace
                     </label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.25rem' }}>
+                    <div className="qubtic-auth-team-list">
                       {[
                         {
                           id: 'team_personal',
@@ -1012,63 +1000,27 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                               setSelectedTeamRole(item.role);
                             }
                           }}
-                          style={{
-                            padding: '0.65rem 0.85rem',
-                            borderRadius: '10px',
-                            border:
-                              selectedTeamId === item.id
-                                ? '1px solid var(--qubtic-auth-border-focus)'
-                                : '1px solid var(--qubtic-auth-box-border)',
-                            background:
-                              selectedTeamId === item.id ? 'var(--qubtic-auth-box-bg)' : 'transparent',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            transition: 'all 0.2s ease',
-                          }}
+                          className={`qubtic-auth-team-item ${selectedTeamId === item.id ? 'selected' : ''}`}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                            <Users
-                              size={16}
-                              style={{
-                                color:
-                                  selectedTeamId === item.id
-                                    ? 'var(--qubtic-auth-accent)'
-                                    : 'var(--qubtic-auth-text-muted)',
-                              }}
-                            />
-                            <div>
-                              <div
-                                style={{
-                                  fontSize: '0.8rem',
-                                  fontWeight: 600,
-                                  color: 'var(--qubtic-auth-text-main)',
-                                }}
-                              >
+                          <div className="qubtic-auth-team-item-left">
+                            <Users size={16} className="qubtic-auth-team-icon" />
+                            <div className="qubtic-auth-team-info">
+                              <div className="qubtic-auth-team-name">
                                 {item.name}
                               </div>
-                              <div
-                                style={{
-                                  fontSize: '0.7rem',
-                                  color: 'var(--qubtic-auth-text-muted)',
-                                }}
-                              >
+                              <div className="qubtic-auth-team-tier">
                                 {item.tier} • Role: {item.role}
                               </div>
                             </div>
                           </div>
                           {selectedTeamId === item.id && (
-                            <CheckCircle2
-                              size={16}
-                              style={{ color: 'var(--qubtic-auth-accent)' }}
-                            />
+                            <CheckCircle2 size={16} className="qubtic-auth-team-check" />
                           )}
                         </div>
                       ))}
 
                       {selectedTeamId === 'custom' && (
-                        <div style={{ marginTop: '0.35rem' }}>
+                        <div className="qubtic-auth-team-custom-input">
                           <input
                             type="text"
                             placeholder="Enter Team or Studio Name"
@@ -1179,7 +1131,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                 {pairingCode && (
                   <div className="qubtic-auth-success-row">
                     <span className="qubtic-auth-success-label">Framer Plugin Paired:</span>
-                    <span className="qubtic-auth-success-val" style={{ color: '#A6FF00', fontWeight: 600 }}>
+                    <span className="qubtic-auth-success-val qubtic-auth-status-connected">
                       <Check size={14} /> Connected
                     </span>
                   </div>
@@ -1192,21 +1144,28 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                   type="button"
                   onClick={() => {
                     if (typeof window !== 'undefined') {
-                      if (window.opener && window.opener !== window) {
+                      try {
                         window.close();
-                      } else {
-                        const safeRedirect = sanitizeRedirectUrl(returnUrlParam);
-                        if (safeRedirect) {
-                          window.location.href = safeRedirect;
-                        } else {
-                          window.location.href = plugin.productUrl;
-                        }
+                      } catch (e) {
+                        console.warn('Manual window.close error:', e);
+                      }
+                      const safeRedirect = sanitizeRedirectUrl(returnUrlParam);
+                      if (safeRedirect) {
+                        window.location.href = safeRedirect;
                       }
                     }
                   }}
-                  className="qubtic-auth-submit-btn"
+                  className={`qubtic-auth-submit-btn ${countdown === 0 ? 'qubtic-auth-close-pulse-btn' : ''}`}
                 >
-                  <span>Return to Framer ({countdown}s)</span>
+                  <span>
+                    {countdown === 0 ? (
+                      'Close Tab Now'
+                    ) : (
+                      <>
+                        Closing Tab in <span className="qubtic-auth-countdown-val">{countdown}</span>s
+                      </>
+                    )}
+                  </span>
                   <ExternalLink size={16} />
                 </button>
 
