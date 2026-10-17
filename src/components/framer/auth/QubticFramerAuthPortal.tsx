@@ -190,7 +190,6 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
   } | null>(null);
 
   const [copiedToken, setCopiedToken] = useState(false);
-  const [copiedCode, setCopiedCode] = useState(false);
   const [countdown, setCountdown] = useState(4);
   const [isHandshakeSent, setIsHandshakeSent] = useState(false);
 
@@ -572,15 +571,10 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
     }
   };
 
-  const copyToClipboard = (text: string, type: 'token' | 'code') => {
+  const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    if (type === 'token') {
-      setCopiedToken(true);
-      setTimeout(() => setCopiedToken(false), 2000);
-    } else {
-      setCopiedCode(true);
-      setTimeout(() => setCopiedCode(false), 2000);
-    }
+    setCopiedToken(true);
+    setTimeout(() => setCopiedToken(false), 2000);
   };
 
   return (
@@ -1171,7 +1165,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
 
                 <button
                   type="button"
-                  onClick={() => copyToClipboard(successData.token, 'token')}
+                  onClick={() => copyToClipboard(successData.token)}
                   className="qubtic-auth-btn-secondary"
                 >
                   {copiedToken ? <Check size={14} /> : <Copy size={14} />}
