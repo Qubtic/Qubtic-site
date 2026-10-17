@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: AuthPluginPageProps): Promise
 
   return {
     title: `Sign In to ${meta.name} — Qubtic Auth for Framer`,
-    description: `Authenticate your account for ${meta.name} directly within the Framer ecosystem. Powered by Qubtic and Supabase.`,
+    description: `Authenticate your account for ${meta.name} directly within the Framer ecosystem. Powered by Qubtic.`,
     robots: {
       index: false,
       follow: false,

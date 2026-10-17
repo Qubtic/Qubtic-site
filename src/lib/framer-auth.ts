@@ -526,7 +526,77 @@ export async function verifyFramerSessionToken(
     return true;
   });
 
-  return match ? ensureEarlyBirdAttributes(match) : null;
+  if (match) {
+    return ensureEarlyBirdAttributes(match);
+  }
+
+  // 3. Check Supabase framer_pairing_sessions (in case token was generated/issued during pairing)
+  try {
+    let pQuery = supabase.from('framer_pairing_sessions').select('*').eq('auth_token', token);
+    if (expectedPlugin) {
+      pQuery = pQuery.eq('plugin_slug', expectedPlugin.toLowerCase().trim());
+    }
+    const { data: pSession, error: pErr } = await pQuery.maybeSingle();
+    if (!pErr && pSession && pSession.user_data) {
+      const uData = pSession.user_data as any;
+      if (uData.email) {
+        try {
+          await supabase
+            .from('framer_users')
+            .update({ auth_token: token })
+            .eq('email', uData.email.toLowerCase().trim())
+            .eq('plugin_slug', (expectedPlugin || pSession.plugin_slug).toLowerCase().trim());
+        } catch {}
+      }
+      return ensureEarlyBirdAttributes({
+        id: uData.id || pSession.id,
+        email: uData.email,
+        name: uData.name || (uData.email ? uData.email.split('@')[0] : 'Designer'),
+        company_name: uData.company_name || '',
+        website_url: uData.website_url || '',
+        plugin_slug: pSession.plugin_slug,
+        plugin_name: pSession.plugin_name,
+        plan: uData.plan || 'pro',
+        auth_token: token,
+        status: uData.status || 'active',
+        is_early_bird: Boolean(uData.is_early_bird),
+        created_at: pSession.created_at,
+        updated_at: pSession.updated_at,
+        last_login_at: pSession.last_poll_at || pSession.updated_at,
+      } as FramerUserRecord);
+    }
+  } catch (_pEx) {
+    // ignore
+  }
+
+  // 4. Check local pairing sessions fallback
+  const localPairingList = readLocalPairingSessions();
+  const pMatch = localPairingList.find((p) => {
+    if (p.auth_token !== token) return false;
+    if (expectedPlugin && p.plugin_slug !== expectedPlugin.toLowerCase().trim()) return false;
+    return true;
+  });
+  if (pMatch && pMatch.user_data) {
+    const uData = pMatch.user_data as any;
+    return ensureEarlyBirdAttributes({
+      id: uData.id || pMatch.id,
+      email: uData.email,
+      name: uData.name || (uData.email ? uData.email.split('@')[0] : 'Designer'),
+      company_name: uData.company_name || '',
+      website_url: uData.website_url || '',
+      plugin_slug: pMatch.plugin_slug,
+      plugin_name: pMatch.plugin_name,
+      plan: uData.plan || 'pro',
+      auth_token: token,
+      status: uData.status || 'active',
+      is_early_bird: Boolean(uData.is_early_bird),
+      created_at: pMatch.created_at,
+      updated_at: pMatch.updated_at,
+      last_login_at: pMatch.updated_at,
+    } as FramerUserRecord);
+  }
+
+  return null;
 }
 
 /**
@@ -879,6 +949,23 @@ export async function confirmPairingSession(
     }
   } catch (sbErr) {
     console.warn('Supabase pairing confirm exception:', sbErr);
+  }
+
+  if (user?.id || user?.email) {
+    try {
+      let uQuery = supabase.from('framer_users').update({
+        auth_token: session.auth_token,
+        last_login_at: new Date(customNow).toISOString(),
+      });
+      if (user.id) {
+        uQuery = uQuery.eq('id', user.id);
+      } else if (user.email) {
+        uQuery = uQuery.eq('email', user.email.toLowerCase().trim()).eq('plugin_slug', session.plugin_slug);
+      }
+      await uQuery;
+    } catch (uErr) {
+      console.warn('Supabase framer_users auth_token sync error:', uErr);
+    }
   }
 
   return { success: true, message: 'Plugin paired successfully' };

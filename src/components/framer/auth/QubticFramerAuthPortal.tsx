@@ -1042,7 +1042,21 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                   {isLoading ? (
                     <>
                       <RefreshCw className="qubtic-auth-spinner" />
-                      <span>Verifying with Supabase...</span>
+                      <span>
+                        {activeTab === 'signin'
+                          ? 'Signing in...'
+                          : activeTab === 'signup'
+                          ? 'Creating account...'
+                          : activeTab === 'otp'
+                          ? otpSent
+                            ? 'Verifying code...'
+                            : 'Sending verification code...'
+                          : activeTab === 'reset'
+                          ? resetSent
+                            ? 'Updating password...'
+                            : 'Sending reset link...'
+                          : 'Verifying...'}
+                      </span>
                     </>
                   ) : (
                     <>

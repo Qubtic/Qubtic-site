@@ -165,7 +165,7 @@ export class QubticFramerAuth {
   }
 
   /**
-   * Verifies an existing token against the Qubtic Supabase backend.
+   * Verifies an existing token against the Qubtic backend.
    */
   public async verifyToken(token: string): Promise<{ valid: boolean; user?: QubticUser }> {
     const res = await fetch(\`\${this.backendUrl}/api/framer-auth/verify?token=\${encodeURIComponent(token)}&plugin=\${this.pluginSlug}\`);
@@ -398,7 +398,7 @@ export class QubticFramerAuth {
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-zinc-400 flex items-center gap-1.5 font-medium">
                         <Database className="w-3.5 h-3.5 text-[#3ECF8E]" />
-                        <span>Supabase Backend Verification:</span>
+                        <span>Backend Verification:</span>
                       </span>
                       {isVerifying ? (
                         <span className="text-amber-400 flex items-center gap-1">

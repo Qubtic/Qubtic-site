@@ -129,7 +129,7 @@ export function getPluginMetadata(rawSlug?: string | null): FramerPluginMetadata
     productUrl: `/framer/${slug}`,
     features: [
       'Unified Qubtic Identity',
-      'Secure Supabase Backend',
+      'Enterprise-Grade Backend',
       'Automated Session Handshake',
     ],
     scopes: [
