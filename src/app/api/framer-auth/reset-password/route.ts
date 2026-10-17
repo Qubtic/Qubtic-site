@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     if (action === 'request') {
       const result = await requestAuthPasswordReset(email, pluginMeta.slug);
       return NextResponse.json(result, {
-        status: 200,
+        status: result.success ? 200 : 500,
         headers: { 'Access-Control-Allow-Origin': '*' },
       });
     }

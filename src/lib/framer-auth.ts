@@ -4,6 +4,12 @@ import path from 'path';
 import nodemailer from 'nodemailer';
 import { supabase } from './supabase';
 import { getPluginMetadata } from './plugins-registry';
+import {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+  sendNewUserTeamNotification,
+  sendTeamInviteEmail,
+} from './email-service';
 
 export interface FramerUserRecord {
   id: string;
@@ -314,6 +320,12 @@ export async function createOrUpdateFramerUser(params: {
             early_bird_granted_at: earlyBird.is_early_bird ? now : undefined,
           } as FramerUserRecord);
           syncUserLocally(userWithAttrs);
+
+          // Asynchronously notify Qubtic team of new member registration
+          sendNewUserTeamNotification(userWithAttrs, params.metadata, pluginSlug).catch((err) => {
+            console.warn('[Team Alert] Error sending team notification:', err);
+          });
+
           return { user: userWithAttrs, isNew: true, token };
         } else if (insertErr) {
           console.warn('Supabase framer_users insert error:', insertErr);
@@ -409,6 +421,12 @@ export async function createOrUpdateFramerUser(params: {
 
     localList.unshift(newRecord);
     writeLocalUsers(localList);
+
+    // Asynchronously notify Qubtic team of new member registration
+    sendNewUserTeamNotification(newRecord, params.metadata, pluginSlug).catch((err) => {
+      console.warn('[Team Alert] Error sending team notification:', err);
+    });
+
     return { user: newRecord, isNew: true, token };
   }
 }
@@ -1045,29 +1063,8 @@ export interface ResetSession {
 const otpStore = new Map<string, OtpSession>();
 const resetStore = new Map<string, ResetSession>();
 
-function getAuthEmailTransporter() {
-  const host = process.env.SMTP_HOST || 'smtp.mailgun.org';
-  const port = parseInt(process.env.SMTP_PORT || '587', 10);
-  const secure = process.env.SMTP_SECURE === 'true' || port === 465;
-  const user = process.env.SMTP_USER || '';
-  const pass = process.env.SMTP_PASS || '';
-
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: {
-      user,
-      pass,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
-  });
-}
-
 /**
- * Generates and dispatches a 6-digit email OTP verification code.
+ * Generates and dispatches a 6-digit email OTP verification code with branded templates.
  */
 export async function sendAuthOtpCode(
   email: string,
@@ -1079,6 +1076,7 @@ export async function sendAuthOtpCode(
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
+  // 1. In-memory storage
   otpStore.set(normalizedEmail, {
     email: normalizedEmail,
     code,
@@ -1086,54 +1084,85 @@ export async function sendAuthOtpCode(
     attempts: 0,
   });
 
-  const fromEmail = process.env.SMTP_FROM_EMAIL || 'hello@qubtic.tech';
-  const fromName = process.env.SMTP_FROM_NAME || 'Qubtic Auth';
-
-  const mailOptions = {
-    from: `"${fromName}" <${fromEmail}>`,
-    to: normalizedEmail,
-    subject: `Your ${plugin.name} Verification Code: ${code}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; background-color: #070D09; padding: 32px; color: #FFFFFF;">
-        <div style="max-width: 520px; margin: 0 auto; background: #0A130D; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px;">
-          <h2 style="color: #A6FF00; margin-top: 0; font-size: 22px;">${plugin.name} Verification</h2>
-          <p style="font-size: 14px; color: #8E968F; line-height: 1.6;">
-            Use the 6-digit one-time code below to verify your account and complete login in Framer:
-          </p>
-          <div style="margin: 24px 0; padding: 18px; background: rgba(0,0,0,0.6); border: 1px solid rgba(166,255,0,0.3); border-radius: 12px; text-align: center; font-size: 32px; letter-spacing: 6px; font-weight: bold; color: #A6FF00; font-family: monospace;">
-            ${code}
-          </div>
-          <p style="font-size: 12px; color: #5C635D; margin-bottom: 0;">
-            This verification code expires in 10 minutes. If you did not request this login code, you can safely ignore this email.
-          </p>
-        </div>
-      </div>
-    `,
-  };
-
+  // 2. Persist in Supabase metadata if user exists (or record pending OTP)
   try {
-    const transporter = getAuthEmailTransporter();
-    await transporter.sendMail(mailOptions);
-  } catch (err) {
-    console.warn('[Mail Warning] Could not deliver OTP email via direct SMTP:', err);
+    const { data: userRecord } = await supabase
+      .from('framer_users')
+      .select('id, metadata')
+      .eq('email', normalizedEmail)
+      .eq('plugin_slug', plugin.slug)
+      .maybeSingle();
+
+    if (userRecord) {
+      await supabase
+        .from('framer_users')
+        .update({
+          metadata: {
+            ...(userRecord.metadata || {}),
+            otp_code: code,
+            otp_expires_at: expiresAt,
+            otp_attempts: 0,
+          },
+        })
+        .eq('id', userRecord.id);
+    }
+  } catch (sbErr) {
+    console.warn('[OTP Store] Supabase sync notice:', sbErr);
   }
 
-  return {
-    success: true,
-    message: `Verification code sent to ${normalizedEmail}.`,
-    devCode: process.env.NODE_ENV !== 'production' ? code : undefined,
-  };
+  // 3. Dispatch branded verification email via direct Mailgun SMTP
+  try {
+    await sendVerificationEmail(normalizedEmail, code, undefined, plugin.slug);
+    return {
+      success: true,
+      message: `A 6-digit verification code has been sent to ${normalizedEmail}.`,
+      devCode: process.env.NODE_ENV !== 'production' ? code : undefined,
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'SMTP delivery error';
+    console.error('[Mail Error] Could not deliver OTP email via direct SMTP:', err);
+    return {
+      success: false,
+      message: `Failed to deliver verification email to ${normalizedEmail}: ${msg}`,
+    };
+  }
 }
 
 /**
- * Validates a submitted 6-digit OTP code against the active session.
+ * Validates a submitted 6-digit OTP code against memory and Supabase session stores.
  */
 export async function verifyAuthOtpCode(
   email: string,
-  code: string
+  code: string,
+  pluginSlug: string = 'frame-drop'
 ): Promise<{ valid: boolean; message?: string }> {
   const normalizedEmail = email.toLowerCase().trim();
-  const session = otpStore.get(normalizedEmail);
+  const cleanCode = code.trim();
+  let session = otpStore.get(normalizedEmail);
+
+  // Cross-instance fallback to Supabase if not in memory
+  if (!session) {
+    try {
+      const plugin = getPluginMetadata(pluginSlug);
+      const { data: userRecord } = await supabase
+        .from('framer_users')
+        .select('id, metadata')
+        .eq('email', normalizedEmail)
+        .eq('plugin_slug', plugin.slug)
+        .maybeSingle();
+
+      if (userRecord && userRecord.metadata?.otp_code && userRecord.metadata?.otp_expires_at) {
+        session = {
+          email: normalizedEmail,
+          code: String(userRecord.metadata.otp_code),
+          expiresAt: Number(userRecord.metadata.otp_expires_at),
+          attempts: Number(userRecord.metadata.otp_attempts || 0),
+        };
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   if (!session) {
     return {
@@ -1159,7 +1188,7 @@ export async function verifyAuthOtpCode(
     };
   }
 
-  if (session.code !== code.trim()) {
+  if (session.code !== cleanCode) {
     return {
       valid: false,
       message: 'Invalid verification code. Please check and try again.',
@@ -1168,6 +1197,29 @@ export async function verifyAuthOtpCode(
 
   // Code is valid - consume
   otpStore.delete(normalizedEmail);
+  try {
+    const plugin = getPluginMetadata(pluginSlug);
+    const { data: userRecord } = await supabase
+      .from('framer_users')
+      .select('id, metadata')
+      .eq('email', normalizedEmail)
+      .eq('plugin_slug', plugin.slug)
+      .maybeSingle();
+
+    if (userRecord) {
+      const updatedMeta = { ...(userRecord.metadata || {}) };
+      delete updatedMeta.otp_code;
+      delete updatedMeta.otp_expires_at;
+      delete updatedMeta.otp_attempts;
+      await supabase
+        .from('framer_users')
+        .update({ metadata: updatedMeta })
+        .eq('id', userRecord.id);
+    }
+  } catch {
+    // ignore
+  }
+
   return { valid: true };
 }
 
@@ -1190,43 +1242,49 @@ export async function requestAuthPasswordReset(
     expiresAt,
   });
 
-  const fromEmail = process.env.SMTP_FROM_EMAIL || 'hello@qubtic.tech';
-  const fromName = process.env.SMTP_FROM_NAME || 'Qubtic Auth';
-
-  const mailOptions = {
-    from: `"${fromName}" <${fromEmail}>`,
-    to: normalizedEmail,
-    subject: `Reset Your Password for ${plugin.name}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; background-color: #070D09; padding: 32px; color: #FFFFFF;">
-        <div style="max-width: 520px; margin: 0 auto; background: #0A130D; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px;">
-          <h2 style="color: #A6FF00; margin-top: 0; font-size: 22px;">Password Reset Request</h2>
-          <p style="font-size: 14px; color: #8E968F; line-height: 1.6;">
-            We received a request to reset your password for <strong>${plugin.name}</strong>. Enter the 6-digit confirmation code below to choose a new password:
-          </p>
-          <div style="margin: 24px 0; padding: 18px; background: rgba(0,0,0,0.6); border: 1px solid rgba(166,255,0,0.3); border-radius: 12px; text-align: center; font-size: 32px; letter-spacing: 6px; font-weight: bold; color: #A6FF00; font-family: monospace;">
-            ${code}
-          </div>
-          <p style="font-size: 12px; color: #5C635D; margin-bottom: 0;">
-            This reset code is valid for 15 minutes. If you did not make this request, you can safely disregard this message.
-          </p>
-        </div>
-      </div>
-    `,
-  };
-
+  // Persist in Supabase metadata if user exists
+  let userName: string | undefined;
   try {
-    const transporter = getAuthEmailTransporter();
-    await transporter.sendMail(mailOptions);
-  } catch (err) {
-    console.warn('[Mail Warning] Could not deliver password reset email via SMTP:', err);
+    const { data: userRecord } = await supabase
+      .from('framer_users')
+      .select('id, name, metadata')
+      .eq('email', normalizedEmail)
+      .eq('plugin_slug', plugin.slug)
+      .maybeSingle();
+
+    if (userRecord) {
+      userName = userRecord.name;
+      await supabase
+        .from('framer_users')
+        .update({
+          metadata: {
+            ...(userRecord.metadata || {}),
+            reset_code: code,
+            reset_expires_at: expiresAt,
+          },
+        })
+        .eq('id', userRecord.id);
+    }
+  } catch (sbErr) {
+    console.warn('[Reset Store] Supabase sync notice:', sbErr);
   }
 
-  return {
-    success: true,
-    message: `Password reset instructions sent to ${normalizedEmail}.`,
-    devCode: process.env.NODE_ENV !== 'production' ? code : undefined,
-  };
+  // Dispatch branded password reset email via direct Mailgun SMTP
+  try {
+    await sendPasswordResetEmail(normalizedEmail, code, userName, plugin.slug);
+    return {
+      success: true,
+      message: `Password reset instructions sent to ${normalizedEmail}.`,
+      devCode: process.env.NODE_ENV !== 'production' ? code : undefined,
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'SMTP delivery error';
+    console.error('[Mail Error] Could not deliver password reset email via SMTP:', err);
+    return {
+      success: false,
+      message: `Failed to deliver reset email to ${normalizedEmail}: ${msg}`,
+    };
+  }
 }
 
 /**
@@ -1244,7 +1302,31 @@ export async function resetAuthUserPassword(
   token?: string;
 }> {
   const normalizedEmail = email.toLowerCase().trim();
-  const session = resetStore.get(normalizedEmail);
+  const cleanCode = code.trim();
+  let session = resetStore.get(normalizedEmail);
+
+  // If not in memory, check Supabase metadata
+  if (!session) {
+    try {
+      const plugin = getPluginMetadata(pluginSlug);
+      const { data: userRecord } = await supabase
+        .from('framer_users')
+        .select('id, metadata')
+        .eq('email', normalizedEmail)
+        .eq('plugin_slug', plugin.slug)
+        .maybeSingle();
+
+      if (userRecord && userRecord.metadata?.reset_code && userRecord.metadata?.reset_expires_at) {
+        session = {
+          email: normalizedEmail,
+          code: String(userRecord.metadata.reset_code),
+          expiresAt: Number(userRecord.metadata.reset_expires_at),
+        };
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   if (!session) {
     return {
@@ -1261,7 +1343,7 @@ export async function resetAuthUserPassword(
     };
   }
 
-  if (session.code !== code.trim()) {
+  if (session.code !== cleanCode) {
     return {
       success: false,
       message: 'Invalid reset code. Please check the code sent to your email.',

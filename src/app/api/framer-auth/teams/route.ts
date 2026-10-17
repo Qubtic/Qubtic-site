@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createOrUpdateFramerUser, generateSessionCode } from '@/lib/framer-auth';
 import { getPluginMetadata } from '@/lib/plugins-registry';
+import { sendTeamInviteEmail } from '@/lib/email-service';
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const {
+      action = 'switch',
       email,
       name,
       teamId = 'team_personal',
@@ -69,7 +71,44 @@ export async function POST(request: Request) {
       framerUserId,
       framerProjectId,
       plan = 'pro',
+      inviteeEmail,
+      inviterName,
+      role = 'Editor',
     } = body;
+
+    const pluginMeta = getPluginMetadata(plugin);
+
+    if (action === 'invite') {
+      const targetEmail = inviteeEmail || email;
+      if (!targetEmail || typeof targetEmail !== 'string' || !targetEmail.includes('@')) {
+        return NextResponse.json(
+          { success: false, message: 'A valid invitee email address is required.' },
+          { status: 400, headers: { 'Access-Control-Allow-Origin': '*' } }
+        );
+      }
+
+      const inviteLink = `https://qubtic.tech/auth/${pluginMeta.slug}?team=${encodeURIComponent(teamName)}`;
+      try {
+        await sendTeamInviteEmail(
+          targetEmail,
+          inviterName || name || 'Team Administrator',
+          teamName,
+          pluginMeta.slug,
+          inviteLink,
+          role
+        );
+        return NextResponse.json(
+          { success: true, message: `Invitation sent to ${targetEmail} for ${teamName}.` },
+          { status: 200, headers: { 'Access-Control-Allow-Origin': '*' } }
+        );
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'SMTP invite error';
+        return NextResponse.json(
+          { success: false, message: `Failed to deliver team invite: ${msg}` },
+          { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } }
+        );
+      }
+    }
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
       return NextResponse.json(
@@ -77,8 +116,6 @@ export async function POST(request: Request) {
         { status: 400, headers: { 'Access-Control-Allow-Origin': '*' } }
       );
     }
-
-    const pluginMeta = getPluginMetadata(plugin);
 
     const { user, isNew, token } = await createOrUpdateFramerUser({
       email,

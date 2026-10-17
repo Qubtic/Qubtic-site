@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     if (action === 'send') {
       const result = await sendAuthOtpCode(email, pluginMeta.slug);
       return NextResponse.json(result, {
-        status: 200,
+        status: result.success ? 200 : 500,
         headers: { 'Access-Control-Allow-Origin': '*' },
       });
     }
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
         );
       }
 
-      const verifyResult = await verifyAuthOtpCode(email, code);
+      const verifyResult = await verifyAuthOtpCode(email, code, pluginMeta.slug);
       if (!verifyResult.valid) {
         return NextResponse.json(
           { success: false, message: verifyResult.message || 'Invalid or expired verification code.' },
