@@ -936,19 +936,6 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                       </>
                     )}
 
-                    <div className="qubtic-auth-action-row-end">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveTab('signin');
-                          setErrorMessage('');
-                          setStatusMessage('');
-                        }}
-                        className="qubtic-auth-magic-link-btn"
-                      >
-                        ← Back to Sign In
-                      </button>
-                    </div>
                   </>
                 )}
 

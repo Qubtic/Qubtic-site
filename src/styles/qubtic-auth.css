@@ -339,8 +339,8 @@
 }
 
 .qubtic-auth-logo-img {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 12px;
   object-fit: contain;
 }
@@ -403,7 +403,7 @@
   background: transparent;
   border: none;
   padding: 0.5rem 0.25rem;
-  font-size: 0.75rem;
+  font-size: 0.80rem;
   font-weight: 600;
   color: var(--qubtic-auth-tab-text);
   border-radius: 8px;
@@ -430,7 +430,7 @@
 
 /* Status banner */
 .qubtic-auth-status-banner {
-  padding: 0.75rem 0.85rem;
+  padding: 0.75rem;
   margin-bottom: 1rem;
   border: 1px solid rgba(166, 255, 0, 0.4);
   background: rgba(166, 255, 0, 0.08);
@@ -438,12 +438,13 @@
   border-radius: 12px;
   font-size: 0.8rem;
   line-height: 1.4;
+  display: flex;
+  gap: 0.5rem;
 }
 
 .qubtic-auth-tab-description {
   font-size: 0.75rem;
   color: var(--qubtic-auth-text-muted);
-  margin: 0 0 0.5rem 0;
   line-height: 1.5;
 }
 
@@ -456,7 +457,7 @@
 .qubtic-auth-action-row-end {
   display: flex;
   justify-content: flex-end;
-  margin-top: 0.75rem;
+
 }
 
 /* Team Workspaces */
@@ -585,7 +586,7 @@
 .qubtic-auth-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: .8rem;
 }
 
 .qubtic-auth-group {
@@ -594,7 +595,7 @@
 }
 
 .qubtic-auth-label {
-  font-size: 0.75rem;
+  font-size: 0.80rem;
   font-weight: 500;
   color: var(--qubtic-auth-text-muted);
   margin-bottom: 0.35rem;
@@ -611,12 +612,12 @@
   background: none;
   border: none;
   color: var(--qubtic-auth-accent);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   cursor: pointer;
   padding: 0;
-  text-decoration: underline;
+
   font-family: inherit;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .qubtic-auth-magic-link-btn:hover {
@@ -686,7 +687,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.75rem;
+  font-size: 0.80rem;
   color: var(--qubtic-auth-checkbox-text);
   cursor: pointer;
   user-select: none;
@@ -703,7 +704,6 @@
 /* Primary Submit Button */
 .qubtic-auth-submit-btn {
   width: 100%;
-  margin-top: 0.5rem;
   padding: 0.85rem 1rem;
   background-color: var(--qubtic-auth-accent);
   color: var(--qubtic-auth-accent-text);
@@ -719,8 +719,7 @@
   cursor: pointer;
   transition: transform 0.15s ease, filter 0.2s ease, background-color 0.2s ease;
   box-shadow: var(--qubtic-auth-accent-shadow);
-  font-family: var(--font-heading), sans-serif;
-  letter-spacing: -0.01em;
+
 }
 
 .qubtic-auth-submit-btn:hover:not(:disabled) {
