@@ -30,15 +30,22 @@ export function BillingPanel({token,onVerified}:{token:string;onVerified?:(pro:b
   return()=>{window.removeEventListener('focus',focus);if(timer)clearInterval(timer);};
  },[pending,token]);
  async function open(action:'checkout'|'portal',replacePrevious=false){
+  const channel=crypto.randomUUID();
+  let launcher:Window|null=null;
+  if(action==='checkout'){try{launcher=window.open(`https://www.qubtic.tech/billing/launch#${channel}`,'_blank');}catch{/* The checkout link remains available after the request. */}}
   setBusy(true);setError('');setDestination('');setDestinationAction(null);setPreviousUrl('');
   try{const data=await api(action,action==='checkout'?{request_id:crypto.randomUUID(),...(replacePrevious?{replace_previous:true}:{})}:{});const url=new URL(data.url);
    if(url.protocol!=='https:'||!['polar.sh','buy.polar.sh','sandbox.polar.sh','sandbox-api.polar.sh','api.polar.sh','sandbox.buy.polar.sh'].includes(url.hostname)||url.username||url.password)throw new Error('Invalid billing destination.');
    setDestination(url.href);setDestinationAction(action);
-   try{window.open(url.href,'_blank','noopener,noreferrer');}catch{/* The visible checkout link remains available. */}
+   if(action==='checkout'&&launcher){
+    const target=launcher;let attempts=0;
+    const send=()=>{if(target.closed||++attempts>40){window.clearInterval(timer);return;}try{target.postMessage({type:'qubtic-billing-checkout',channel,url:url.href},'https://www.qubtic.tech');}catch{/* The visible link remains available. */}};
+    const timer=window.setInterval(send,250);send();
+   }else if(action==='portal'){try{window.open(url.href,'_blank','noopener,noreferrer');}catch{/* The visible portal link remains available. */}}
    if(action==='checkout')setPending(true);
-  }catch(err){const previous=(err as Error&{previous_url?:string})?.previous_url;if(previous){try{const url=new URL(previous);if(url.protocol==='https:'&&['polar.sh','buy.polar.sh','sandbox.polar.sh','sandbox-api.polar.sh','api.polar.sh','sandbox.buy.polar.sh'].includes(url.hostname)&&!url.username&&!url.password)setPreviousUrl(url.href);}catch{/* Ignore an invalid recovery link. */}}setError(err instanceof Error?err.message:'Could not open billing.');}finally{setBusy(false);}
+  }catch(err){launcher?.close();const previous=(err as Error&{previous_url?:string})?.previous_url;if(previous){try{const url=new URL(previous);if(url.protocol==='https:'&&['polar.sh','buy.polar.sh','sandbox.polar.sh','sandbox-api.polar.sh','api.polar.sh','sandbox.buy.polar.sh'].includes(url.hostname)&&!url.username&&!url.password)setPreviousUrl(url.href);}catch{/* Ignore an invalid recovery link. */}}setError(err instanceof Error?err.message:'Could not open billing.');}finally{setBusy(false);}
  }
- return <section className="qubtic-billing" aria-label="Pro billing and purchase history">
+  return <section className="qubtic-billing" aria-label="Pro billing and purchase history">
   <p>All Pro features are included. Select your payment option on Polar checkout.</p>
   <div className="qubtic-billing-plans"><article className="qubtic-billing-plan"><h3>Pro access</h3><p>Choose your billing option and enter any eligible discount code at Polar checkout.</p><button type="button" disabled={!token||busy||plans.length!==3||status?.is_pro} onClick={()=>void open('checkout')}>{status?.is_pro?'Pro active':!token?'Sign in to upgrade':'Purchase Pro'}</button>{destination&&destinationAction==='checkout'&&<a href={destination} target="_blank" rel="noopener noreferrer">Open Polar checkout</a>}{previousUrl&&<div className="qubtic-billing-recovery"><a href={previousUrl} target="_blank" rel="noopener noreferrer">Continue previous checkout</a><button type="button" disabled={busy} onClick={()=>void open('checkout',true)}>Start new Pro checkout</button><p>Close the previous checkout tab before paying to avoid two purchases.</p></div>}</article></div>
   {destination&&destinationAction==='portal'&&<a href={destination} target="_blank" rel="noopener noreferrer">Continue to Polar</a>}
