@@ -15,6 +15,3 @@
 .qubtic-billing-history { list-style:none;margin:0;padding:0;display:grid;gap:8px; }
 .qubtic-billing-history li { display:flex;flex-direction:column;gap:3px;border:1px solid var(--qb-border);border-radius:8px;padding:10px;overflow-wrap:anywhere; }
 
-.qubtic-billing-price { display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px; }
-.qubtic-billing-price del { color:var(--qb-muted); }
-.qubtic-billing-price strong { color:var(--qb-text);font-size:15px; }

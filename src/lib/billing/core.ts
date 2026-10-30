@@ -57,19 +57,6 @@ export function safePolarUrl(value:string) {
  if(url.protocol!=='https:' || !['polar.sh','buy.polar.sh','sandbox.polar.sh','sandbox-api.polar.sh','api.polar.sh','sandbox.buy.polar.sh'].includes(url.hostname) || url.username || url.password) throw new BillingError('Invalid checkout destination.');
  return url.href;
 }
-export async function planPrice(productId:string, discountId?:string) {
- const sdk=polar(); const product=await sdk.products.get(productId);
- if(product.organization_id!==process.env.POLAR_ORGANIZATION_ID || product.is_archived) throw new BillingError('Plan configuration is invalid.');
- const prices=product.prices.filter(price=>!price.is_archived && price.amount_type==='fixed' && typeof price.price_amount==='number' && price.price_amount>0);
- if(prices.length!==1) throw new BillingError('Plan needs exactly one active fixed price.');
- const price=prices[0]; const priceAmount='price_amount' in price ? price.price_amount : 0; let discountAmount=0; let appliedDiscountId:string|undefined; let discountDuration:string|undefined;
- if(discountId){
-  const discount=await sdk.discounts.get(discountId);
-  const eligible=discount.organization_id===product.organization_id && discount.products?.some(item=>(typeof item==='string'?item:item.id)===productId) && (!discount.starts_at||Date.parse(discount.starts_at)<=Date.now()) && (!discount.ends_at||Date.parse(discount.ends_at)>Date.now()) && (discount.max_redemptions===null||discount.redemptions_count<discount.max_redemptions);
-  if(eligible && discount.type==='fixed' && 'currency' in discount && 'amount' in discount && discount.currency===price.price_currency && typeof discount.amount==='number' && discount.amount>0 && discount.amount<priceAmount){discountAmount=discount.amount;appliedDiscountId=discount.id;discountDuration=discount.duration;}
- }
- return {price_amount:priceAmount,discount_amount:discountAmount,amount_due:priceAmount-discountAmount,currency:price.price_currency,discount_id:appliedDiscountId,discount_duration:discountDuration};
-}
 export async function paidAccess(userId:string,plugin:string) {
  // Access is a current server record, never a browser plan or a legacy auth flag.
  if(!process.env.POLAR_ENVIRONMENT) return false;

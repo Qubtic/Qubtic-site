@@ -3,18 +3,18 @@ import './billing-panel.css';
 const API='https://www.qubtic.tech/api/billing';
 type Cadence='monthly'|'yearly'|'lifetime';
 interface Order { polar_order_id:string;cadence:Cadence;status:string;amount:number;subtotal_amount:number;discount_amount:number;refunded_amount:number;currency:string;purchased_at:string }
-interface Plan {cadence:Cadence;price_amount:number;discount_amount:number;amount_due:number;currency:string;discount_duration?:string}
+interface Plan {cadence:Cadence}
 interface Status {is_pro:boolean;orders:Order[];subscriptions:{cadence:string;status:string;current_period_end:string;cancel_at_period_end:boolean}[]}
-function money(amount:number,currency:string){const formatter=new Intl.NumberFormat(undefined,{style:'currency',currency});const digits=formatter.resolvedOptions().maximumFractionDigits??2;return formatter.format(amount/(10**digits));}
+function money(amount:number,currency:string){if(!Number.isFinite(amount)||!currency||!/^[A-Z]{3}$/i.test(currency))return 'Price at checkout';try{const formatter=new Intl.NumberFormat(undefined,{style:'currency',currency:currency.toUpperCase()});const digits=formatter.resolvedOptions().maximumFractionDigits??2;return formatter.format(amount/(10**digits));}catch{return 'Price at checkout';}}
 export function BillingPanel({token,onVerified}:{token:string;onVerified?:(pro:boolean)=>void}){
- const [plans,setPlans]=useState<Plan[]>([]);const [status,setStatus]=useState<Status|null>(null);const [error,setError]=useState('');const [busy,setBusy]=useState(false);const [pending,setPending]=useState(false);const [destination,setDestination]=useState('');const [destinationCadence,setDestinationCadence]=useState<Cadence|null>(null);
+ const [plans,setPlans]=useState<Plan[]>([]);const [status,setStatus]=useState<Status|null>(null);const [error,setError]=useState('');const [busy,setBusy]=useState(false);const [pending,setPending]=useState(false);const [destination,setDestination]=useState('');const [destinationAction,setDestinationAction]=useState<'checkout'|'portal'|null>(null);
  const callback=useRef(onVerified);callback.current=onVerified;const running=useRef(false);const currentToken=useRef(token);currentToken.current=token;
  async function api(action:string,body?:unknown){
   const response=await fetch(`${API}/${action}`,{method:body===undefined?'GET':'POST',headers:{Authorization:`Bearer ${token}`,...(body===undefined?{}:{'Content-Type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)}),cache:'no-store',signal:AbortSignal.timeout(25000)});
   const data=await response.json();if(!response.ok)throw new Error(data.error||'Billing is unavailable. Please try again.');return data;
  }
  useEffect(()=>{
-  setStatus(null);setPlans([]);setPending(false);setDestination('');setDestinationCadence(null);
+  setStatus(null);setPlans([]);setPending(false);setDestination('');setDestinationAction(null);
   if(!token)return;
   let active=true;
   Promise.all([api('catalog'),api('status')]).then(([catalog,next])=>{if(active){setPlans(catalog.plans);setStatus(next);setError('');callback.current?.(next.is_pro===true);}}).catch(err=>{if(active)setError(err.message);});
@@ -29,20 +29,20 @@ export function BillingPanel({token,onVerified}:{token:string;onVerified?:(pro:b
   let count=0;const timer=pending?setInterval(()=>{if(++count>8){setPending(false);return;}void refresh();},15000):undefined;
   return()=>{window.removeEventListener('focus',focus);if(timer)clearInterval(timer);};
  },[pending,token]);
- async function open(action:'checkout'|'portal',cadence?:Cadence){
-  const tab=window.open('about:blank','_blank');if(tab)tab.opener=null;setBusy(true);setError('');setDestination('');setDestinationCadence(null);
-  try{const data=await api(action,action==='checkout'?{cadence,request_id:crypto.randomUUID()}:{});const url=new URL(data.url);
+ async function open(action:'checkout'|'portal'){
+  setBusy(true);setError('');setDestination('');setDestinationAction(null);
+  try{const data=await api(action,action==='checkout'?{request_id:crypto.randomUUID()}:{});const url=new URL(data.url);
    if(url.protocol!=='https:'||!['polar.sh','buy.polar.sh','sandbox.polar.sh','sandbox-api.polar.sh','api.polar.sh','sandbox.buy.polar.sh'].includes(url.hostname)||url.username||url.password)throw new Error('Invalid billing destination.');
-   setDestination(url.href);setDestinationCadence(action==='checkout'?cadence??null:null);
-   if(tab){try{tab.location.href=url.href;}catch{tab.close();}}
+   setDestination(url.href);setDestinationAction(action);
+   try{window.open(url.href,'_blank','noopener,noreferrer');}catch{/* The visible checkout link remains available. */}
    if(action==='checkout')setPending(true);
-  }catch(err){tab?.close();setError(err instanceof Error?err.message:'Could not open billing.');}finally{setBusy(false);}
+  }catch(err){setError(err instanceof Error?err.message:'Could not open billing.');}finally{setBusy(false);}
  }
  return <section className="qubtic-billing" aria-label="Pro billing and purchase history">
-  <p>Monthly, yearly, and lifetime include the same Pro features. Choose how you pay.</p>
-  <div className="qubtic-billing-plans">{(['monthly','yearly','lifetime'] as Cadence[]).map(cadence=><article className="qubtic-billing-plan" key={cadence}><h3>Pro {cadence}</h3><p>{cadence==='lifetime'?'One payment, lifetime access.':`Billed ${cadence}.`}</p><p>{plans.find(plan=>plan.cadence===cadence)?'Final tax and total are confirmed at Polar checkout.':'Checkout coming soon.'}</p>{plans.filter(plan=>plan.cadence===cadence&&Number.isFinite(plan.amount_due)&&Boolean(plan.currency)).map(plan=><p className="qubtic-billing-price" key={plan.cadence}>{plan.discount_amount>0&&<><del>{money(plan.price_amount,plan.currency)}</del><span>Discount {money(plan.discount_amount,plan.currency)}</span></>}<strong>{money(plan.amount_due,plan.currency)}</strong>{cadence==='yearly'&&plan.discount_amount>0&&plan.discount_duration==='once'&&<span>First payment only; renews at {money(plan.price_amount,plan.currency)} per year.</span>}</p>)}<button type="button" disabled={!token||busy||!plans.some(plan=>plan.cadence===cadence)||status?.is_pro} onClick={()=>void open('checkout',cadence)}>{status?.is_pro?'Pro active':!token?'Sign in to upgrade':`Purchase Pro ${cadence}`}</button>{destination&&destinationCadence===cadence&&<a href={destination} target="_blank" rel="noopener noreferrer">Open Polar checkout</a>}</article>)}</div>
+  <p>All Pro features are included. Select your payment option on Polar checkout.</p>
+  <div className="qubtic-billing-plans"><article className="qubtic-billing-plan"><h3>Pro access</h3><p>Choose your billing option and enter any eligible discount code at Polar checkout.</p><button type="button" disabled={!token||busy||plans.length!==3||status?.is_pro} onClick={()=>void open('checkout')}>{status?.is_pro?'Pro active':!token?'Sign in to upgrade':'Purchase Pro'}</button>{destination&&destinationAction==='checkout'&&<a href={destination} target="_blank" rel="noopener noreferrer">Open Polar checkout</a>}</article></div>
+  {destination&&destinationAction==='portal'&&<a href={destination} target="_blank" rel="noopener noreferrer">Continue to Polar</a>}
   {pending&&<p role="status">Waiting for payment verification. Access will refresh automatically.</p>}
-  {destination&&!destinationCadence&&<a href={destination} target="_blank" rel="noopener noreferrer">Continue to Polar</a>}
   {error&&<p role="alert">{error}</p>}
   {token&&<div className="qubtic-billing-actions"><button type="button" disabled={busy} onClick={()=>void refresh()}>{busy?'Checking billing…':'Refresh billing'}</button><button type="button" disabled={busy||!status?.orders.length} onClick={()=>void open('portal')}>Manage billing &amp; invoices</button></div>}
   <h3>Purchase history</h3>

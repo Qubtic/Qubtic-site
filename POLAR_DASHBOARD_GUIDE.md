@@ -2,7 +2,7 @@
 
 The only billing configuration template is **`Qubtic/.env.example`**. Copy its settings into the Qubtic website's existing `.env`/`.env.local` or your hosting provider's server Environment Variables. Do not overwrite an existing real environment file. Next.js loads `.env.local` before `.env`; avoid setting the same key differently in both files.
 
-For promotions, put each eligible Polar Discount UUID in the matching server variable, such as `POLAR_WHATSAPP_COMMERCE_YEARLY_DISCOUNT_ID` and `POLAR_WHATSAPP_COMMERCE_LIFETIME_DISCOUNT_ID`. Qubtic reads Polar's current product price and discount, displays the first-payment amount, and passes the eligible discount to the account-linked checkout session. Polar's order supplies the final charged amount, subtotal, and discount for payment history after `billing_discounts.sql` is applied. A static `/checkout-links/.../redirect` URL is not used for plugin Pro access because it does not carry Qubtic's verified account and checkout mapping.
+The plugin and Qubtic account page show one Purchase Pro button. Qubtic creates an account-linked Polar Checkout Session with monthly, yearly, and lifetime products. The buyer selects a product and enters an eligible discount code on Polar. Polar's paid order supplies the final charged amount, subtotal, and discount for payment history after `billing_discounts.sql` is applied. A static `/checkout-links/.../redirect` URL is not used for plugin Pro access because it does not carry Qubtic's verified account and checkout mapping.
 
 FrameDrop, WhatsApp Commerce, and Qube Auth do not need Polar environment files. They call `https://www.qubtic.tech/api/billing/*` with their Qubtic account session. The website holds provider credentials, selects products, verifies payments, and supplies access/history. `commerce.env.example` is now a deprecated pointer, not another configuration file.
 
@@ -22,7 +22,6 @@ In the selected organization, open **Settings → Access Tokens → Create token
 |---|---|
 | `organizations:read` | Setup command confirms the organization |
 | `products:read` | Validate products, prices, billing periods, and benefits |
-| `discounts:read` | Validate configured promotions and display eligible prices |
 | `customers:read` | Resolve the linked customer and current benefit state |
 | `orders:read` | Verify payments/refunds and synchronize history |
 | `subscriptions:read` | Synchronize recurring access and cancellation dates |
@@ -110,7 +109,6 @@ Source: [Polar webhook setup](https://polar.sh/docs/integrate/webhooks/endpoints
 | `POLAR_ACCESS_TOKEN` | Polar Organization Access Token |
 | `POLAR_ORGANIZATION_ID` | Polar organization UUID / `billing:organization` helper |
 | `POLAR_WEBHOOK_SECRET` | Signing secret for this deployment's webhook endpoint |
-| `POLAR_WHATSAPP_COMMERCE_YEARLY_DISCOUNT_ID`, `POLAR_WHATSAPP_COMMERCE_LIFETIME_DISCOUNT_ID` | Optional Polar discount UUIDs; Qubtic checks product eligibility and price before showing or applying each discount |
 | Twelve product/benefit ID keys | Polar products and benefits created above |
 | `NEXT_PUBLIC_SITE_URL` | Public Qubtic website origin; used for checkout returns and auth pairing |
 | `SUPABASE_URL` | Your shared Qubtic Supabase project's URL |

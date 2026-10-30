@@ -1,5 +1,5 @@
 import { billingSiteUrl } from '@/lib/billing/config.mjs';
-import { actor, BillingError, billingHeaders, catalog, check, cronAuthorized, database, environment, identity, limit, paidAccess, planPrice, polar, processEvent, safePolarUrl, synchronize, webhook, type Cadence } from '@/lib/billing/core';
+import { actor, BillingError, billingHeaders, catalog, check, cronAuthorized, database, environment, identity, limit, paidAccess, polar, processEvent, safePolarUrl, synchronize, webhook, type Cadence } from '@/lib/billing/core';
 import { randomUUID } from 'node:crypto';
 export const runtime='nodejs';
 export const maxDuration=60;
@@ -26,8 +26,7 @@ async function handle(request:Request,{params}:Context){
   const user=await actor(request);await limit(`api:${user.id}`);
   if(action==='catalog' && request.method==='GET'){
    const rows=(await catalog()).filter(row=>row.plugin_slug===user.plugin);
-   const plans=await Promise.all(rows.map(async row=>({cadence:row.cadence,available:true,...await planPrice(row.product_id,process.env[`POLAR_${row.plugin_slug.replaceAll('-','_').toUpperCase()}_${row.cadence.toUpperCase()}_DISCOUNT_ID`])})));
-   return reply({plans});
+   return reply({plans:rows.map(row=>({cadence:row.cadence,available:true}))});
   }
   const customerId=await identity(user.id);
   if(action==='status' && request.method==='GET'){
@@ -49,9 +48,11 @@ async function handle(request:Request,{params}:Context){
    await limit(`checkout:${user.id}`,5,300);
    const raw=await request.text();if(Buffer.byteLength(raw)>4096)throw new BillingError('Request too large.',413);
    const body=(()=>{try{return JSON.parse(raw);}catch{return null;}})() as {cadence?:Cadence;request_id?:string}|null;
-   if(!body || !['monthly','yearly','lifetime'].includes(body.cadence||'') || !/^[0-9a-f-]{36}$/i.test(body.request_id||'')) throw new BillingError('Choose a valid billing period.',400);
-   const row=(await catalog()).find(item=>item.plugin_slug===user.plugin && item.cadence===body.cadence);
-   if(!row) throw new BillingError('This plan is not available yet.',409);
+   if(!body || (body.cadence && !['monthly','yearly','lifetime'].includes(body.cadence)) || !/^[0-9a-f-]{36}$/i.test(body.request_id||'')) throw new BillingError('Choose a valid billing period.',400);
+   const rows=(await catalog()).filter(item=>item.plugin_slug===user.plugin);
+   const selectable=['yearly','monthly','lifetime'].map(cadence=>rows.find(item=>item.cadence===cadence));
+   if(selectable.some(item=>!item)) throw new BillingError('Pro checkout is not fully configured yet.',409);
+   const row=selectable[0]!;
    if(await paidAccess(user.id,user.plugin)) throw new BillingError('Pro is already active. Manage billing to change your plan.',409);
    const {data:existing,error:existingError}=await db.from('billing_checkouts').select('*').eq('user_id',user.id).eq('request_key',body.request_id).maybeSingle();check(existingError);
    if(existing){
@@ -59,19 +60,21 @@ async function handle(request:Request,{params}:Context){
     if(existing.checkout_url && Date.parse(existing.expires_at)>Date.now()) return reply({url:safePolarUrl(existing.checkout_url)});
     throw new BillingError('This checkout request is already processing or expired. Start a new checkout.',409);
    }
-   const sdk=polar();const product=await sdk.products.get(row.product_id);
-   if(product.organization_id!==process.env.POLAR_ORGANIZATION_ID || product.is_archived || !product.benefits.some(b=>b.id===row.benefit_id)) throw new BillingError('Plan configuration is invalid.');
-   const prices=product.prices.filter(price=>!price.is_archived);
-   if(!prices.length||prices.some(price=>price.amount_type!=='fixed'||!('price_amount' in price)||typeof price.price_amount!=='number'||price.price_amount<=0))throw new BillingError('Pro requires a configured fixed paid price.');
-   if((row.cadence==='lifetime' && product.is_recurring)||(row.cadence!=='lifetime' && (!product.is_recurring || product.recurring_interval!==(row.cadence==='monthly'?'month':'year')))) throw new BillingError('Plan billing interval does not match.');
-   const offer=await planPrice(row.product_id,process.env[`POLAR_${row.plugin_slug.replaceAll('-','_').toUpperCase()}_${row.cadence.toUpperCase()}_DISCOUNT_ID`]);
+   const sdk=polar();
+   for(const selected of selectable){
+    const product=await sdk.products.get(selected!.product_id);
+    if(product.organization_id!==process.env.POLAR_ORGANIZATION_ID || product.is_archived || !product.benefits.some(b=>b.id===row.benefit_id)) throw new BillingError('Plan configuration is invalid.');
+    const prices=product.prices.filter(price=>!price.is_archived);
+    if(!prices.length||prices.some(price=>price.amount_type!=='fixed'||!('price_amount' in price)||typeof price.price_amount!=='number'||price.price_amount<=0))throw new BillingError('Pro requires a configured fixed paid price.');
+    if((selected!.cadence==='lifetime' && product.is_recurring)||(selected!.cadence!=='lifetime' && (!product.is_recurring || product.recurring_interval!==(selected!.cadence==='monthly'?'month':'year')))) throw new BillingError('Plan billing interval does not match.');
+   }
    const {error:expiryError}=await db.from('billing_checkouts').update({status:'expired'}).eq('user_id',user.id).eq('environment',env).in('status',['creating','open']).lt('expires_at',new Date().toISOString());check(expiryError);
    const {data:openCheckout,error:openError}=await db.from('billing_checkouts').select('*').eq('user_id',user.id).eq('environment',env).in('status',['creating','open']).maybeSingle();check(openError);
    if(openCheckout){if(openCheckout.checkout_url && openCheckout.product_id===row.product_id)return reply({url:safePolarUrl(openCheckout.checkout_url)});throw new BillingError('Another checkout is already open. Complete it or wait for it to expire.',409);}
    const id=randomUUID();
    const {error:insertError}=await db.from('billing_checkouts').insert({id,user_id:user.id,customer_id:customerId,environment:env,plugin_slug:user.plugin,cadence:row.cadence,product_id:row.product_id,request_key:body.request_id});check(insertError);
    // The account ID comes exclusively from verified database identity. No bearer tokens in URLs.
-   const checkout=await sdk.checkouts.create({products:[row.product_id],external_customer_id:customerId,customer_email:user.email,customer_name:user.name,allow_trial:false,...(offer.discount_id?{discount_id:offer.discount_id,allow_discount_codes:false}:{}),success_url:`${billingSiteUrl(process.env)}/billing/return`,return_url:`${billingSiteUrl(process.env)}/billing/return`,metadata:{qubtic_checkout_id:id,plugin_slug:user.plugin}});
+   const checkout=await sdk.checkouts.create({products:selectable.map(item=>item!.product_id),external_customer_id:customerId,customer_email:user.email,customer_name:user.name,allow_trial:false,allow_discount_codes:true,success_url:`${billingSiteUrl(process.env)}/billing/return`,return_url:`${billingSiteUrl(process.env)}/billing/return`,metadata:{qubtic_checkout_id:id,plugin_slug:user.plugin}});
    const url=safePolarUrl(checkout.url);
    const {error:updateError}=await db.from('billing_checkouts').update({polar_checkout_id:checkout.id,checkout_url:url,status:'open',expires_at:checkout.expires_at}).eq('id',id).eq('status','creating');check(updateError);
    return reply({url});

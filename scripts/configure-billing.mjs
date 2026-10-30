@@ -39,8 +39,6 @@ if(args.has('--organization')) {
      if(row.cadence==='lifetime'?product.is_recurring:!product.is_recurring||product.recurring_interval!==(row.cadence==='monthly'?'month':'year')||product.recurring_interval_count!==1)throw new Error(`${row.plugin_slug}/${row.cadence}: billing interval does not match.`);
      const prices=product.prices.filter(price=>!price.is_archived);
      if(!prices.length||prices.some(price=>price.amount_type!=='fixed'||typeof price.price_amount!=='number'||price.price_amount<=0))throw new Error(`${row.plugin_slug}/${row.cadence}: configure a positive fixed price.`);
-     const discountKey=`POLAR_${row.plugin_slug.replaceAll('-','_').toUpperCase()}_${row.cadence.toUpperCase()}_DISCOUNT_ID`;
-     if(process.env[discountKey]){const discount=await polar.discounts.get(process.env[discountKey]);const price=prices[0];if(discount.organization_id!==org.id||!discount.products.some(item=>(typeof item==='string'?item:item.id)===row.product_id)||discount.type!=='fixed'||discount.currency!==price.price_currency||discount.amount<=0||discount.amount>=price.price_amount)throw new Error(`${row.plugin_slug}/${row.cadence}: discount is not eligible or would make checkout free.`);}
     }
     const {data:current,error}=await db.from('billing_catalog').select('*').eq('environment',process.env.POLAR_ENVIRONMENT);if(error)throw new Error('Billing schema is unavailable. Apply the billing migrations first.');
     if(args.has('--apply')){
@@ -48,7 +46,7 @@ if(args.has('--organization')) {
      if(applyError)throw new Error('Catalog synchronization failed. Apply billing_central_config.sql and check server-role permissions.');
      console.log(`Synced ${data} enabled plans from central ENV. Retired rows were retained for purchase history.`);
     }else if(!catalogMatches(current||[],rows))throw new Error('Database catalog differs from ENV. Run npm run billing:configure after reviewing your settings.');
-    console.log('Remote checks passed: resource read permissions, organization, products, benefits, prices, configured discounts, and database catalog. Checkout/customer-session write permissions require the sandbox acceptance test. No checkout or payment was created.');
+    console.log('Remote checks passed: resource read permissions, organization, products, benefits, prices, and database catalog. Checkout/customer-session write permissions require the sandbox acceptance test. No checkout or payment was created.');
     console.log('Webhook delivery and cron execution still require the sandbox acceptance test in POLAR_DASHBOARD_GUIDE.md.');
    }catch(error){console.error(error instanceof Error&&error.message&&!('statusCode' in error)?error.message:'Remote validation failed. Check credentials, token scopes, environment, and connectivity. Provider payloads are hidden.');process.exitCode=1;}
   }
