@@ -47,7 +47,7 @@ async function handle(request:Request,{params}:Context){
   if(action==='checkout' && request.method==='POST'){
    await limit(`checkout:${user.id}`,5,300);
    const raw=await request.text();if(Buffer.byteLength(raw)>4096)throw new BillingError('Request too large.',413);
-   const body=(()=>{try{return JSON.parse(raw);}catch{return null;}})() as {cadence?:Cadence;request_id?:string}|null;
+   const body=(()=>{try{return JSON.parse(raw);}catch{return null;}})() as {cadence?:Cadence;request_id?:string;replace_previous?:boolean}|null;
    if(!body || (body.cadence && !['monthly','yearly','lifetime'].includes(body.cadence)) || !/^[0-9a-f-]{36}$/i.test(body.request_id||'')) throw new BillingError('Choose a valid billing period.',400);
    const rows=(await catalog()).filter(item=>item.plugin_slug===user.plugin);
    const selectable=['yearly','monthly','lifetime'].map(cadence=>rows.find(item=>item.cadence===cadence));
@@ -70,7 +70,15 @@ async function handle(request:Request,{params}:Context){
    }
    const {error:expiryError}=await db.from('billing_checkouts').update({status:'expired'}).eq('user_id',user.id).eq('environment',env).in('status',['creating','open']).lt('expires_at',new Date().toISOString());check(expiryError);
    const {data:openCheckout,error:openError}=await db.from('billing_checkouts').select('*').eq('user_id',user.id).eq('environment',env).in('status',['creating','open']).maybeSingle();check(openError);
-   if(openCheckout){if(openCheckout.checkout_url && openCheckout.product_id===row.product_id)return reply({url:safePolarUrl(openCheckout.checkout_url)});throw new BillingError('Another checkout is already open. Complete it or wait for it to expire.',409);}
+   if(openCheckout){
+    if(!openCheckout.checkout_url || !openCheckout.polar_checkout_id || openCheckout.plugin_slug!==user.plugin) throw new BillingError('Another checkout is still processing. Please try again shortly.',409);
+    const previous=await sdk.checkouts.get(openCheckout.polar_checkout_id);
+    if(previous.status!=='open') throw new BillingError('Your previous checkout changed status. Refresh billing before starting another.',409);
+    const available=previous.products.map(item=>item.id).sort().join(',')===selectable.map(item=>item!.product_id).sort().join(',');
+    if(available)return reply({url:safePolarUrl(openCheckout.checkout_url)});
+    if(body.replace_previous!==true)return reply({error:'An earlier checkout is still open. Continue it or start a new Pro checkout to choose a plan.',previous_url:safePolarUrl(openCheckout.checkout_url),can_replace:true},409);
+    const {error:replaceError}=await db.from('billing_checkouts').update({status:'superseded'}).eq('id',openCheckout.id).eq('status','open');check(replaceError);
+   }
    const id=randomUUID();
    const {error:insertError}=await db.from('billing_checkouts').insert({id,user_id:user.id,customer_id:customerId,environment:env,plugin_slug:user.plugin,cadence:row.cadence,product_id:row.product_id,request_key:body.request_id});check(insertError);
    // The account ID comes exclusively from verified database identity. No bearer tokens in URLs.
