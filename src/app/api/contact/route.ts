@@ -39,7 +39,7 @@ export async function POST(request: Request) {
         {
           success: false,
           message: 'Invalid form input',
-          errors: error.errors,
+          errors: error.issues,
         },
         { status: 400 }
       );

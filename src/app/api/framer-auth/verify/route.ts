@@ -1,3 +1,4 @@
+import { paidAccess } from '@/lib/billing/core';
 import { NextResponse } from 'next/server';
 import { verifyFramerSessionToken } from '@/lib/framer-auth';
 
@@ -49,13 +50,13 @@ export async function GET(request: Request) {
       );
     }
 
-    const isPro = user.plan === 'pro';
+    const isPro = await paidAccess(user.id, user.plugin_slug);
 
     return NextResponse.json(
       {
         valid: true,
         is_pro: isPro,
-        tier: user.plan,
+        tier: isPro ? 'pro' : 'free',
         is_early_bird: Boolean(user.is_early_bird),
         user: {
           id: user.id,
@@ -63,9 +64,9 @@ export async function GET(request: Request) {
           name: user.name,
           company_name: user.company_name,
           website_url: user.website_url,
-          plan: user.plan,
+          plan: isPro ? 'pro' : 'free',
           is_pro: isPro,
-          tier: user.plan,
+          tier: isPro ? 'pro' : 'free',
           is_early_bird: Boolean(user.is_early_bird),
           early_bird_granted_at: user.early_bird_granted_at,
           plugin_slug: user.plugin_slug,
@@ -113,18 +114,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const isPro = user.plan === 'pro';
+    const isPro = await paidAccess(user.id, user.plugin_slug);
 
     return NextResponse.json(
       {
         valid: true,
         is_pro: isPro,
-        tier: user.plan,
+        tier: isPro ? 'pro' : 'free',
         is_early_bird: Boolean(user.is_early_bird),
         user: {
           ...user,
           is_pro: isPro,
-          tier: user.plan,
+          tier: isPro ? 'pro' : 'free',
           is_early_bird: Boolean(user.is_early_bird),
         },
       },

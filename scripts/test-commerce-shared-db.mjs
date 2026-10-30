@@ -7,7 +7,7 @@ test('shared auth migration preserves per-plugin accounts and keeps account/sess
   const db = new PGlite();
   try {
     await db.exec('create role anon; create role authenticated; create role service_role;');
-    for (const file of ['framer_users.sql', 'pairing_sessions.sql', 'whatsapp_commerce_shared_auth.sql', 'whatsapp_commerce_shared_auth.sql']) {
+    for (const file of ['framer_users.sql', 'pairing_sessions.sql', 'auth_server_only.sql', 'auth_server_only.sql']) {
       await db.exec(await readFile(new URL(`../supabase/${file}`, import.meta.url), 'utf8'));
     }
     await db.exec("insert into framer_users(email,plugin_slug,plugin_name,auth_token) values ('same@example.test','frame-drop','Frame Drop','drop-token'), ('same@example.test','whatsapp-commerce','WhatsApp Commerce','commerce-token');");

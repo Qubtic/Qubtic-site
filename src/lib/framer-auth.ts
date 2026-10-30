@@ -1,3 +1,4 @@
+import { hashPassword } from './passwords';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
@@ -509,7 +510,7 @@ export async function verifyFramerSessionToken(
   }
 
   // WhatsApp Commerce uses only current account records in production, never pairing snapshots.
-  if (expectedPlugin === 'whatsapp-commerce' && process.env.NODE_ENV === 'production') return null;
+  if (process.env.NODE_ENV === 'production') return null;
   // 2. Check local fallback
   const localList = readLocalUsers();
   const match = localList.find((u) => {
@@ -1307,6 +1308,10 @@ export async function verifyAuthOtpCode(
   code: string,
   pluginSlug: string = 'frame-drop'
 ): Promise<{ valid: boolean; message?: string }> {
+  if (process.env.NODE_ENV === 'production') {
+    const { data, error } = await supabase.rpc('auth_verify_code', { p_email: email, p_plugin: getPluginMetadata(pluginSlug).slug, p_code: code.trim(), p_kind: 'otp' });
+    return !error && data === true ? { valid: true } : { valid: false, message: 'Invalid or expired verification code.' };
+  }
   const normalizedEmail = email.toLowerCase().trim();
   const cleanCode = code.trim();
   let session = otpStore.get(`${getPluginMetadata(pluginSlug).slug}:${normalizedEmail}`);
@@ -1436,7 +1441,7 @@ export async function requestAuthPasswordReset(
   const normalizedEmail = email.toLowerCase().trim();
   const plugin = getPluginMetadata(pluginSlug);
 
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const code = crypto.randomInt(100000,1000000).toString();
   const expiresAt = Date.now() + 15 * 60 * 1000; // 15 mins
 
   resetStore.set(`${getPluginMetadata(pluginSlug).slug}:${normalizedEmail}`, {
@@ -1464,6 +1469,7 @@ export async function requestAuthPasswordReset(
             ...(userRecord.metadata || {}),
             reset_code: code,
             reset_expires_at: expiresAt,
+            reset_attempts: 0,
           },
         })
         .eq('id', userRecord.id);
@@ -1504,6 +1510,11 @@ export async function resetAuthUserPassword(
   user?: FramerUserRecord;
   token?: string;
 }> {
+  if (process.env.NODE_ENV === 'production') {
+    const { data, error } = await supabase.rpc('auth_verify_code', { p_email: email, p_plugin: getPluginMetadata(pluginSlug).slug, p_code: code.trim(), p_kind: 'reset' });
+    if(error || data !== true) return { success: false, message: 'Invalid or expired reset code.' };
+    resetStore.set(`${getPluginMetadata(pluginSlug).slug}:${email.toLowerCase().trim()}`, { email: email.toLowerCase().trim(), code: code.trim(), expiresAt: Date.now()+60000 });
+  }
   const normalizedEmail = email.toLowerCase().trim();
   const cleanCode = code.trim();
   let session = resetStore.get(`${getPluginMetadata(pluginSlug).slug}:${normalizedEmail}`);
@@ -1554,7 +1565,7 @@ export async function resetAuthUserPassword(
   }
 
   const salt = 'qubtic_pwd_salt_';
-  const passwordHash = crypto.createHash('sha256').update(salt + newPassword).digest('hex');
+  const passwordHash = hashPassword(newPassword);
 
   resetStore.delete(`${getPluginMetadata(pluginSlug).slug}:${normalizedEmail}`);
   const plugin = getPluginMetadata(pluginSlug);

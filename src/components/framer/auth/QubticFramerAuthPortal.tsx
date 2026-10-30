@@ -1412,6 +1412,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
               </div>
 
               {plugin.slug === 'whatsapp-commerce' && <p className="qubtic-auth-success-desc" role="status">{pairingCode && pairingStatus !== 'confirmed' ? 'Your account is ready, but the plugin connection could not complete. Return to WhatsApp Commerce and start a new connection.' : 'Return to WhatsApp Commerce in Framer. You can close this tab.'}</p>}
+              <a href="/billing" className="qubtic-auth-btn-secondary">Purchase history &amp; billing</a>
               {/* Action Buttons */}
               <div className="qubtic-auth-success-actions">
                 <button

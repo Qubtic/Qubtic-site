@@ -35,14 +35,15 @@ function harness() {
     }; return query;
   } };
   const registry = load('src/lib/plugins-registry.ts', {});
-  const auth = load('src/lib/framer-auth.ts', {
+  const passwords = load('src/lib/passwords.ts', { 'server-only': {} });
+  const auth = load('src/lib/framer-auth.ts', { './passwords': passwords,
     './supabase': { supabase }, './plugins-registry': registry,
     fs: { existsSync: file => files.has(file), mkdirSync() {}, readFileSync: file => files.get(file), writeFileSync: (file,data) => files.set(file,data) },
     './email-service': { sendVerificationEmail: async (...args) => messages.push(args), sendPasswordResetEmail: async (...args) => messages.push(args), sendNewUserTeamNotification: async () => {} },
   });
-  const api = load('src/lib/commerce-access.ts', { 'server-only': {}, './framer-auth': auth });
+  const api = load('src/lib/commerce-access.ts', { 'server-only': {}, './framer-auth': auth, './billing/core': { paidAccess: async () => false } });
   const next = { NextResponse: { json: (data, options) => Response.json(data, options) } };
-  const route = file => load(`src/app/api/framer-auth/${file}/route.ts`, { 'next/server': next, '@/lib/framer-auth': auth, '@/lib/plugins-registry': registry, '@/lib/email-service': { sendTeamInviteEmail: async () => {} } });
+  const route = file => load(`src/app/api/framer-auth/${file}/route.ts`, { 'next/server': next, '@/lib/framer-auth': auth, '@/lib/plugins-registry': registry, '@/lib/email-service': { sendTeamInviteEmail: async () => {} }, '@/lib/passwords': passwords, '@/lib/auth-rate-limit': { authRateLimit: async () => true } });
   const request = (body, token) => new Request('https://www.qubtic.tech/test', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) });
   return { auth, api, registry, tables, messages, route, request };
 }

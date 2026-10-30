@@ -54,8 +54,9 @@ export function getMailTransporter() {
   const host = process.env.SMTP_HOST || 'smtp.mailgun.org';
   const port = parseInt(process.env.SMTP_PORT || '587', 10);
   const secure = process.env.SMTP_SECURE === 'true' || port === 465;
-  const user = 'hello@qubtic.tech';
-  const pass = '9iEggBuT#Xq-Ca*';
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!user || !pass) throw new Error('SMTP credentials are not configured.');
 
   return nodemailer.createTransport({
     host,
@@ -66,7 +67,7 @@ export function getMailTransporter() {
       pass,
     },
     tls: {
-      rejectUnauthorized: false,
+      rejectUnauthorized: true,
     },
   });
 }

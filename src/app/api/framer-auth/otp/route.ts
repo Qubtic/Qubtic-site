@@ -1,3 +1,5 @@
+import { authRateLimit } from '@/lib/auth-rate-limit';
+import { hashPassword } from '@/lib/passwords';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import {
@@ -43,7 +45,7 @@ export async function POST(request: Request) {
       mode,
     } = body;
 
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
+    if (!email || typeof email !== 'string' || !/^\S+@[^\s@,<>;]+\.[^\s@,<>;]+$/.test(email) || email.length > 254 || /[,<>;]/.test(email)) {
       return NextResponse.json(
         { success: false, message: 'A valid email address is required.' },
         { status: 400, headers: { 'Access-Control-Allow-Origin': '*' } }
@@ -51,7 +53,8 @@ export async function POST(request: Request) {
     }
 
     const pluginMeta = getPluginMetadata(plugin);
-    const commerce = pluginMeta.slug === 'whatsapp-commerce';
+    if (!await authRateLimit(request,email,pluginMeta.slug,action)) return NextResponse.json({success:false,message:'Too many attempts. Please try again later.'},{status:429});
+    const commerce = true; // Every plugin uses the same verified account requirements.
     if (commerce) {
       const existing = await findFramerUser(email, pluginMeta.slug);
       if (existing && ['suspended', 'inactive'].includes(existing.status)) return NextResponse.json({ success: false, message: 'This account is not active.' }, { status: 403 });
@@ -109,7 +112,7 @@ export async function POST(request: Request) {
       // Hash password if provided during signup registration
       let passwordHash: string | undefined = undefined;
       if (typeof password === 'string' && password.length > 0) {
-        passwordHash = crypto.createHash('sha256').update(password).digest('hex');
+        passwordHash = hashPassword(password);
       }
 
       // Successful OTP verification - establish authenticated session

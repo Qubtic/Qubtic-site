@@ -1,3 +1,5 @@
+import { authRateLimit } from '@/lib/auth-rate-limit';
+import { hashPassword, verifyPassword } from '@/lib/passwords';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import {
@@ -45,7 +47,7 @@ export async function POST(request: Request) {
       team_role,
     } = body;
 
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
+    if (!email || typeof email !== 'string' || !/^\S+@[^\s@,<>;]+\.[^\s@,<>;]+$/.test(email) || email.length > 254 || /[,<>;]/.test(email)) {
       return NextResponse.json(
         { success: false, message: 'A valid email address is required.' },
         {
@@ -56,8 +58,9 @@ export async function POST(request: Request) {
     }
 
     const pluginMeta = getPluginMetadata(plugin);
-    const commerce = pluginMeta.slug === 'whatsapp-commerce';
-    if (commerce && (!['signup', 'signin'].includes(mode) || typeof password !== 'string' || password.length < 6)) {
+    if (!await authRateLimit(request,email,pluginMeta.slug,mode)) return NextResponse.json({success:false,message:'Too many attempts. Please try again later.'},{status:429});
+    const commerce = true; // Every plugin uses the same verified account requirements.
+    if (commerce && (!['signup', 'signin'].includes(mode) || typeof password !== 'string' || password.length < 6 || password.length > 128)) {
       return NextResponse.json({ success: false, message: 'Choose sign in or sign up and enter a password of at least 6 characters.' }, { status: 400 });
     }
 
@@ -169,7 +172,7 @@ export async function POST(request: Request) {
       const directHash = crypto.createHash('sha256').update(submittedPassword).digest('hex');
       const saltedHash = crypto.createHash('sha256').update('qubtic_pwd_salt_' + submittedPassword).digest('hex');
 
-      if (storedHash !== directHash && storedHash !== saltedHash) {
+      if (!verifyPassword(submittedPassword, storedHash)) {
         return NextResponse.json(
           {
             success: false,
@@ -191,9 +194,10 @@ export async function POST(request: Request) {
     // On sign-up (or new user creation): hash password if provided
     let passwordHash: string | undefined = undefined;
     if ((mode === 'signup' || !existingUser) && typeof password === 'string' && password.length > 0) {
-      passwordHash = crypto.createHash('sha256').update(password).digest('hex');
+      passwordHash = hashPassword(password);
     }
 
+    if (mode === 'signin' && existingUser?.metadata?.password_hash && !String(existingUser.metadata.password_hash).startsWith('scrypt:')) passwordHash = hashPassword(password);
     // Save or update in database
     const { user, isNew, token } = await createOrUpdateFramerUser({
       email,

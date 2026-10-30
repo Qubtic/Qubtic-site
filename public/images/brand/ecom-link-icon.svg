@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40" fill="none">
+  <defs>
+    <linearGradient id="ecomBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8054b8" />
+      <stop offset="100%" stop-color="#55248c" />
+    </linearGradient>
+    <linearGradient id="ecomSheen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05" />
+    </linearGradient>
+  </defs>
+
+  <!-- Base container with WooCommerce Purple -->
+  <rect width="40" height="40" rx="11" fill="url(#ecomBg)" />
+  <rect x="0.5" y="0.5" width="39" height="39" rx="10.5" stroke="url(#ecomSheen)" stroke-width="1" />
+
+  <!-- Shopping Bag Body -->
+  <rect x="10" y="14.5" width="20" height="16.5" rx="4" fill="#ffffff" fill-opacity="0.18" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" />
+  
+  <!-- Handle -->
+  <path d="M15 14.5V12C15 9.79086 16.7909 8 19 8H21C23.2091 8 25 9.79086 25 12V14.5" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" />
+
+  <!-- Woo "W" monogram in center of bag -->
+  <path d="M14.5 19.5L16.8 26.5L19.5 21.2L20.5 21.2L23.2 26.5L25.5 19.5" stroke="#f6deaf" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

@@ -1,4 +1,5 @@
 import 'server-only';
+import { paidAccess } from './billing/core';
 import { initiatePairingSession, resolvePairingSession, verifyFramerSessionToken, revokeCommerceSession, getPairingSession } from './framer-auth';
 
 const PRODUCT = 'whatsapp-commerce';
@@ -30,7 +31,7 @@ export async function commerceRequest(request: Request, action: string) {
     if (action === 'access' && ['GET', 'POST'].includes(request.method)) {
       const user = await verifyFramerSessionToken(bearer(request), PRODUCT);
       if (!user || user.plugin_slug !== PRODUCT || user.status !== 'active' || user.metadata?.email_verified !== true) return reply({ error: 'Sign in to WhatsApp Commerce first.' }, 401);
-      return reply({ authenticated: true, product: PRODUCT, email: user.email, name: user.name, company_name: user.company_name, website_url: user.website_url, plan: user.plan, is_pro: user.plan === 'pro' });
+      return reply({ authenticated: true, product: PRODUCT, email: user.email, name: user.name, company_name: user.company_name, website_url: user.website_url, plan: await paidAccess(user.id, PRODUCT) ? 'pro' : 'free', is_pro: await paidAccess(user.id, PRODUCT) });
     }
     if (action === 'signout' && request.method === 'POST') {
       await revokeCommerceSession(bearer(request));

@@ -1,0 +1,8 @@
+.billing-account { --ba-bg:#f4efe6;--ba-card:#fff;--ba-text:#17221c;min-height:100vh;background:var(--ba-bg);color:var(--ba-text);padding:24px; }
+.billing-account[data-theme="dark"] { --ba-bg:#070d09;--ba-card:#18201b;--ba-text:#edf4ef; }
+.billing-account[data-theme="light"] { --ba-bg:#f4efe6;--ba-card:#fff;--ba-text:#17221c; }
+.billing-account>section { max-width:760px;margin:auto;background:var(--ba-card);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px; }
+.billing-account label { display:flex;flex-direction:column;gap:8px; }
+.billing-account :is(select,button) { color:var(--ba-text);background:var(--ba-card);border:1px solid currentColor;padding:8px;border-radius:8px; }
+.billing-account a { color:var(--ba-text);text-decoration:underline; }
+.billing-account :is(a,button,select):focus-visible { outline:2px solid currentColor;outline-offset:3px; }

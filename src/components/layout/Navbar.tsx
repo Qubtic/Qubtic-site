@@ -213,39 +213,37 @@ export function Navbar() {
                     </span>
                   </div>
 
-                  {/* 2 Featured Product Cards Grid */}
-                  <div className="qubtic-dropdown__grid">
+                  {/* Product List */}
+                  <div className="qubtic-dropdown__list" role="list">
                     {/* Qube Auth */}
                     <Link
                       href="/framer/qube-auth"
                       onClick={closeProductMenu}
-                      className="qubtic-dropdown__product-card"
+                      className="qubtic-dropdown__list-item"
+                      role="listitem"
                     >
-                      <div>
-                        <div className="qubtic-dropdown__card-top">
-                          <div className="qubtic-dropdown__product-icon">
-                            <Image
-                              src="/images/qube-auth/qube-auth-logo.png"
-                              alt="Qube Auth Logo"
-                              width={24}
-                              height={24}
-                              className="qubtic-dropdown__product-img"
-                            />
-                          </div>
+                      <div className="qubtic-dropdown__product-icon">
+                        <Image
+                          src="/images/qube-auth/qube-auth-logo.png"
+                          alt="Qube Auth Logo"
+                          width={24}
+                          height={24}
+                          className="qubtic-dropdown__product-img"
+                        />
+                      </div>
+                      <div className="qubtic-dropdown__item-content">
+                        <div className="qubtic-dropdown__title-row">
+                          <h3 className="qubtic-dropdown__title">Qube Auth</h3>
                           <span className="qubtic-dropdown__badge">
                             v1.0 · New
                           </span>
                         </div>
-
-                        <div className="qubtic-dropdown__title-row">
-                          <h3 className="qubtic-dropdown__title">
-                            Qube Auth
-                          </h3>
-                          <ArrowUpRight className="qubtic-dropdown__arrow" />
-                        </div>
                         <p className="qubtic-dropdown__desc">
                           Full-stack auth, user licensing &amp; Supabase toolkit for Framer.
                         </p>
+                      </div>
+                      <div className="qubtic-dropdown__action">
+                        <ArrowUpRight className="qubtic-dropdown__arrow" />
                       </div>
                     </Link>
 
@@ -253,81 +251,145 @@ export function Navbar() {
                     <Link
                       href="/framer/frame-drop"
                       onClick={closeProductMenu}
-                      className="qubtic-dropdown__product-card"
+                      className="qubtic-dropdown__list-item"
+                      role="listitem"
                     >
-                      <div>
-                        <div className="qubtic-dropdown__card-top">
-                          <div className="qubtic-dropdown__product-icon">
-                            <Image
-                              src="/images/brand/frame-drop-icon-transparent.png"
-                              alt="Frame Drop Logo"
-                              width={24}
-                              height={24}
-                              className="qubtic-dropdown__product-img"
-                            />
-                          </div>
-                          <span className="qubtic-dropdown__badge qubtic-dropdown__badge--muted">
+                      <div className="qubtic-dropdown__product-icon">
+                        <Image
+                          src="/images/brand/frame-drop-icon-transparent.png"
+                          alt="Frame Drop Logo"
+                          width={24}
+                          height={24}
+                          className="qubtic-dropdown__product-img"
+                        />
+                      </div>
+                      <div className="qubtic-dropdown__item-content">
+                        <div className="qubtic-dropdown__title-row">
+                          <h3 className="qubtic-dropdown__title">Frame Drop</h3>
+                          <span className="qubtic-dropdown__badge qubtic-dropdown__badge--live">
                             v0.2 · Live
                           </span>
-                        </div>
-
-                        <div className="qubtic-dropdown__title-row">
-                          <h3 className="qubtic-dropdown__title">
-                            Frame Drop
-                          </h3>
-                          <ArrowUpRight className="qubtic-dropdown__arrow" />
                         </div>
                         <p className="qubtic-dropdown__desc">
                           Native Framer component studio with 34+ responsive section drops.
                         </p>
                       </div>
+                      <div className="qubtic-dropdown__action">
+                        <ArrowUpRight className="qubtic-dropdown__arrow" />
+                      </div>
                     </Link>
 
-                    {/* Quick Product Links Strip */}
-                    <div className="mt-2.5 pt-2.5 border-t border-[#141915]/10 flex flex-wrap items-center justify-between px-1 text-xs text-[#555C54] col-span-full gap-2">
-                      <div className="flex items-center gap-3">
-                        <Link
-                          href="/framer/frame-drop/docs"
-                          onClick={closeProductMenu}
-                          className="hover:text-[#0C3823] transition-colors font-medium flex items-center gap-1"
-                        >
-                          <BookOpen className="w-3.5 h-3.5" />
-                          <span>Docs</span>
-                        </Link>
-                        <Link
-                          href="/framer/frame-drop/docs#catalog"
-                          onClick={closeProductMenu}
-                          className="hover:text-[#0C3823] transition-colors font-medium flex items-center gap-1"
-                        >
-                          <Layers className="w-3.5 h-3.5" />
-                          <span>Catalog</span>
-                        </Link>
-                        <Link
-                          href="/framer/frame-drop/roadmap"
-                          onClick={closeProductMenu}
-                          className="hover:text-[#0C3823] transition-colors font-medium flex items-center gap-1"
-                        >
-                          <Compass className="w-3.5 h-3.5" />
-                          <span>Roadmap</span>
-                        </Link>
-                        <Link
-                          href="/framer/frame-drop/version-control"
-                          onClick={closeProductMenu}
-                          className="hover:text-[#0C3823] transition-colors font-medium flex items-center gap-1"
-                        >
-                          <GitBranch className="w-3.5 h-3.5" />
-                          <span>Version Control</span>
-                        </Link>
+                    {/* WhatsApp Commerce */}
+                    <Link
+                      href="/auth/whatsapp-commerce"
+                      onClick={closeProductMenu}
+                      className="qubtic-dropdown__list-item qubtic-dropdown__list-item--soon"
+                      role="listitem"
+                    >
+                      <div className="qubtic-dropdown__product-icon qubtic-dropdown__product-icon--whatsapp">
+                        <Image
+                          src="/images/brand/whatsapp-commerce-logo.png"
+                          alt="WhatsApp Commerce Logo"
+                          width={24}
+                          height={24}
+                          className="qubtic-dropdown__product-img"
+                        />
                       </div>
+                      <div className="qubtic-dropdown__item-content">
+                        <div className="qubtic-dropdown__title-row">
+                          <h3 className="qubtic-dropdown__title">WhatsApp Commerce</h3>
+                          <span className="qubtic-dropdown__badge qubtic-dropdown__badge--soon">
+                            Coming Soon
+                          </span>
+                        </div>
+                        <p className="qubtic-dropdown__desc">
+                          Framer CMS store builder, Excel sync &amp; instant WhatsApp click-to-chat checkout.
+                        </p>
+                      </div>
+                      <div className="qubtic-dropdown__action">
+                        <span className="qubtic-dropdown__action-pill">Early Access</span>
+                        <ArrowUpRight className="qubtic-dropdown__arrow" />
+                      </div>
+                    </Link>
+
+                    {/* E-com Link (WooCommerce) */}
+                    <Link
+                      href="/feature-request"
+                      onClick={closeProductMenu}
+                      className="qubtic-dropdown__list-item qubtic-dropdown__list-item--soon"
+                      role="listitem"
+                    >
+                      <div className="qubtic-dropdown__product-icon qubtic-dropdown__product-icon--woo">
+                        <Image
+                          src="/images/brand/ecom-link-icon.svg"
+                          alt="E-com Link (WooCommerce) Logo"
+                          width={24}
+                          height={24}
+                          className="qubtic-dropdown__product-img"
+                        />
+                      </div>
+                      <div className="qubtic-dropdown__item-content">
+                        <div className="qubtic-dropdown__title-row">
+                          <h3 className="qubtic-dropdown__title">E-com Link</h3>
+                          <span className="qubtic-dropdown__badge qubtic-dropdown__badge--soon">
+                            Coming Soon
+                          </span>
+                        </div>
+                        <p className="qubtic-dropdown__desc">
+                          WooCommerce catalog sync &amp; automated checkout bridge for Framer.
+                        </p>
+                      </div>
+                      <div className="qubtic-dropdown__action">
+                        <span className="qubtic-dropdown__action-pill">WooCommerce</span>
+                        <ArrowUpRight className="qubtic-dropdown__arrow" />
+                      </div>
+                    </Link>
+                  </div>
+
+                  {/* Quick Product Links Strip */}
+                  <div className="qubtic-dropdown__footer">
+                    <div className="qubtic-dropdown__footer-links">
                       <Link
-                        href="/feature-request"
+                        href="/framer/frame-drop/docs"
                         onClick={closeProductMenu}
-                        className="text-[#0C3823] hover:underline font-semibold flex items-center gap-1"
+                        className="qubtic-dropdown__footer-link"
                       >
-                        <span>Requests</span>
-                        <ArrowUpRight className="w-3 h-3" />
+                        <BookOpen className="qubtic-dropdown__footer-icon" />
+                        <span>Docs</span>
+                      </Link>
+                      <Link
+                        href="/framer/frame-drop/docs#catalog"
+                        onClick={closeProductMenu}
+                        className="qubtic-dropdown__footer-link"
+                      >
+                        <Layers className="qubtic-dropdown__footer-icon" />
+                        <span>Catalog</span>
+                      </Link>
+                      <Link
+                        href="/framer/frame-drop/roadmap"
+                        onClick={closeProductMenu}
+                        className="qubtic-dropdown__footer-link"
+                      >
+                        <Compass className="qubtic-dropdown__footer-icon" />
+                        <span>Roadmap</span>
+                      </Link>
+                      <Link
+                        href="/framer/frame-drop/version-control"
+                        onClick={closeProductMenu}
+                        className="qubtic-dropdown__footer-link"
+                      >
+                        <GitBranch className="qubtic-dropdown__footer-icon" />
+                        <span>Version Control</span>
                       </Link>
                     </div>
+                    <Link
+                      href="/feature-request"
+                      onClick={closeProductMenu}
+                      className="qubtic-dropdown__footer-cta"
+                    >
+                      <span>Requests</span>
+                      <ArrowUpRight className="qubtic-dropdown__footer-cta-arrow" />
+                    </Link>
                   </div>
                 </div>
               </motion.div>
@@ -489,6 +551,42 @@ export function Navbar() {
                                     <span>Version Control &amp; Rollback</span>
                                   </div>
                                   <ArrowUpRight className="qubtic-mobile-sublink-arrow" />
+                                </Link>
+
+                                <Link
+                                  href="/auth/whatsapp-commerce"
+                                  onClick={() => setIsOpen(false)}
+                                  className="qubtic-mobile-sublink qubtic-mobile-sublink--soon"
+                                >
+                                  <div className="qubtic-mobile-sublink-left">
+                                    <Image
+                                      src="/images/brand/whatsapp-commerce-logo.png"
+                                      alt="WhatsApp Commerce Logo"
+                                      width={16}
+                                      height={16}
+                                      className="qubtic-mobile-sublink-img"
+                                    />
+                                    <span>WhatsApp Commerce</span>
+                                  </div>
+                                  <span className="qubtic-mobile-sublink-badge qubtic-mobile-sublink-badge--soon">SOON</span>
+                                </Link>
+
+                                <Link
+                                  href="/feature-request"
+                                  onClick={() => setIsOpen(false)}
+                                  className="qubtic-mobile-sublink qubtic-mobile-sublink--soon"
+                                >
+                                  <div className="qubtic-mobile-sublink-left">
+                                    <Image
+                                      src="/images/brand/ecom-link-icon.svg"
+                                      alt="E-com Link (WooCommerce) Logo"
+                                      width={16}
+                                      height={16}
+                                      className="qubtic-mobile-sublink-img"
+                                    />
+                                    <span>E-com Link (WooCommerce)</span>
+                                  </div>
+                                  <span className="qubtic-mobile-sublink-badge qubtic-mobile-sublink-badge--soon">SOON</span>
                                 </Link>
 
                                 <Link

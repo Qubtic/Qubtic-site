@@ -1,3 +1,4 @@
+import { authRateLimit } from '@/lib/auth-rate-limit';
 import { NextResponse } from 'next/server';
 import {
   requestAuthPasswordReset,
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
       plugin = 'frame-drop',
     } = body;
 
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
+    if (!email || typeof email !== 'string' || !/^\S+@[^\s@,<>;]+\.[^\s@,<>;]+$/.test(email) || email.length > 254 || /[,<>;]/.test(email)) {
       return NextResponse.json(
         { success: false, message: 'A valid email address is required.' },
         { status: 400, headers: { 'Access-Control-Allow-Origin': '*' } }
@@ -36,6 +37,7 @@ export async function POST(request: Request) {
     }
 
     const pluginMeta = getPluginMetadata(plugin);
+    if (!await authRateLimit(request,email,pluginMeta.slug,action)) return NextResponse.json({success:false,message:'Too many attempts. Please try again later.'},{status:429});
 
     if (action === 'request') {
       const result = await requestAuthPasswordReset(email, pluginMeta.slug);
