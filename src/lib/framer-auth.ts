@@ -19,7 +19,7 @@ export interface FramerUserRecord {
   plugin_name: string;
   framer_user_id?: string;
   framer_project_id?: string;
-  plan: 'free' | 'pro' | 'enterprise' | 'trial';
+  plan: 'free' | 'pro';
   auth_token: string;
   status: 'active' | 'inactive' | 'suspended' | 'pending_verification';
   metadata?: Record<string, unknown>;
@@ -30,29 +30,21 @@ export interface FramerUserRecord {
   early_bird_granted_at?: string;
 }
 
-export const EARLY_BIRD_CUTOFF_DATE = process.env.EARLY_BIRD_CUTOFF_DATE || '2026-12-31T23:59:59.999Z';
 export const PAIRING_TTL_SECONDS = 600; // 10 minutes
 export const PAIRING_POLL_INTERVAL_SECONDS = 3;
 
 /**
  * Evaluates Early Bird Pro entitlement status based on registration timestamp.
+ * Retired: registration dates never grant Pro. Kept as a compatibility helper.
  */
-export function evaluateEarlyBirdStatus(
-  registrationTimestamp?: string | number | Date,
-  cutoffDate: string = EARLY_BIRD_CUTOFF_DATE
-): {
-  plan: 'free' | 'pro';
-  is_early_bird: boolean;
-  early_bird_cutoff: string;
-} {
-  const regDate = registrationTimestamp ? new Date(registrationTimestamp) : new Date();
-  const cutoff = new Date(cutoffDate);
-  const isEarlyBird = regDate.getTime() <= cutoff.getTime();
-  return {
-    plan: isEarlyBird ? 'pro' : 'free',
-    is_early_bird: isEarlyBird,
-    early_bird_cutoff: cutoff.toISOString(),
-  };
+export function evaluateEarlyBirdStatus() {
+  return { plan: 'free' as const, is_early_bird: false };
+}
+
+/** Free and Pro are the only account tiers. Legacy early-bird grants carry no access. */
+export function accountPlan(user?: Partial<FramerUserRecord> | null): 'free' | 'pro' {
+  if (!user || user.status === 'pending_verification' || user.is_early_bird === true || user.metadata?.is_early_bird === true) return 'free';
+  return user.plan === 'pro' ? 'pro' : 'free';
 }
 
 export type PairingSessionStatus = 'pending' | 'confirmed' | 'consumed' | 'expired';
@@ -195,12 +187,13 @@ export async function createOrUpdateFramerUser(params: {
   pluginSlug: string;
   framerUserId?: string;
   framerProjectId?: string;
-  plan?: 'free' | 'pro' | 'enterprise' | 'trial';
+  plan?: 'free' | 'pro';
   metadata?: Record<string, unknown>;
 }): Promise<{ user: FramerUserRecord; isNew: boolean; token: string }> {
   const normalizedEmail = params.email.toLowerCase().trim();
   const pluginSlug = params.pluginSlug.toLowerCase().trim();
   const plugin = getPluginMetadata(pluginSlug);
+  const commerce = plugin.slug === 'whatsapp-commerce';
   const now = new Date().toISOString();
   const token = generateFramerAuthToken(pluginSlug);
 
@@ -227,17 +220,10 @@ export async function createOrUpdateFramerUser(params: {
         const wasPending = existing.status === 'pending_verification';
 
         // Evaluate Early Bird Pro entitlement for existing user
-        const wasEarlyBird =
-          existing.is_early_bird === true ||
-          Boolean(
-            existing.created_at &&
-              new Date(existing.created_at).getTime() <= new Date(EARLY_BIRD_CUTOFF_DATE).getTime()
-          );
-        const resolvedPlan = wasEarlyBird ? 'pro' : existing.plan || params.plan || 'free';
-        const resolvedIsEarlyBird = Boolean(wasEarlyBird);
-        const resolvedEarlyBirdGrantedAt = wasEarlyBird
-          ? existing.early_bird_granted_at || existing.created_at || now
-          : undefined;
+        // Retired: preserve only an explicit, non-promotional server Pro plan.
+        const resolvedPlan = accountPlan(existing);
+        const resolvedIsEarlyBird = false;
+        const resolvedEarlyBirdGrantedAt = undefined;
 
         const dbUpdatePayload = {
           name: params.name || existing.name || '',
@@ -290,8 +276,8 @@ export async function createOrUpdateFramerUser(params: {
         }
       } else {
         // Create brand new user
-        const earlyBird = evaluateEarlyBirdStatus(now, EARLY_BIRD_CUTOFF_DATE);
-        const assignedPlan = earlyBird.is_early_bird ? 'pro' : params.plan || 'free';
+        const earlyBird = evaluateEarlyBirdStatus();
+        const assignedPlan = 'free' as const;
 
         const dbInsertPayload = {
           email: normalizedEmail,
@@ -307,6 +293,7 @@ export async function createOrUpdateFramerUser(params: {
           status: 'active',
           metadata: {
             ...(params.metadata || {}),
+            email_verified: true,
             ...(params.company_name ? { company_name: params.company_name } : {}),
             ...(params.website_url ? { website_url: params.website_url } : {}),
             is_early_bird: earlyBird.is_early_bird,
@@ -346,6 +333,7 @@ export async function createOrUpdateFramerUser(params: {
     console.warn('Supabase framer_users query failed, falling back to local store:', sbErr);
   }
 
+  if (commerce && process.env.NODE_ENV === 'production') throw new Error('WhatsApp Commerce account database is unavailable.');
   // 2. Local Fallback (ensures zero crashes if Supabase table is not yet migrated)
   const localList = readLocalUsers();
   const existingIdx = localList.findIndex(
@@ -373,18 +361,9 @@ export async function createOrUpdateFramerUser(params: {
     if (params.framerUserId) existing.framer_user_id = params.framerUserId;
     if (params.framerProjectId) existing.framer_project_id = params.framerProjectId;
 
-    const wasEarlyBird =
-      existing.is_early_bird === true ||
-      Boolean(
-        existing.created_at &&
-          new Date(existing.created_at).getTime() <= new Date(EARLY_BIRD_CUTOFF_DATE).getTime()
-      );
-    existing.plan = wasEarlyBird ? 'pro' : existing.plan || params.plan || 'free';
-    existing.is_early_bird = Boolean(wasEarlyBird);
-    if (wasEarlyBird) {
-      existing.early_bird_granted_at =
-        existing.early_bird_granted_at || existing.created_at || now;
-    }
+    existing.plan = accountPlan(existing);
+    existing.is_early_bird = false;
+    existing.early_bird_granted_at = undefined;
 
     existing.metadata = {
       ...(existing.metadata || {}),
@@ -410,8 +389,8 @@ export async function createOrUpdateFramerUser(params: {
 
     return { user: existing, isNew: false, token };
   } else {
-    const earlyBird = evaluateEarlyBirdStatus(now, EARLY_BIRD_CUTOFF_DATE);
-    const assignedPlan = earlyBird.is_early_bird ? 'pro' : params.plan || 'free';
+    const earlyBird = evaluateEarlyBirdStatus();
+    const assignedPlan = 'free' as const;
 
     const newRecord: FramerUserRecord = {
       id: crypto.randomUUID(),
@@ -430,6 +409,7 @@ export async function createOrUpdateFramerUser(params: {
       early_bird_granted_at: earlyBird.is_early_bird ? now : undefined,
       metadata: {
         ...(params.metadata || {}),
+        email_verified: true,
         ...(params.company_name ? { company_name: params.company_name } : {}),
         ...(params.website_url ? { website_url: params.website_url } : {}),
         is_early_bird: earlyBird.is_early_bird,
@@ -464,20 +444,7 @@ function syncUserLocally(user: FramerUserRecord) {
 }
 
 function ensureEarlyBirdAttributes(user: FramerUserRecord): FramerUserRecord {
-  if (user.is_early_bird === undefined) {
-    const isEarly = Boolean(
-      user.created_at &&
-        new Date(user.created_at).getTime() <= new Date(EARLY_BIRD_CUTOFF_DATE).getTime()
-    );
-    user.is_early_bird = isEarly;
-    if (isEarly) {
-      if (user.plan === 'free') {
-        user.plan = 'pro';
-      }
-      user.early_bird_granted_at = user.early_bird_granted_at || user.created_at;
-    }
-  }
-  return user;
+  return { ...user, plan: accountPlan(user), is_early_bird: false, early_bird_granted_at: undefined };
 }
 
 /**
@@ -524,6 +491,7 @@ export async function verifyFramerSessionToken(
   expectedPlugin?: string
 ): Promise<FramerUserRecord | null> {
   if (!token) return null;
+  if (token.startsWith('qbt_fr_whatsapp_')) expectedPlugin = expectedPlugin || 'whatsapp-commerce';
 
   // 1. Check Supabase
   try {
@@ -533,12 +501,15 @@ export async function verifyFramerSessionToken(
     }
     const { data, error } = await query.maybeSingle();
     if (!error && data) {
+      if (data.plugin_slug === 'whatsapp-commerce' && (data.status !== 'active' || data.metadata?.email_verified !== true)) return null;
       return ensureEarlyBirdAttributes(data as FramerUserRecord);
     }
   } catch (_err) {
     // Fall back to local
   }
 
+  // WhatsApp Commerce uses only current account records in production, never pairing snapshots.
+  if (expectedPlugin === 'whatsapp-commerce' && process.env.NODE_ENV === 'production') return null;
   // 2. Check local fallback
   const localList = readLocalUsers();
   const match = localList.find((u) => {
@@ -548,8 +519,10 @@ export async function verifyFramerSessionToken(
   });
 
   if (match) {
+    if (match.plugin_slug === 'whatsapp-commerce' && (match.status !== 'active' || match.metadata?.email_verified !== true)) return null;
     return ensureEarlyBirdAttributes(match);
   }
+  if (expectedPlugin === 'whatsapp-commerce') return null;
 
   // 3. Check Supabase framer_pairing_sessions (in case token was generated/issued during pairing)
   try {
@@ -577,7 +550,7 @@ export async function verifyFramerSessionToken(
         website_url: uData.website_url || '',
         plugin_slug: pSession.plugin_slug,
         plugin_name: pSession.plugin_name,
-        plan: uData.plan || 'pro',
+        plan: uData.plan === 'pro' && !uData.is_early_bird ? 'pro' : 'free',
         auth_token: token,
         status: uData.status || 'active',
         is_early_bird: Boolean(uData.is_early_bird),
@@ -607,7 +580,7 @@ export async function verifyFramerSessionToken(
       website_url: uData.website_url || '',
       plugin_slug: pMatch.plugin_slug,
       plugin_name: pMatch.plugin_name,
-      plan: uData.plan || 'pro',
+      plan: uData.plan === 'pro' && !uData.is_early_bird ? 'pro' : 'free',
       auth_token: token,
       status: uData.status || 'active',
       is_early_bird: Boolean(uData.is_early_bird),
@@ -629,6 +602,7 @@ export async function getFramerUsersList(pluginFilter?: string): Promise<{
     total: number;
     qubeAuth: number;
     frameDrop: number;
+    whatsappCommerce: number;
     proCount: number;
     activeToday: number;
   };
@@ -659,7 +633,8 @@ export async function getFramerUsersList(pluginFilter?: string): Promise<{
     total: allUsers.length,
     qubeAuth: allUsers.filter((u) => u.plugin_slug === 'qube-auth').length,
     frameDrop: allUsers.filter((u) => u.plugin_slug === 'frame-drop').length,
-    proCount: allUsers.filter((u) => u.plan === 'pro' || u.plan === 'enterprise').length,
+    whatsappCommerce: allUsers.filter((u) => u.plugin_slug === 'whatsapp-commerce').length,
+    proCount: allUsers.filter((u) => accountPlan(u) === 'pro').length,
     activeToday: allUsers.filter((u) => new Date(u.last_login_at) >= todayStart).length,
   };
 
@@ -772,14 +747,14 @@ export async function initiatePairingSession(params?: {
 }> {
   const pluginSlug = (params?.pluginSlug || 'frame-drop').toLowerCase().trim();
   const pluginMeta = getPluginMetadata(pluginSlug);
-  const pluginName = params?.pluginName || pluginMeta.name;
+  const pluginName = pluginSlug === 'whatsapp-commerce' ? pluginMeta.name : params?.pluginName || pluginMeta.name;
 
   // Clamp TTL between 60s and 3600s, default 600s (RFC 8628 timing contracts)
   const requestedTtl = params?.ttlSeconds ?? PAIRING_TTL_SECONDS;
   const ttlSeconds = Math.max(60, Math.min(requestedTtl, 3600));
 
   const deviceCode = crypto.randomBytes(32).toString('hex'); // 256-bit entropy = 64 hex chars
-  const userCode = generateUserCode('FD');
+  const userCode = generateUserCode(pluginSlug === 'whatsapp-commerce' ? 'WC' : 'FD');
   const nowMs = params?.customNow ?? Date.now();
   const nowIso = new Date(nowMs).toISOString();
   const expiresAt = new Date(nowMs + ttlSeconds * 1000).toISOString();
@@ -827,9 +802,11 @@ export async function initiatePairingSession(params?: {
     };
     const { error: sbErr } = await supabase.from('framer_pairing_sessions').insert(supabasePayload);
     if (sbErr) {
+      if (pluginSlug === 'whatsapp-commerce' && process.env.NODE_ENV === 'production') throw new Error('Pairing database unavailable.');
       console.warn('Supabase framer_pairing_sessions insert error:', sbErr);
     }
   } catch (sbEx) {
+    if (pluginSlug === 'whatsapp-commerce' && process.env.NODE_ENV === 'production') throw new Error('Pairing database unavailable.');
     console.warn('Supabase framer_pairing_sessions insert exception:', sbEx);
   }
 
@@ -867,6 +844,7 @@ export async function confirmPairingSession(
     is_early_bird?: boolean;
     status?: string;
     auth_token?: string;
+    plugin_slug?: string;
   } | null,
   customNow: number = Date.now()
 ): Promise<{
@@ -917,6 +895,13 @@ export async function confirmPairingSession(
     return { success: false, status: 404, error: 'Invalid pairing code' };
   }
 
+  // Plugin identity is part of the authorization, not just a display label.
+  if (session.plugin_slug === 'whatsapp-commerce' || user?.plugin_slug === 'whatsapp-commerce') {
+    if (!user || user.plugin_slug !== session.plugin_slug || user.status !== 'active' || !user.auth_token) {
+      return { success: false, status: 403, error: 'Sign in to the matching plugin account before connecting.' };
+    }
+  }
+
   const expiresTime = new Date(session.expires_at).getTime();
   if (customNow > expiresTime) {
     session.status = 'expired';
@@ -945,8 +930,8 @@ export async function confirmPairingSession(
         name: user.name,
         company_name: user.company_name,
         website_url: user.website_url,
-        plan: user.plan || 'pro',
-        is_early_bird: Boolean(user.is_early_bird),
+        plan: user.plan === 'pro' && !user.is_early_bird ? 'pro' : 'free',
+        is_early_bird: false,
         status: user.status || 'active',
       }
     : null;
@@ -1192,11 +1177,11 @@ export async function sendAuthOtpCode(
   const normalizedEmail = email.toLowerCase().trim();
   const plugin = getPluginMetadata(pluginSlug);
 
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const code = crypto.randomInt(100000, 1000000).toString();
   const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
   // 1. In-memory storage
-  otpStore.set(normalizedEmail, {
+  otpStore.set(`${getPluginMetadata(pluginSlug).slug}:${normalizedEmail}`, {
     email: normalizedEmail,
     code,
     expiresAt,
@@ -1233,7 +1218,7 @@ export async function sendAuthOtpCode(
           name: normalizedEmail.split('@')[0],
           plugin_slug: plugin.slug,
           plugin_name: plugin.name,
-          plan: 'pro',
+          plan: 'free',
           status: 'pending_verification',
           auth_token: generateFramerAuthToken(plugin.slug),
           metadata: {
@@ -1269,17 +1254,17 @@ export async function sendAuthOtpCode(
     } else {
       const now = new Date().toISOString();
       syncUserLocally({
-        id: 'usr_pending_' + Date.now(),
+        id: crypto.randomUUID(),
         email: normalizedEmail,
         name: normalizedEmail.split('@')[0],
         company_name: '',
         website_url: '',
         plugin_slug: plugin.slug,
         plugin_name: plugin.name,
-        plan: 'pro',
+        plan: 'free',
         auth_token: generateFramerAuthToken(plugin.slug),
         status: 'pending_verification',
-        is_early_bird: true,
+        is_early_bird: false,
         metadata: {
           otp_code: code,
           otp_expires_at: expiresAt,
@@ -1324,7 +1309,7 @@ export async function verifyAuthOtpCode(
 ): Promise<{ valid: boolean; message?: string }> {
   const normalizedEmail = email.toLowerCase().trim();
   const cleanCode = code.trim();
-  let session = otpStore.get(normalizedEmail);
+  let session = otpStore.get(`${getPluginMetadata(pluginSlug).slug}:${normalizedEmail}`);
 
   // Cross-instance fallback to Supabase if not in memory
   if (!session) {
@@ -1379,7 +1364,7 @@ export async function verifyAuthOtpCode(
   }
 
   if (Date.now() > session.expiresAt) {
-    otpStore.delete(normalizedEmail);
+    otpStore.delete(`${getPluginMetadata(pluginSlug).slug}:${normalizedEmail}`);
     return {
       valid: false,
       message: 'Verification code has expired. Please request a new code.',
@@ -1388,7 +1373,7 @@ export async function verifyAuthOtpCode(
 
   session.attempts += 1;
   if (session.attempts > 5) {
-    otpStore.delete(normalizedEmail);
+    otpStore.delete(`${getPluginMetadata(pluginSlug).slug}:${normalizedEmail}`);
     return {
       valid: false,
       message: 'Too many incorrect attempts. Please request a new verification code.',
@@ -1403,7 +1388,7 @@ export async function verifyAuthOtpCode(
   }
 
   // Code is valid - consume
-  otpStore.delete(normalizedEmail);
+  otpStore.delete(`${getPluginMetadata(pluginSlug).slug}:${normalizedEmail}`);
   try {
     const plugin = getPluginMetadata(pluginSlug);
     const { data: userRecord } = await supabase
@@ -1454,7 +1439,7 @@ export async function requestAuthPasswordReset(
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = Date.now() + 15 * 60 * 1000; // 15 mins
 
-  resetStore.set(normalizedEmail, {
+  resetStore.set(`${getPluginMetadata(pluginSlug).slug}:${normalizedEmail}`, {
     email: normalizedEmail,
     code,
     expiresAt,
@@ -1521,7 +1506,7 @@ export async function resetAuthUserPassword(
 }> {
   const normalizedEmail = email.toLowerCase().trim();
   const cleanCode = code.trim();
-  let session = resetStore.get(normalizedEmail);
+  let session = resetStore.get(`${getPluginMetadata(pluginSlug).slug}:${normalizedEmail}`);
 
   // If not in memory, check Supabase metadata
   if (!session) {
@@ -1554,7 +1539,7 @@ export async function resetAuthUserPassword(
   }
 
   if (Date.now() > session.expiresAt) {
-    resetStore.delete(normalizedEmail);
+    resetStore.delete(`${getPluginMetadata(pluginSlug).slug}:${normalizedEmail}`);
     return {
       success: false,
       message: 'Reset code has expired. Please request a new code.',
@@ -1571,7 +1556,16 @@ export async function resetAuthUserPassword(
   const salt = 'qubtic_pwd_salt_';
   const passwordHash = crypto.createHash('sha256').update(salt + newPassword).digest('hex');
 
-  resetStore.delete(normalizedEmail);
+  resetStore.delete(`${getPluginMetadata(pluginSlug).slug}:${normalizedEmail}`);
+  const plugin = getPluginMetadata(pluginSlug);
+  const account = await findFramerUser(normalizedEmail, plugin.slug);
+  if (!account || account.status !== 'active') return { success: false, message: 'Account is not active.' };
+  const cleanMetadata = { ...(account.metadata || {}) };
+  delete cleanMetadata.reset_code;
+  delete cleanMetadata.reset_expires_at;
+  const { error: resetError } = await supabase.from('framer_users').update({ metadata: cleanMetadata }).eq('id', account.id).eq('plugin_slug', plugin.slug);
+  if (resetError && plugin.slug === 'whatsapp-commerce') return { success: false, message: 'Could not reset password. Try again.' };
+  syncUserLocally({ ...account, metadata: cleanMetadata });
 
   const result = await createOrUpdateFramerUser({
     email: normalizedEmail,
@@ -1588,4 +1582,15 @@ export async function resetAuthUserPassword(
     user: result.user,
     token: result.token,
   };
+}
+
+/** Revoke the current WhatsApp Commerce account token. Pairing snapshots cannot restore it. */
+export async function revokeCommerceSession(token: string): Promise<void> {
+  if (!token) return;
+  const user = await verifyFramerSessionToken(token, 'whatsapp-commerce');
+  if (!user || user.plugin_slug !== 'whatsapp-commerce') return;
+  const replacement = generateFramerAuthToken('whatsapp-commerce');
+  const { error } = await supabase.from('framer_users').update({ auth_token: replacement }).eq('id', user.id).eq('auth_token', token).eq('plugin_slug', 'whatsapp-commerce');
+  if (error) throw new Error('Could not sign out. Try again.');
+  syncUserLocally({ ...user, auth_token: replacement });
 }

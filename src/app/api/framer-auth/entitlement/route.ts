@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyFramerSessionToken, EARLY_BIRD_CUTOFF_DATE } from '@/lib/framer-auth';
+import { verifyFramerSessionToken } from '@/lib/framer-auth';
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const isPro = user.plan === 'pro' || user.plan === 'enterprise' || Boolean(user.is_early_bird);
+    const isPro = user.plan === 'pro';
 
     return NextResponse.json(
       {
@@ -77,7 +77,6 @@ export async function GET(request: Request) {
         tier: user.plan,
         is_pro: isPro,
         is_early_bird: Boolean(user.is_early_bird),
-        early_bird_cutoff: EARLY_BIRD_CUTOFF_DATE,
         capabilities: isPro
           ? ['pro_components', 'token_sync', 'bulk_export', 'custom_styles']
           : ['free_components'],

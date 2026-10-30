@@ -60,9 +60,9 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
 
   // Framer Users State
-  const [framerUsers, setFramerUsers] = useState<FramerUserRecord[]>([]);
-  const [framerStats, setFramerStats] = useState({ total: 0, qubeAuth: 0, frameDrop: 0, proCount: 0, activeToday: 0 });
-  const [framerPluginFilter, setFramerPluginFilter] = useState<'all' | 'qube-auth' | 'frame-drop'>('all');
+  const [framerUsers, setFramerUsers] = useState<Omit<FramerUserRecord, 'auth_token' | 'metadata'>[]>([]);
+  const [framerStats, setFramerStats] = useState({ total: 0, qubeAuth: 0, frameDrop: 0, whatsappCommerce: 0, proCount: 0, activeToday: 0 });
+  const [framerPluginFilter, setFramerPluginFilter] = useState<'all' | 'qube-auth' | 'frame-drop' | 'whatsapp-commerce'>('all');
   const [framerSearchQuery, setFramerSearchQuery] = useState('');
 
   // Status & Feedback
@@ -1706,7 +1706,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     Framer Plugin Members ({framerUsers.length})
                   </h3>
                   <p className="text-xs text-[#666C64]">
-                    User accounts authenticated across Qubtic Framer plugins (Frame Drop, Qube Auth, and future extensions) stored in Supabase.
+                    User accounts authenticated across Qubtic Framer plugins (Frame Drop, Qube Auth, WhatsApp Commerce, and future extensions) stored in Supabase.
                   </p>
                 </div>
                 <div className="flex items-center gap-2.5">
@@ -1782,6 +1782,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                   >
                     Frame Drop
                   </button>
+                  <button onClick={() => setFramerPluginFilter('whatsapp-commerce')} className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${framerPluginFilter === 'whatsapp-commerce' ? 'bg-[#0C3823] text-white shadow-xs' : 'bg-[#F4F1EA] text-[#666C64] hover:text-[#141915]'}`}>WhatsApp Commerce</button>
                 </div>
 
                 <div className="w-full sm:w-72">
@@ -1847,8 +1848,8 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="font-mono text-[11px] text-zinc-500 truncate max-w-[140px]" title={u.auth_token}>
-                              {u.auth_token.slice(0, 14)}...
+                            <div className="font-mono text-[11px] text-zinc-500 truncate max-w-[140px]" title="Session credentials stay on the server">
+                              Server managed
                             </div>
                           </td>
                           <td className="px-6 py-4 text-[#666C64] font-mono text-[11px]">

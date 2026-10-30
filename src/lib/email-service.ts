@@ -1,9 +1,13 @@
 import nodemailer from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
 import {
   FRAMEDROP_ICON_BASE64,
   QUBEAUTH_ICON_BASE64,
 } from './logoAssets';
 import { getPluginMetadata } from './plugins-registry';
+
+const WHATSAPP_COMMERCE_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="#f6deaf"/><path d="M8 10h16v13H8zM12 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#141822" stroke-width="2" stroke-linejoin="round"/><path d="m13 16 2 2 4-4" fill="none" stroke="#141822" stroke-width="2" stroke-linecap="round"/></svg>';
 
 export const LOGO_CID = 'logo@qubtic.tech';
 
@@ -19,6 +23,15 @@ function getIconBuffer(base64Data: string): Buffer {
  * Returns dynamic attachment array for the specified plugin
  */
 export function getPluginEmailAttachments(pluginSlug: string = 'frame-drop') {
+  if (pluginSlug === 'whatsapp-commerce') {
+    try {
+      const logoPath = path.join(process.cwd(), 'public', 'images', 'brand', 'whatsapp-commerce-logo.png');
+      if (fs.existsSync(logoPath)) {
+        return [{ filename: 'whatsapp-commerce-logo.png', content: fs.readFileSync(logoPath), cid: LOGO_CID, contentType: 'image/png', contentDisposition: 'inline' as const }];
+      }
+    } catch {}
+    return [{ filename: 'whatsapp-commerce.svg', content: Buffer.from(WHATSAPP_COMMERCE_ICON), cid: LOGO_CID, contentType: 'image/svg+xml', contentDisposition: 'inline' as const }];
+  }
   const isQubeAuth = pluginSlug === 'qube-auth';
   const iconBase64 = isQubeAuth ? QUBEAUTH_ICON_BASE64 : FRAMEDROP_ICON_BASE64;
   const filename = isQubeAuth ? 'qube-auth-logo.png' : 'framedrop-logo.png';

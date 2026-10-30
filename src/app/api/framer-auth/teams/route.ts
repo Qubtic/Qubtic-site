@@ -77,6 +77,7 @@ export async function POST(request: Request) {
     } = body;
 
     const pluginMeta = getPluginMetadata(plugin);
+    if (['whatsapp-commerce', 'frame-drop'].includes(pluginMeta.slug)) return NextResponse.json({ success: false, message: 'Use your plugin sign-in page to connect your account.' }, { status: 403 });
 
     if (action === 'invite') {
       const targetEmail = inviteeEmail || email;

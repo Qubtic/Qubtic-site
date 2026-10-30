@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyAdminUserDb } from '@/lib/store';
+import { createAdminSession } from '@/lib/admin-session';
 
 export async function POST(request: Request) {
   try {
@@ -16,15 +17,7 @@ export async function POST(request: Request) {
     const user = await verifyAdminUserDb(username, password);
 
     if (user) {
-      const sessionPayload = Buffer.from(
-        JSON.stringify({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          timestamp: Date.now(),
-        })
-      ).toString('base64');
+      const sessionPayload = createAdminSession({ id: user.id, name: user.name, email: user.email, role: user.role });
 
       const response = NextResponse.json({
         success: true,

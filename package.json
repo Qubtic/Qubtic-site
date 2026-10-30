@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test scripts/test-commerce-api.mjs scripts/test-commerce-shared-db.mjs",
+    "test:commerce": "node --test scripts/test-commerce-api.mjs scripts/test-commerce-shared-db.mjs",
+    "test:commerce:legacy": "node --test scripts/test-commerce-access.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -30,6 +34,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.13",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

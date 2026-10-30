@@ -49,7 +49,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const isPro = user.plan === 'pro' || user.plan === 'enterprise' || Boolean(user.is_early_bird);
+    const isPro = user.plan === 'pro';
 
     return NextResponse.json(
       {
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const isPro = user.plan === 'pro' || user.plan === 'enterprise' || Boolean(user.is_early_bird);
+    const isPro = user.plan === 'pro';
 
     return NextResponse.json(
       {

@@ -16,6 +16,20 @@ export interface FramerPluginMetadata {
 }
 
 export const REGISTERED_PLUGINS: Record<string, FramerPluginMetadata> = {
+  'whatsapp-commerce': {
+    slug: 'whatsapp-commerce', name: 'WhatsApp Commerce', shortName: 'WhatsApp Commerce',
+    tagline: 'Your Framer storefront, connected to WhatsApp',
+    description: 'Manage products, customize storefront components, and prepare WhatsApp orders from Framer.',
+    version: 'v0.2.0', logo: '/images/brand/whatsapp-commerce-logo.png',
+    accentColor: '#F6DEAF', glowColor: 'rgba(246, 222, 175, 0.25)', badge: 'Qubtic Plugin',
+    docsUrl: '/framer/whatsapp-commerce', productUrl: '/framer/whatsapp-commerce',
+    features: ['Framer CMS catalog integration', 'Storefront components', 'Excel and CSV import / export', 'WhatsApp order handoff'],
+    scopes: [
+      { id: 'profile', label: 'Account profile', description: 'Your verified email, name, and workspace details' },
+      { id: 'session', label: 'Plugin connection', description: 'Connect your WhatsApp Commerce plugin session' },
+      { id: 'subscription', label: 'Plan status', description: 'Check your Free or Pro access' },
+    ],
+  },
   'qube-auth': {
     slug: 'qube-auth',
     name: 'Qube Auth',

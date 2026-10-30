@@ -176,7 +176,7 @@
   top: 100%;
   padding-top: 8px;
   z-index: 50;
-  width: 540px;
+  width: 780px;
   max-width: calc(100vw - 32px);
   pointer-events: auto;
   box-sizing: border-box;
@@ -273,7 +273,7 @@
 
 @media (min-width: 640px) {
   .qubtic-dropdown__grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -711,4 +711,13 @@
   color: #FFFFFF;
   text-decoration: none;
   box-sizing: border-box;
+}
+
+.qubtic-dropdown__badge--gold {
+  color: #141822;
+  background: rgba(246, 222, 175, 0.55);
+  border: 1px solid rgba(246, 222, 175, 0.8);
+}
+.qubtic-dropdown__product-card:hover .qubtic-dropdown__badge--gold {
+  background: rgba(246, 222, 175, 0.75);
 }

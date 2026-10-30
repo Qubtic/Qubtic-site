@@ -1,0 +1,21 @@
+.commerce-account-portal[data-theme="dark"] { --ca-bg: #101216; --ca-surface: #181b20; --ca-text: #f4f0e9; --ca-muted: #b4b3b0; --ca-border: #36393e; --ca-accent: #f6deaf; --ca-on-accent: #161819; }
+.commerce-account-portal[data-theme="light"] { --ca-bg: #faf9f6; --ca-surface: #fff; --ca-text: #20241f; --ca-muted: #60645c; --ca-border: #d7d9d0; --ca-accent: #253d32; --ca-on-accent: #fff; }
+.commerce-account-portal { min-height: 100svh; padding: 80px 24px; background: var(--ca-bg); color: var(--ca-text); font-family: var(--font-inter), system-ui, sans-serif; display: grid; place-items: center; }
+.commerce-account-sheet { width: min(100%, 440px); display: grid; gap: 24px; }
+.commerce-account-wordmark { display: flex; gap: 12px; align-items: center; font-size: 13px; }
+.commerce-account-wordmark svg, .commerce-account-seal { color: var(--ca-accent); }
+.commerce-account-eyebrow { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ca-accent); padding-top: 32px; }
+.commerce-account-sheet h1 { font-size: clamp(30px, 6vw, 44px); line-height: 1.15; font-weight: 500; letter-spacing: -.04em; }
+.commerce-account-sheet p { color: var(--ca-muted); font-size: 14px; line-height: 1.7; }
+.commerce-account-sheet form, .commerce-account-sheet label { display: grid; gap: 12px; }
+.commerce-account-sheet label span { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.commerce-account-sheet input { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--ca-border); border-radius: 10px; background: var(--ca-surface); color: var(--ca-text); font: inherit; }
+.commerce-account-sheet button { display: flex; justify-content: center; align-items: center; gap: 10px; min-height: 48px; padding: 12px 16px; border: 1px solid var(--ca-border); border-radius: 10px; background: var(--ca-accent); color: var(--ca-on-accent); cursor: pointer; font: inherit; font-size: 13px; }
+.commerce-account-sheet button:disabled { opacity: .6; cursor: wait; }
+.commerce-account-sheet .commerce-account-text { color: var(--ca-muted); background: transparent; border-color: transparent; }
+.commerce-account-benefit { display: flex; align-items: flex-start; gap: 12px; padding-top: 24px; border-top: 1px solid var(--ca-border); }
+.commerce-account-benefit svg { flex-shrink: 0; margin-top: 4px; color: var(--ca-accent); }
+.commerce-account-sheet .commerce-account-note, .commerce-account-benefit p { font-size: 12px; }
+.commerce-account-sheet [role="alert"] { color: var(--ca-text); padding: 12px; border: 1px solid var(--ca-accent); border-radius: 8px; }
+.commerce-account-sheet :is(input, button):focus-visible { outline: 2px solid var(--ca-accent); outline-offset: 3px; }
+.commerce-account-sheet .commerce-account-theme { min-height: 36px; width: 36px; padding: 6px; border-radius: 50%; background: transparent; color: var(--ca-text); margin-left: auto; flex-shrink: 0; }

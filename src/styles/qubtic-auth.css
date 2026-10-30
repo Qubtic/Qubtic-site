@@ -1057,3 +1057,17 @@
   color: var(--qubtic-auth-text-subtle);
   margin: 0;
 }
+
+/* WhatsApp Commerce keeps the shared layout with readable secondary text in both themes. */
+.qubtic-auth-page[data-plugin="whatsapp-commerce"][data-theme="dark"] {
+  --qubtic-auth-text-subtle: var(--qubtic-auth-text-muted);
+  --qubtic-auth-error-text: #fca5a5;
+}
+.qubtic-auth-page[data-plugin="whatsapp-commerce"][data-theme="light"] {
+  --qubtic-auth-text-subtle: #4b554e;
+  --qubtic-auth-input-placeholder: #5f6660;
+  --qubtic-auth-error-text: #b91c1c;
+}
+.qubtic-auth-page[data-plugin="whatsapp-commerce"] .qubtic-auth-error {
+  color: var(--qubtic-auth-error-text);
+}

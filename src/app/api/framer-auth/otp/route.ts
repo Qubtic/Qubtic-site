@@ -51,6 +51,13 @@ export async function POST(request: Request) {
     }
 
     const pluginMeta = getPluginMetadata(plugin);
+    const commerce = pluginMeta.slug === 'whatsapp-commerce';
+    if (commerce) {
+      const existing = await findFramerUser(email, pluginMeta.slug);
+      if (existing && ['suspended', 'inactive'].includes(existing.status)) return NextResponse.json({ success: false, message: 'This account is not active.' }, { status: 403 });
+      if ((mode === 'signup' || action === 'verify-signup') && existing?.status === 'active' && existing.metadata?.password_hash) return NextResponse.json({ success: false, alreadyExists: true, message: 'An account already exists. Please sign in.' }, { status: 400 });
+      if ((mode === 'signup' || action === 'verify-signup') && action !== 'send' && (typeof password !== 'string' || password.length < 6)) return NextResponse.json({ success: false, message: 'Use a password of at least 6 characters.' }, { status: 400 });
+    }
 
     if (action === 'send') {
       // Check if user already exists when initiating registration OTP
@@ -115,7 +122,7 @@ export async function POST(request: Request) {
         pluginSlug: pluginMeta.slug,
         framerUserId,
         framerProjectId,
-        plan,
+        plan: 'free',
         metadata: {
           authMode: isSignupFlow ? 'signup_otp' : 'otp',
           email_verified: true,

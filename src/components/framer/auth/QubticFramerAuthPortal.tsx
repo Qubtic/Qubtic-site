@@ -83,7 +83,7 @@ export function sanitizeRedirectUrl(rawUrl: string | null | undefined): string |
 
 export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAuthPortalProps) {
   const searchParams = useSearchParams();
-  const pluginParam = searchParams.get('plugin') || initialPlugin || 'qube-auth';
+  const pluginParam = initialPlugin || searchParams.get('plugin') || 'qube-auth';
   const returnUrlParam = searchParams.get('return_url') || searchParams.get('redirect_uri') || '';
   const framerProjectId = searchParams.get('project') || searchParams.get('project_id') || '';
   const framerUserId = searchParams.get('framer_user') || searchParams.get('user_id') || '';
@@ -96,7 +96,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
     setPlugin(getPluginMetadata(pluginParam));
   }
 
-  const [activeTab, setActiveTab] = useState<AuthTab>('signin');
+  const [activeTab, setActiveTab] = useState<AuthTab>(searchParams.get('mode') === 'signup' ? 'signup' : 'signin');
 
   // Dual theme state engine (supports light and dark modes)
   const themeParam = searchParams.get('theme');
@@ -215,7 +215,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
   useEffect(() => {
     if (!pairingCode || pairingStatus === 'confirmed') return;
     try {
-      const storedToken = localStorage.getItem('qubtic_framer_token');
+      const storedToken = localStorage.getItem(`qubtic_framer_token:${plugin.slug}`) || (plugin.slug === 'whatsapp-commerce' ? null : localStorage.getItem('qubtic_framer_token'));
       if (storedToken && pairingStatus === 'idle') {
         setPairingStatus('confirming');
         fetch('/api/framer-auth/pair/confirm', {
@@ -234,29 +234,30 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
               if (data.user) {
                 setSuccessData({
                   token: storedToken,
-                  sessionCode: data.sessionCode || 'FD-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+                  sessionCode: data.sessionCode || (plugin.slug === 'whatsapp-commerce' ? 'WC-' : 'FD-') + Math.random().toString(36).substring(2, 8).toUpperCase(),
                   user: data.user,
                   isNew: false,
                 });
               }
             } else {
-              setPairingStatus('idle');
+              setPairingStatus('failed');
             }
           })
           .catch(() => {
-            setPairingStatus('idle');
+            setPairingStatus('failed');
           });
       }
     } catch {
       // ignore
     }
-  }, [pairingCode, pairingStatus]);
+  }, [pairingCode, pairingStatus, plugin.slug]);
 
   // Handle postMessage handshake when successData is set
   useEffect(() => {
     if (!successData) return;
 
     // Send postMessage to opener (Framer plugin modal/window)
+    if (plugin.slug === 'whatsapp-commerce') return; // Device polling alone transfers this plugin's token.
     const payload = {
       type: 'QUBTIC_AUTH_SUCCESS',
       source: 'qubtic-auth-portal',
@@ -530,7 +531,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
             pairing_code: pairingCode ? pairingCode.trim() : undefined,
             framerUserId,
             framerProjectId,
-            plan: 'pro',
+            plan: 'free',
             mode: 'signup',
           }),
         });
@@ -543,7 +544,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
         }
 
         try {
-          localStorage.setItem('qubtic_framer_token', data.token);
+          localStorage.setItem(`qubtic_framer_token:${plugin.slug}`, data.token);
         } catch {
           // ignore
         }
@@ -563,8 +564,9 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
             const pairData = await pairRes.json();
             if (pairRes.ok && pairData.success) {
               setPairingStatus('confirmed');
-            }
+            } else { setPairingStatus('failed'); }
           } catch (pairErr) {
+            setPairingStatus('failed');
             console.warn('Pairing confirm background attempt:', pairErr);
           }
         }
@@ -631,7 +633,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
             name: name || email.split('@')[0],
             framerUserId,
             framerProjectId,
-            plan: 'pro',
+            plan: 'free',
           }),
         });
       } else if (activeTab === 'reset') {
@@ -663,7 +665,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
             plugin: plugin.slug,
             framerUserId,
             framerProjectId,
-            plan: 'pro',
+            plan: 'free',
           }),
         });
       } else {
@@ -681,7 +683,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
             plugin: plugin.slug,
             framerUserId,
             framerProjectId,
-            plan: 'pro',
+            plan: 'free',
             pairing_code: pairingCode ? pairingCode.trim() : undefined,
             metadata: {
               sourceTab: activeTab,
@@ -716,7 +718,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
 
       // Save token for persistent session and auto-pairing handoff
       try {
-        localStorage.setItem('qubtic_framer_token', data.token);
+        localStorage.setItem(`qubtic_framer_token:${plugin.slug}`, data.token);
       } catch {
         // ignore
       }
@@ -737,9 +739,10 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
           const pairData = await pairRes.json();
           if (pairRes.ok && pairData.success) {
             setPairingStatus('confirmed');
-          }
+          } else { setPairingStatus('failed'); }
         } catch (pairErr) {
-          console.warn('Pairing confirm background attempt:', pairErr);
+          setPairingStatus('failed');
+            console.warn('Pairing confirm background attempt:', pairErr);
         }
       }
 
@@ -763,7 +766,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
   };
 
   return (
-    <div className="qubtic-auth-page" data-theme={theme} suppressHydrationWarning>
+    <div className="qubtic-auth-page" data-plugin={plugin.slug} data-theme={theme} suppressHydrationWarning>
       {/* Dynamic Animated Ambient Background Effects (Pure CSS) */}
       <div className="qubtic-auth-bg-layer">
         <div className="qubtic-auth-orb-primary" />
@@ -864,7 +867,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
 
               {/* Error Banner */}
               {errorMessage && !statusMessage && (
-                <div className="qubtic-auth-error">
+                <div className="qubtic-auth-error" role="alert">
                   <AlertCircle className="qubtic-auth-error-icon" />
                   <span>{errorMessage}</span>
                 </div>
@@ -1398,7 +1401,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                     <span className="qubtic-auth-success-val">{successData.user.team_name}</span>
                   </div>
                 )}
-                {pairingCode && (
+                {pairingCode && pairingStatus === 'confirmed' && (
                   <div className="qubtic-auth-success-row">
                     <span className="qubtic-auth-success-label">Framer Plugin Paired:</span>
                     <span className="qubtic-auth-success-val qubtic-auth-status-connected">
@@ -1408,6 +1411,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                 )}
               </div>
 
+              {plugin.slug === 'whatsapp-commerce' && <p className="qubtic-auth-success-desc" role="status">{pairingCode && pairingStatus !== 'confirmed' ? 'Your account is ready, but the plugin connection could not complete. Return to WhatsApp Commerce and start a new connection.' : 'Return to WhatsApp Commerce in Framer. You can close this tab.'}</p>}
               {/* Action Buttons */}
               <div className="qubtic-auth-success-actions">
                 <button
@@ -1428,7 +1432,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                   className={`qubtic-auth-submit-btn ${countdown === 0 ? 'qubtic-auth-close-pulse-btn' : ''}`}
                 >
                   <span>
-                    {countdown === 0 ? (
+                    {plugin.slug === 'whatsapp-commerce' ? 'Return to Framer / Close tab' : countdown === 0 ? (
                       'Close Tab Now'
                     ) : (
                       <>
@@ -1439,14 +1443,14 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
                   <ExternalLink size={16} />
                 </button>
 
-                <button
+                {plugin.slug !== 'whatsapp-commerce' && <button
                   type="button"
                   onClick={() => copyToClipboard(successData.token)}
                   className="qubtic-auth-btn-secondary"
                 >
                   {copiedToken ? <Check size={14} /> : <Copy size={14} />}
                   <span>{copiedToken ? 'Auth Token Copied!' : 'Copy Full Bearer Session Token'}</span>
-                </button>
+                </button>}
               </div>
             </div>
           )}
@@ -1464,7 +1468,7 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
             Terms of Service
           </Link>
           <span>•</span>
-          <Link href="/framer/qube-auth/docs" className="qubtic-auth-footer-link">
+          <Link href={plugin.docsUrl} className="qubtic-auth-footer-link">
             Plugin API Docs
           </Link>
         </div>

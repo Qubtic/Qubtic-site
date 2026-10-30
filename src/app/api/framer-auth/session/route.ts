@@ -56,6 +56,10 @@ export async function POST(request: Request) {
     }
 
     const pluginMeta = getPluginMetadata(plugin);
+    const commerce = pluginMeta.slug === 'whatsapp-commerce';
+    if (commerce && (!['signup', 'signin'].includes(mode) || typeof password !== 'string' || password.length < 6)) {
+      return NextResponse.json({ success: false, message: 'Choose sign in or sign up and enter a password of at least 6 characters.' }, { status: 400 });
+    }
 
     const rawCompany = typeof company_name === 'string' ? company_name : (typeof companyName === 'string' ? companyName : '');
     const resolvedCompany = rawCompany.trim().length > 0 ? rawCompany.trim() : undefined;
@@ -69,6 +73,12 @@ export async function POST(request: Request) {
     const normalizedEmail = email.toLowerCase().trim();
     const existingUser = await findFramerUser(normalizedEmail, pluginMeta.slug);
 
+    if (commerce && existingUser && (existingUser.status === 'suspended' || existingUser.status === 'inactive')) {
+      return NextResponse.json({ success: false, message: 'This account is not active.' }, { status: 403 });
+    }
+    if (commerce && mode === 'signin' && existingUser && (existingUser.status !== 'active' || !existingUser.metadata?.password_hash || existingUser.metadata?.email_verified !== true)) {
+      return NextResponse.json({ success: false, message: 'Verify your email or use an email code to sign in.' }, { status: 401 });
+    }
     // Hard Requirement: If user does not have an account beforehand, they must sign up first; sign-in is strictly not allowed
     if (mode === 'signin' && !existingUser) {
       return NextResponse.json(
@@ -113,7 +123,8 @@ export async function POST(request: Request) {
     const submittedOtp = body.otp_code || body.code || body.otp;
     if (mode === 'signup') {
       if (!submittedOtp) {
-        await sendAuthOtpCode(normalizedEmail, pluginMeta.slug);
+        const delivery = await sendAuthOtpCode(normalizedEmail, pluginMeta.slug);
+        if (!delivery.success) return NextResponse.json({ success: false, message: 'Verification email could not be sent. Try again shortly.' }, { status: 503 });
         return NextResponse.json(
           {
             success: false,
@@ -192,9 +203,9 @@ export async function POST(request: Request) {
       pluginSlug: pluginMeta.slug,
       framerUserId,
       framerProjectId,
-      plan,
+      plan: 'free',
       metadata: {
-        ...metadata,
+        ...(commerce ? {} : metadata),
         ...(resolvedCompany ? { company_name: resolvedCompany } : {}),
         ...(resolvedWebsite ? { website_url: resolvedWebsite } : {}),
         ...(resolvedTeamName ? { team_name: resolvedTeamName } : {}),

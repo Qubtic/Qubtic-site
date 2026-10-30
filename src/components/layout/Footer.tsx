@@ -32,6 +32,7 @@ const serviceLinks = [
 ];
 
 const productLinks = [
+  { name: 'WhatsApp Commerce (Plugin)', href: '/auth/whatsapp-commerce' },
   { name: 'Frame Drop (Plugin)', href: '/framer/frame-drop' },
   { name: 'Frame Drop Docs', href: '/framer/frame-drop/docs' },
   { name: 'Product Roadmap', href: '/framer/frame-drop/roadmap' },

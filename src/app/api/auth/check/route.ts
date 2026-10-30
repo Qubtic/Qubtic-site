@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { verifyAdminSession } from '@/lib/admin-session';
 
 export async function GET() {
   try {
@@ -11,7 +12,7 @@ export async function GET() {
     }
 
     try {
-      const decoded = JSON.parse(Buffer.from(sessionToken, 'base64').toString('utf-8'));
+      const decoded = verifyAdminSession(sessionToken);
       if (decoded && decoded.email) {
         return NextResponse.json({
           authenticated: true,
