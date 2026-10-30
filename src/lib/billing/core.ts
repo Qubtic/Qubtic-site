@@ -57,6 +57,19 @@ export function safePolarUrl(value:string) {
  if(url.protocol!=='https:' || !['polar.sh','buy.polar.sh','sandbox.polar.sh','sandbox-api.polar.sh','api.polar.sh','sandbox.buy.polar.sh'].includes(url.hostname) || url.username || url.password) throw new BillingError('Invalid checkout destination.');
  return url.href;
 }
+export async function planPrice(productId:string, discountId?:string) {
+ const sdk=polar(); const product=await sdk.products.get(productId);
+ if(product.organization_id!==process.env.POLAR_ORGANIZATION_ID || product.is_archived) throw new BillingError('Plan configuration is invalid.');
+ const prices=product.prices.filter(price=>!price.is_archived && price.amount_type==='fixed' && typeof price.price_amount==='number' && price.price_amount>0);
+ if(prices.length!==1) throw new BillingError('Plan needs exactly one active fixed price.');
+ const price=prices[0]; const priceAmount='price_amount' in price ? price.price_amount : 0; let discountAmount=0; let appliedDiscountId:string|undefined; let discountDuration:string|undefined;
+ if(discountId){
+  const discount=await sdk.discounts.get(discountId);
+  const eligible=discount.organization_id===product.organization_id && discount.products?.some(item=>(typeof item==='string'?item:item.id)===productId) && (!discount.starts_at||Date.parse(discount.starts_at)<=Date.now()) && (!discount.ends_at||Date.parse(discount.ends_at)>Date.now()) && (discount.max_redemptions===null||discount.redemptions_count<discount.max_redemptions);
+  if(eligible && discount.type==='fixed' && 'currency' in discount && 'amount' in discount && discount.currency===price.price_currency && typeof discount.amount==='number' && discount.amount>0 && discount.amount<priceAmount){discountAmount=discount.amount;appliedDiscountId=discount.id;discountDuration=discount.duration;}
+ }
+ return {price_amount:priceAmount,discount_amount:discountAmount,amount_due:priceAmount-discountAmount,currency:price.price_currency,discount_id:appliedDiscountId,discount_duration:discountDuration};
+}
 export async function paidAccess(userId:string,plugin:string) {
  // Access is a current server record, never a browser plan or a legacy auth flag.
  if(!process.env.POLAR_ENVIRONMENT) return false;
@@ -73,7 +86,7 @@ export function normalizeState(state:models.CustomerState,entries:Catalog[],orde
   const row=entries.find(r=>r.product_id===order.product_id);
   if(!row) return [];
   if(order.customer_id!==state.id || order.customer.organization_id!==state.organization_id) throw new BillingError('Order ownership mismatch.');
-  return [{id:order.id,plugin_slug:row.plugin_slug,cadence:row.cadence,product_id:order.product_id,status:order.status,amount:order.total_amount,refunded_amount:order.refunded_amount,currency:order.currency,created_at:order.created_at,subscription_id:order.subscription_id,checkout_id:order.checkout_id}];
+  return [{id:order.id,plugin_slug:row.plugin_slug,cadence:row.cadence,product_id:order.product_id,status:order.status,amount:order.total_amount,subtotal_amount:order.subtotal_amount,discount_amount:order.discount_amount,discount_id:order.discount_id,refunded_amount:order.refunded_amount,currency:order.currency,created_at:order.created_at,subscription_id:order.subscription_id,checkout_id:order.checkout_id}];
  });
  const subscriptions=allSubscriptions.flatMap(sub=>{
   const row=entries.find(r=>r.product_id===sub.product_id); if(!row) return [];

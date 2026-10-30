@@ -5,7 +5,7 @@ export const PLUGINS = [
   { slug: 'frame-drop', prefix: 'POLAR_FRAME_DROP' },
   { slug: 'qube-auth', prefix: 'POLAR_QUBE_AUTH' },
 ];
-export const REQUIRED_SCOPES = ['organizations:read', 'products:read', 'customers:read', 'orders:read', 'subscriptions:read', 'checkouts:write', 'customer_sessions:write'];
+export const REQUIRED_SCOPES = ['organizations:read', 'products:read', 'discounts:read', 'customers:read', 'orders:read', 'subscriptions:read', 'checkouts:write', 'customer_sessions:write'];
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function billingSiteUrl(env) {
   const url = new URL(env.NEXT_PUBLIC_SITE_URL || 'https://www.qubtic.tech');
@@ -48,6 +48,7 @@ export function configurationProblems(env) {
   for (const key of ['SUPABASE_SERVICE_ROLE_KEY', 'POLAR_ACCESS_TOKEN', 'POLAR_ORGANIZATION_ID', 'POLAR_WEBHOOK_SECRET', 'BILLING_CRON_SECRET', 'ADMIN_SESSION_SECRET', 'SMTP_USER', 'SMTP_PASS']) if (!env[key]?.trim()) problems.push(`Missing ${key}.`);
   if (!(env.SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL)?.trim()) problems.push('Missing SUPABASE_URL.');
   if (env.POLAR_ORGANIZATION_ID && !uuid.test(env.POLAR_ORGANIZATION_ID)) problems.push('POLAR_ORGANIZATION_ID must be the organization UUID, not its name or slug.');
+  for (const [key,value] of Object.entries(env)) if (/^POLAR_[A-Z0-9_]+_(MONTHLY|YEARLY|LIFETIME)_DISCOUNT_ID$/.test(key) && value?.trim() && !uuid.test(value.trim())) problems.push(`${key} must be a Polar discount UUID.`);
   for (const key of ['BILLING_CRON_SECRET', 'ADMIN_SESSION_SECRET']) if (env[key] && env[key].length < 32) problems.push(`${key} must contain at least 32 random characters.`);
   if (env.BILLING_CRON_SECRET && env.BILLING_CRON_SECRET === env.ADMIN_SESSION_SECRET) problems.push('BILLING_CRON_SECRET and ADMIN_SESSION_SECRET must be different.');
   try { billingSiteUrl(env); } catch (error) { problems.push(error.message); }

@@ -69,3 +69,14 @@ test('ENV catalog synchronization is atomic, retains history, and refuses cross-
  assert.equal((await db.query("select has_function_privilege('anon','billing_configure_catalog(text,jsonb)','EXECUTE') as allowed")).rows[0].allowed,false);
  }finally{await db.close();}
 });
+test('discount migration stores provider subtotal, discount and charged amount in plugin payment history',async()=>{
+ const db=await setup();try{
+  const migration=await readFile(new URL('../supabase/billing_discounts.sql',import.meta.url),'utf8');await db.exec(migration);await db.exec(migration);
+  const customer=randomUUID(),product=randomUUID();await db.query("insert into billing_customers(id,email,environment) values($1,'discount@example.test','sandbox')",[customer]);
+  await db.query("insert into billing_catalog values('whatsapp-commerce','lifetime','sandbox',$1,$2,true)",[product,randomUUID()]);
+  const order={id:'discount-order',plugin_slug:'whatsapp-commerce',cadence:'lifetime',product_id:product,status:'paid',amount:7999,subtotal_amount:9999,discount_amount:2000,discount_id:randomUUID(),refunded_amount:0,currency:'usd',created_at:'2026-10-30T00:00:00Z'};
+  await db.query('select billing_apply_snapshot($1,$2,$3,$4,$5,$6)',[customer,'2026-10-30T01:00:00Z','polar-discount-customer','[]',JSON.stringify([order]),'[]']);
+  const {rows}=await db.query('select amount,subtotal_amount,discount_amount,discount_id from whatsapp_commerce_plugin_payments where polar_order_id=$1',[order.id]);
+  assert.equal(Number(rows[0].amount),7999);assert.equal(Number(rows[0].subtotal_amount),9999);assert.equal(Number(rows[0].discount_amount),2000);assert.equal(rows[0].discount_id,order.discount_id);
+ }finally{await db.close();}
+});
