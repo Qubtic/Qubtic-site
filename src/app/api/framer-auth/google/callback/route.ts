@@ -8,6 +8,49 @@ import {
 
 export const dynamic = 'force-dynamic';
 
+function resolveGoogleCallbackUrl(request: Request): string {
+  if (process.env.GOOGLE_REDIRECT_URI) {
+    return process.env.GOOGLE_REDIRECT_URI.trim();
+  }
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+  if (forwardedHost && !forwardedHost.includes('localhost') && !forwardedHost.includes('127.0.0.1')) {
+    return `${forwardedProto}://${forwardedHost}/api/framer-auth/google/callback`;
+  }
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return `${process.env.NEXT_PUBLIC_SITE_URL.replace(/\/+$/, '')}/api/framer-auth/google/callback`;
+  }
+  try {
+    const origin = new URL(request.url).origin;
+    if (origin && !origin.includes('localhost') && !origin.includes('127.0.0.1')) {
+      return `${origin}/api/framer-auth/google/callback`;
+    }
+  } catch {
+    /* fallback below */
+  }
+  return 'https://www.qubtic.tech/api/framer-auth/google/callback';
+}
+
+function resolveSiteUrl(request: Request): string {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/+$/, '');
+  }
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+  if (forwardedHost && !forwardedHost.includes('localhost') && !forwardedHost.includes('127.0.0.1')) {
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+  try {
+    const origin = new URL(request.url).origin;
+    if (origin && !origin.includes('localhost') && !origin.includes('127.0.0.1')) {
+      return origin;
+    }
+  } catch {
+    /* fallback below */
+  }
+  return 'https://www.qubtic.tech';
+}
+
 interface GoogleStatePayload {
   plugin: string;
   code?: string;
@@ -65,11 +108,8 @@ export async function GET(request: Request) {
   const pluginSlug = pluginMeta.slug;
   const userCode = (state.code || '').trim().toUpperCase();
 
-  const siteUrl = (
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    new URL(request.url).origin ||
-    'https://qubtic.tech'
-  ).replace(/\/+$/, '');
+  const siteUrl = resolveSiteUrl(request);
+  const callbackUrl = resolveGoogleCallbackUrl(request);
 
   const fallbackPortalUrl = new URL(`/auth/${pluginSlug}`, siteUrl);
   if (userCode) fallbackPortalUrl.searchParams.set('code', userCode);
@@ -94,8 +134,6 @@ export async function GET(request: Request) {
     fallbackPortalUrl.searchParams.set('error', 'google_credentials_missing');
     return NextResponse.redirect(fallbackPortalUrl.toString());
   }
-
-  const callbackUrl = `${siteUrl}/api/framer-auth/google/callback`;
 
   try {
     // 1. Exchange authorization code for Google access token
