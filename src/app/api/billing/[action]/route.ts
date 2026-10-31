@@ -18,11 +18,11 @@ async function handle(request:Request,{params}:Context){
    await limit(`resolve:${channel}`,30,60);
    const {data:checkout,error}=await db.from('billing_checkouts').select('checkout_url,status,expires_at').eq('environment',env).eq('request_key',channel).maybeSingle();
    check(error);
-   if(!checkout) return reply({pending:true},202);
+   if(!checkout) return reply({error:'No checkout exists for this link yet.'},404);
    if(checkout.status==='open' && checkout.checkout_url && Date.parse(checkout.expires_at)>Date.now()){
     return reply({url:safePolarUrl(checkout.checkout_url)});
    }
-   if(checkout.status==='creating') return reply({pending:true},202);
+   if(checkout.status==='creating' && Date.parse(checkout.expires_at)>Date.now()) return reply({pending:true},202);
    throw new BillingError('Checkout is expired or unavailable.',410);
   }
   if(action==='reconcile' && request.method==='POST'){
@@ -63,15 +63,16 @@ async function handle(request:Request,{params}:Context){
    const raw=await request.text();if(Buffer.byteLength(raw)>4096)throw new BillingError('Request too large.',413);
    const body=(()=>{try{return JSON.parse(raw);}catch{return null;}})() as {cadence?:Cadence;request_id?:string;replace_previous?:boolean}|null;
    if(!body || (body.cadence && !['monthly','yearly','lifetime'].includes(body.cadence)) || !/^[0-9a-f-]{36}$/i.test(body.request_id||'')) throw new BillingError('Choose a valid billing period.',400);
-   const rows=(await catalog()).filter(item=>item.plugin_slug===user.plugin);
+   const [entries,alreadyPro,existingResult]=await Promise.all([catalog(),paidAccess(user.id,user.plugin),db.from('billing_checkouts').select('*').eq('user_id',user.id).eq('request_key',body.request_id).maybeSingle()]);
+   const rows=entries.filter(item=>item.plugin_slug===user.plugin);
    const selectable=['yearly','monthly','lifetime'].map(cadence=>rows.find(item=>item.cadence===cadence));
    if(selectable.some(item=>!item)) throw new BillingError('Pro checkout is not fully configured yet.',409);
    const row=selectable[0]!;
-   if(await paidAccess(user.id,user.plugin)) throw new BillingError('Pro is already active. Manage billing to change your plan.',409);
-   const {data:existing,error:existingError}=await db.from('billing_checkouts').select('*').eq('user_id',user.id).eq('request_key',body.request_id).maybeSingle();check(existingError);
+   if(alreadyPro) throw new BillingError('Pro is already active. Manage billing to change your plan.',409);
+   const {data:existing,error:existingError}=existingResult;check(existingError);
    if(existing){
     if(existing.environment!==env || existing.product_id!==row.product_id) throw new BillingError('Checkout request does not match.',409);
-    if(existing.checkout_url && Date.parse(existing.expires_at)>Date.now()) return reply({url:safePolarUrl(existing.checkout_url)});
+    if(existing.status==='open' && existing.checkout_url && Date.parse(existing.expires_at)>Date.now()) return reply({url:safePolarUrl(existing.checkout_url)});
     throw new BillingError('This checkout request is already processing or expired. Start a new checkout.',409);
    }
    const sdk=polar();
@@ -89,7 +90,12 @@ async function handle(request:Request,{params}:Context){
     const previous=await sdk.checkouts.get(openCheckout.polar_checkout_id);
     if(previous.status!=='open') throw new BillingError('Your previous checkout changed status. Refresh billing before starting another.',409);
     const available=previous.products.map(item=>item.id).sort().join(',')===selectable.map(item=>item!.product_id).sort().join(',');
-    if(available)return reply({url:safePolarUrl(openCheckout.checkout_url)});
+    if(available){
+     // Rebind the polling fallback to this launch tab when reusing an open checkout.
+     const {data:rebound,error:rebindError}=await db.from('billing_checkouts').update({request_key:body.request_id}).eq('id',openCheckout.id).eq('status','open').select('id').maybeSingle();check(rebindError);
+     if(!rebound)throw new BillingError('Checkout changed status. Refresh billing and try again.',409);
+     return reply({url:safePolarUrl(openCheckout.checkout_url)});
+    }
     if(body.replace_previous!==true)return reply({error:'An earlier checkout is still open. Continue it or start a new Pro checkout to choose a plan.',previous_url:safePolarUrl(openCheckout.checkout_url),can_replace:true},409);
     const {error:replaceError}=await db.from('billing_checkouts').update({status:'superseded'}).eq('id',openCheckout.id).eq('status','open');check(replaceError);
    }

@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --test scripts/test-commerce-api.mjs scripts/test-commerce-shared-db.mjs scripts/test-billing-api.mjs scripts/test-billing-db.mjs scripts/test-billing-config.mjs",
+    "test": "node --test scripts/test-commerce-api.mjs scripts/test-commerce-shared-db.mjs scripts/test-billing-api.mjs scripts/test-billing-db.mjs scripts/test-billing-config.mjs scripts/test-billing-launch.mjs",
     "test:commerce": "node --test scripts/test-commerce-api.mjs scripts/test-commerce-shared-db.mjs",
     "test:commerce:legacy": "node --test scripts/test-commerce-access.mjs",
     "test:billing": "node --test scripts/test-billing-api.mjs scripts/test-billing-db.mjs",

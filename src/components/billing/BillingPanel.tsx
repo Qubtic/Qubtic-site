@@ -10,7 +10,6 @@ function safeUUID():string{if(typeof crypto!=='undefined'&&typeof crypto.randomU
 export function BillingPanel({token,onVerified}:{token:string;onVerified?:(pro:boolean)=>void}){
  const [plans,setPlans]=useState<Plan[]>([]);const [status,setStatus]=useState<Status|null>(null);const [error,setError]=useState('');const [busy,setBusy]=useState(false);const [pending,setPending]=useState(false);const [destination,setDestination]=useState('');const [destinationAction,setDestinationAction]=useState<'checkout'|'portal'|null>(null);const [previousUrl,setPreviousUrl]=useState('');
  const [selectedCadence,setSelectedCadence]=useState<Cadence>('yearly');
- const [showCheckoutModal,setShowCheckoutModal]=useState(false);
  const callback=useRef(onVerified);callback.current=onVerified;const running=useRef(false);const currentToken=useRef(token);currentToken.current=token;
  async function api(action:string,body?:unknown){
   const response=await fetch(`${API}/${action}`,{method:body===undefined?'GET':'POST',headers:{Authorization:`Bearer ${token}`,...(body===undefined?{}:{'Content-Type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)}),cache:'no-store',signal:AbortSignal.timeout(25000)});
@@ -32,17 +31,8 @@ export function BillingPanel({token,onVerified}:{token:string;onVerified?:(pro:b
   let count=0;const timer=pending?setInterval(()=>{if(++count>8){setPending(false);return;}void refresh();},15000):undefined;
   return()=>{window.removeEventListener('focus',focus);if(timer)clearInterval(timer);};
  },[pending,token]);
- useEffect(()=>{
-  if(status?.is_pro) setShowCheckoutModal(false);
- },[status?.is_pro]);
- useEffect(()=>{
-  if(!showCheckoutModal) return;
-  const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape')setShowCheckoutModal(false);};
-  window.addEventListener('keydown',onKey);
-  return()=>window.removeEventListener('keydown',onKey);
- },[showCheckoutModal]);
- async function open(action:'checkout'|'portal',replacePrevious=false){
-  if(action==='checkout') setShowCheckoutModal(true);
+  async function open(action:'checkout'|'portal',replacePrevious=false){
+  
   const channel=safeUUID();
   let launcher:Window|null=null;
   if(action==='checkout'){try{launcher=window.open(`https://www.qubtic.tech/billing/launch#${channel}`,'_blank');}catch{/* The checkout link remains available after the request. */}}
@@ -51,10 +41,13 @@ export function BillingPanel({token,onVerified}:{token:string;onVerified?:(pro:b
    if(url.protocol!=='https:'||!['polar.sh','buy.polar.sh','sandbox.polar.sh','sandbox-api.polar.sh','api.polar.sh','sandbox.buy.polar.sh'].includes(url.hostname)||url.username||url.password)throw new Error('Invalid billing destination.');
    setDestination(url.href);setDestinationAction(action);
    if(action==='checkout'&&launcher){
-    const target=launcher;let attempts=0;
+    const target=launcher;
     try{if(!target.closed){target.location.href=url.href;}}catch{}
-    const send=()=>{if(target.closed||++attempts>40){window.clearInterval(timer);return;}try{target.postMessage({type:'qubtic-billing-checkout',channel,url:url.href},'*');}catch{}try{target.location.href=url.href;}catch{}};
-    const timer=window.setInterval(send,250);send();
+    let attempts=0;
+    const timer=window.setInterval(()=>{
+     if(target.closed||++attempts>8){window.clearInterval(timer);return;}
+     try{target.postMessage({type:'qubtic-billing-checkout',channel,url:url.href},'*');}catch{}
+    },250);
    }else if(action==='portal'){try{window.open(url.href,'_blank','noopener,noreferrer');}catch{/* The visible portal link remains available. */}}
    if(action==='checkout')setPending(true);
   }catch(err){launcher?.close();const previous=(err as Error&{previous_url?:string})?.previous_url;if(previous){try{const url=new URL(previous);if(url.protocol==='https:'&&['polar.sh','buy.polar.sh','sandbox.polar.sh','sandbox-api.polar.sh','api.polar.sh','sandbox.buy.polar.sh'].includes(url.hostname)&&!url.username&&!url.password)setPreviousUrl(url.href);}catch{/* Ignore an invalid recovery link. */}}setError(err instanceof Error?err.message:'Could not open billing.');}finally{setBusy(false);}
@@ -102,7 +95,7 @@ export function BillingPanel({token,onVerified}:{token:string;onVerified?:(pro:b
       </span>
      ):status?.is_pro?'Pro active':!token?'Sign in to upgrade':'Purchase Pro'}
     </button>
-    {!showCheckoutModal&&destination&&destinationAction==='checkout'&&(
+    {destination&&destinationAction==='checkout'&&(
      <div className="qubtic-billing-destination-box">
       <div className="qubtic-billing-destination-content">
        <span className="qubtic-billing-destination-icon">🚀</span>
@@ -119,7 +112,7 @@ export function BillingPanel({token,onVerified}:{token:string;onVerified?:(pro:b
      <span className="qubtic-billing-trust-sep">·</span>
      <span>Powered by Polar</span>
     </div>
-    {!showCheckoutModal&&previousUrl&&(
+    {previousUrl&&(
      <div className="qubtic-billing-recovery">
       <div className="qubtic-billing-recovery-header">
        <span className="qubtic-billing-recovery-icon">⚠️</span>
@@ -132,72 +125,7 @@ export function BillingPanel({token,onVerified}:{token:string;onVerified?:(pro:b
       <p>Close the previous checkout tab before paying to avoid two purchases.</p>
      </div>
     )}
-    {showCheckoutModal&&(
-     <div className="qubtic-billing-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="qubtic-checkout-modal-title" onClick={(e)=>{if(e.target===e.currentTarget)setShowCheckoutModal(false);}}>
-      <div className="qubtic-billing-modal">
-       <div className="qubtic-billing-modal-header">
-        <div className="qubtic-billing-modal-title-row">
-         <span className="qubtic-billing-modal-icon" aria-hidden="true">💎</span>
-         <h3 id="qubtic-checkout-modal-title">Upgrade to Pro</h3>
-        </div>
-        <button type="button" className="qubtic-billing-modal-close" aria-label="Close checkout modal" onClick={()=>setShowCheckoutModal(false)}>✕</button>
-       </div>
-       <div className="qubtic-billing-modal-plan-summary">
-        <div className="qubtic-billing-modal-plan-top">
-         <span className="qubtic-billing-modal-plan-tier">Pro Access</span>
-         <span className="qubtic-billing-modal-plan-badge">{selectedCadence==='yearly'?'Save ~50%':selectedCadence==='lifetime'?'Pay once':'Flexible'}</span>
-        </div>
-        <div className="qubtic-billing-modal-plan-cadence">{selectedCadence==='yearly'?'Yearly Plan (Annual billing)':selectedCadence==='lifetime'?'Lifetime Access (One-time payment)':'Monthly Plan (Cancel anytime)'}</div>
-        <div className="qubtic-billing-modal-guarantee">🛡️ 14-day refund guarantee included with your purchase</div>
-       </div>
-       {busy&&(
-        <div className="qubtic-billing-modal-status-loading">
-         <span className="qubtic-modal-spinner" aria-hidden="true" />
-         <div className="qubtic-billing-modal-status-info">
-          <strong>Connecting to Polar secure checkout…</strong>
-          <span>Preparing your checkout session. Tab will open automatically.</span>
-         </div>
-        </div>
-       )}
-       {!busy&&destination&&destinationAction==='checkout'&&(
-        <div className="qubtic-billing-modal-status-ready">
-         <div className="qubtic-billing-modal-ready-header">
-          <span className="qubtic-billing-modal-ready-check">✓</span>
-          <div className="qubtic-billing-modal-status-info">
-           <strong>Checkout tab opened in Polar</strong>
-           <span>If your browser blocked the window, click below to proceed:</span>
-          </div>
-         </div>
-         <a href={destination} target="_blank" rel="noopener noreferrer" className="qubtic-billing-checkout-link qubtic-billing-modal-cta-btn">Open Polar checkout</a>
-        </div>
-       )}
-       {!busy&&previousUrl&&(
-        <div className="qubtic-billing-recovery">
-         <div className="qubtic-billing-recovery-header">
-          <span className="qubtic-billing-recovery-icon">⚠️</span>
-          <span>An earlier checkout is still open</span>
-         </div>
-         <div className="qubtic-billing-recovery-actions">
-          <a href={previousUrl} target="_blank" rel="noopener noreferrer" className="qubtic-billing-recovery-link">Continue previous checkout</a>
-          <button type="button" className="btn-brand-secondary qubtic-billing-recovery-btn" disabled={busy} onClick={()=>void open('checkout',true)}>Start new Pro checkout</button>
-         </div>
-         <p>Close the previous checkout tab before paying to avoid two purchases.</p>
-        </div>
-       )}
-       {!busy&&error&&(
-        <div className="qubtic-billing-modal-error">
-         <p className="commerce-feedback error" role="alert">{error}</p>
-         <button type="button" className="btn-brand-secondary qubtic-billing-modal-retry-btn" onClick={()=>void open('checkout')}>Retry checkout</button>
-        </div>
-       )}
-       <div className="qubtic-billing-modal-footer">
-        <div className="qubtic-billing-trust"><span>🔒 256-bit encrypted Polar checkout</span></div>
-        <button type="button" className="commerce-text-button qubtic-billing-modal-dismiss-btn" onClick={()=>setShowCheckoutModal(false)}>Close</button>
-       </div>
-      </div>
-     </div>
-    )}
-   </article>
+    </article>
   </div>
   {destination&&destinationAction==='portal'&&<a href={destination} target="_blank" rel="noopener noreferrer">Continue to Polar</a>}
   {pending&&<p role="status">Waiting for payment verification. Access will refresh automatically.</p>}
