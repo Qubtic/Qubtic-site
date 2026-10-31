@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import '../return/return.css';
+import './launch.css';
 
 const polarHosts=new Set(['polar.sh','buy.polar.sh','sandbox.polar.sh','sandbox-api.polar.sh','api.polar.sh','sandbox.buy.polar.sh']);
 export default function BillingLaunch(){
@@ -18,5 +18,5 @@ export default function BillingLaunch(){
   opener.postMessage({type:'qubtic-billing-ready',channel},'*');
   return()=>{window.removeEventListener('message',receive);window.clearTimeout(timer);};
  },[]);
- return <main className="billing-return"><section aria-labelledby="billing-launch-title"><p>Qubtic / Billing</p><h1 id="billing-launch-title">Preparing Polar checkout</h1><p role="status">Your purchase is being connected to your Qubtic account.</p>{waiting&&<p>Return to the plugin and use its Open Polar checkout link, or try Purchase Pro again.</p>}</section></main>;
+ return <main className="billing-launch"><section className="billing-launch__content" aria-labelledby="billing-launch-title"><span className="billing-launch__spinner" aria-hidden="true"/><h1 id="billing-launch-title">Opening Polar checkout</h1><p role="status">Please wait while your checkout loads.</p>{waiting&&<p className="billing-launch__recovery">Checkout is taking longer than expected. Return to the plugin and select Open Polar checkout, or try Purchase Pro again.</p>}</section></main>;
 }
