@@ -19,6 +19,13 @@ body:has(.billing-launch) > footer { display: none; }
 .billing-launch h1 { margin: 0; font-size: 1.25rem; font-weight: 650; }
 .billing-launch p { margin: 12px 0 0; color: var(--launch-muted); line-height: 1.5; }
 .billing-launch__recovery { padding-top: 16px; }
+.billing-launch__link {
+  display: inline-block;
+  margin-top: 14px;
+  color: var(--launch-accent);
+  font-weight: 600;
+  text-decoration: underline;
+}
 
 @keyframes billing-launch-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .billing-launch__spinner { animation: none; border-color: var(--launch-accent); } }

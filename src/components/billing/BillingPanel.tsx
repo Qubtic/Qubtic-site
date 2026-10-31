@@ -47,14 +47,14 @@ export function BillingPanel({token,onVerified}:{token:string;onVerified?:(pro:b
   let launcher:Window|null=null;
   if(action==='checkout'){try{launcher=window.open(`https://www.qubtic.tech/billing/launch#${channel}`,'_blank');}catch{/* The checkout link remains available after the request. */}}
   setBusy(true);setError('');setDestination('');setDestinationAction(null);setPreviousUrl('');
-  try{const data=await api(action,action==='checkout'?{cadence:selectedCadence,request_id:safeUUID(),...(replacePrevious?{replace_previous:true}:{})}:{});const url=new URL(data.url);
+  try{const data=await api(action,action==='checkout'?{cadence:selectedCadence,request_id: channel,...(replacePrevious?{replace_previous:true}:{})}:{});const url=new URL(data.url);
    if(url.protocol!=='https:'||!['polar.sh','buy.polar.sh','sandbox.polar.sh','sandbox-api.polar.sh','api.polar.sh','sandbox.buy.polar.sh'].includes(url.hostname)||url.username||url.password)throw new Error('Invalid billing destination.');
    setDestination(url.href);setDestinationAction(action);
    if(action==='checkout'&&launcher){
     const target=launcher;let attempts=0;
-    const send=()=>{if(target.closed||++attempts>40){window.clearInterval(timer);return;}try{target.postMessage({type:'qubtic-billing-checkout',channel,url:url.href},'https://www.qubtic.tech');}catch{}};
+    try{if(!target.closed){target.location.href=url.href;}}catch{}
+    const send=()=>{if(target.closed||++attempts>40){window.clearInterval(timer);return;}try{target.postMessage({type:'qubtic-billing-checkout',channel,url:url.href},'*');}catch{}try{target.location.href=url.href;}catch{}};
     const timer=window.setInterval(send,250);send();
-    try{if(!target.closed&&(target.location.href.startsWith('about:blank')||target.location.href.includes('/billing/launch'))){target.location.replace(url.href);}}catch{}
    }else if(action==='portal'){try{window.open(url.href,'_blank','noopener,noreferrer');}catch{/* The visible portal link remains available. */}}
    if(action==='checkout')setPending(true);
   }catch(err){launcher?.close();const previous=(err as Error&{previous_url?:string})?.previous_url;if(previous){try{const url=new URL(previous);if(url.protocol==='https:'&&['polar.sh','buy.polar.sh','sandbox.polar.sh','sandbox-api.polar.sh','api.polar.sh','sandbox.buy.polar.sh'].includes(url.hostname)&&!url.username&&!url.password)setPreviousUrl(url.href);}catch{/* Ignore an invalid recovery link. */}}setError(err instanceof Error?err.message:'Could not open billing.');}finally{setBusy(false);}

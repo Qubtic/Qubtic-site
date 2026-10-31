@@ -11,6 +11,20 @@ async function handle(request:Request,{params}:Context){
  try{
   if(action==='webhook' && request.method==='POST'){await webhook(request);return reply({received:true},202);}
   const db=database();const env=environment();
+  if(action==='resolve' && request.method==='GET'){
+   const urlObj=new URL(request.url);
+   const channel=urlObj.searchParams.get('channel')||'';
+   if(!/^[0-9a-f-]{36}$/i.test(channel)) throw new BillingError('Invalid channel.',400);
+   await limit(`resolve:${channel}`,30,60);
+   const {data:checkout,error}=await db.from('billing_checkouts').select('checkout_url,status,expires_at').eq('environment',env).eq('request_key',channel).maybeSingle();
+   check(error);
+   if(!checkout) return reply({pending:true},202);
+   if(checkout.status==='open' && checkout.checkout_url && Date.parse(checkout.expires_at)>Date.now()){
+    return reply({url:safePolarUrl(checkout.checkout_url)});
+   }
+   if(checkout.status==='creating') return reply({pending:true},202);
+   throw new BillingError('Checkout is expired or unavailable.',410);
+  }
   if(action==='reconcile' && request.method==='POST'){
    if(!cronAuthorized(request)) throw new BillingError('Unauthorized.',401);
    // Bounded durable batches; oldest snapshots first. Failed events remain pending.
@@ -61,13 +75,13 @@ async function handle(request:Request,{params}:Context){
     throw new BillingError('This checkout request is already processing or expired. Start a new checkout.',409);
    }
    const sdk=polar();
-   for(const selected of selectable){
+   await Promise.all(selectable.map(async selected=>{
     const product=await sdk.products.get(selected!.product_id);
     if(product.organization_id!==process.env.POLAR_ORGANIZATION_ID || product.is_archived || !product.benefits.some(b=>b.id===row.benefit_id)) throw new BillingError('Plan configuration is invalid.');
     const prices=product.prices.filter(price=>!price.is_archived);
     if(!prices.length||prices.some(price=>price.amount_type!=='fixed'||!('price_amount' in price)||typeof price.price_amount!=='number'||price.price_amount<=0))throw new BillingError('Pro requires a configured fixed paid price.');
     if((selected!.cadence==='lifetime' && product.is_recurring)||(selected!.cadence!=='lifetime' && (!product.is_recurring || product.recurring_interval!==(selected!.cadence==='monthly'?'month':'year')))) throw new BillingError('Plan billing interval does not match.');
-   }
+   }));
    const {error:expiryError}=await db.from('billing_checkouts').update({status:'expired'}).eq('user_id',user.id).eq('environment',env).in('status',['creating','open']).lt('expires_at',new Date().toISOString());check(expiryError);
    const {data:openCheckout,error:openError}=await db.from('billing_checkouts').select('*').eq('user_id',user.id).eq('environment',env).in('status',['creating','open']).maybeSingle();check(openError);
    if(openCheckout){
