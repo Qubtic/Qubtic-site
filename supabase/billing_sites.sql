@@ -1,0 +1,91 @@
+-- Apply after billing.sql and billing_discounts.sql, before deploying site-aware APIs.
+-- Unassigned historical purchases deliberately grant no WhatsApp Commerce site access.
+BEGIN;
+ALTER TABLE billing_checkouts ADD COLUMN IF NOT EXISTS site_id text CHECK(site_id ~ '^[A-Za-z0-9_-]{1,128}$');
+ALTER TABLE billing_orders ADD COLUMN IF NOT EXISTS site_id text;
+ALTER TABLE billing_subscriptions ADD COLUMN IF NOT EXISTS site_id text;
+CREATE OR REPLACE VIEW whatsapp_commerce_plugin_payments WITH(security_invoker=true) AS SELECT * FROM billing_orders WHERE plugin_slug='whatsapp-commerce';
+DROP INDEX IF EXISTS billing_checkout_active;
+CREATE UNIQUE INDEX billing_checkout_active ON billing_checkouts(user_id,environment,COALESCE(site_id,'')) WHERE status IN ('creating','open');
+CREATE UNIQUE INDEX IF NOT EXISTS billing_checkout_polar_unique ON billing_checkouts(environment,polar_checkout_id) WHERE polar_checkout_id IS NOT NULL;
+CREATE TABLE IF NOT EXISTS billing_site_entitlements (
+ customer_id uuid NOT NULL REFERENCES billing_customers(id), plugin_slug text NOT NULL,
+ site_id text NOT NULL CHECK(site_id ~ '^[A-Za-z0-9_-]{1,128}$'),
+ is_pro boolean NOT NULL DEFAULT false, verified_until timestamptz NOT NULL,
+ updated_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(customer_id,plugin_slug,site_id)
+);
+ALTER TABLE billing_site_entitlements ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON billing_site_entitlements FROM anon,authenticated;
+GRANT ALL ON billing_site_entitlements TO service_role;
+DROP POLICY IF EXISTS billing_site_service_access ON billing_site_entitlements;
+CREATE POLICY billing_site_service_access ON billing_site_entitlements FOR ALL TO service_role USING(true) WITH CHECK(true);
+CREATE OR REPLACE FUNCTION billing_lock_checkout_site() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$
+BEGIN
+ IF OLD.site_id IS NOT NULL AND (NEW.site_id IS DISTINCT FROM OLD.site_id OR NEW.customer_id<>OLD.customer_id OR NEW.plugin_slug<>OLD.plugin_slug OR NEW.environment<>OLD.environment OR (OLD.polar_checkout_id IS NOT NULL AND NEW.polar_checkout_id IS DISTINCT FROM OLD.polar_checkout_id)) THEN
+  RAISE EXCEPTION 'Checkout site assignment is immutable';
+ END IF;
+ RETURN NEW;
+END $$;
+DROP TRIGGER IF EXISTS billing_checkout_site_lock ON billing_checkouts;
+CREATE TRIGGER billing_checkout_site_lock BEFORE UPDATE ON billing_checkouts FOR EACH ROW EXECUTE FUNCTION billing_lock_checkout_site();
+CREATE OR REPLACE FUNCTION billing_site_access(p_user uuid,p_plugin text,p_environment text,p_site text) RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
+ SELECT EXISTS(SELECT 1 FROM billing_memberships m JOIN billing_site_entitlements e
+ ON e.customer_id=m.customer_id AND e.plugin_slug=m.plugin_slug
+ JOIN framer_users u ON u.id=m.user_id
+ WHERE m.user_id=p_user AND m.plugin_slug=p_plugin AND m.environment=p_environment
+ AND u.status='active' AND u.metadata->>'email_verified'='true'
+ AND e.site_id=p_site AND e.is_pro AND e.verified_until>now());
+$$;
+CREATE OR REPLACE FUNCTION billing_site_has_purchase(p_customer uuid,p_site text) RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
+ SELECT EXISTS(SELECT 1 FROM billing_subscriptions WHERE customer_id=p_customer AND plugin_slug='whatsapp-commerce' AND site_id=p_site AND status='active' AND current_period_end>now())
+ OR EXISTS(SELECT 1 FROM billing_orders WHERE customer_id=p_customer AND plugin_slug='whatsapp-commerce' AND site_id=p_site AND cadence='lifetime' AND status IN ('paid','partially_refunded') AND amount>refunded_amount);
+$$;
+CREATE OR REPLACE FUNCTION billing_guard_site_checkout() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$
+BEGIN
+ IF NEW.plugin_slug='whatsapp-commerce' AND NEW.site_id IS NOT NULL THEN
+  -- Serialize against webhook snapshots so a just-paid site cannot race a second purchase.
+  PERFORM 1 FROM billing_customers WHERE id=NEW.customer_id FOR UPDATE;
+  IF billing_site_has_purchase(NEW.customer_id,NEW.site_id) THEN RAISE EXCEPTION 'This site already has a Pro purchase'; END IF;
+ END IF;
+ RETURN NEW;
+END $$;
+DROP TRIGGER IF EXISTS billing_checkout_site_purchase_guard ON billing_checkouts;
+CREATE TRIGGER billing_checkout_site_purchase_guard BEFORE INSERT ON billing_checkouts FOR EACH ROW EXECUTE FUNCTION billing_guard_site_checkout();
+CREATE OR REPLACE FUNCTION billing_apply_site_snapshot(p_customer uuid,p_started timestamptz,p_polar_id text,p_grants jsonb,p_orders jsonb,p_subscriptions jsonb,p_site_grants jsonb)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE item jsonb; applied boolean; env text;
+BEGIN
+ -- The original function locks the customer and rejects stale or foreign snapshots.
+ SELECT billing_apply_snapshot(p_customer,p_started,p_polar_id,
+  (SELECT COALESCE(jsonb_agg(value),'[]'::jsonb) FROM jsonb_array_elements(p_grants) WHERE value->>'plugin_slug'<>'whatsapp-commerce'),
+  p_orders,p_subscriptions) INTO applied;
+ IF NOT applied THEN RETURN false; END IF;
+ SELECT environment INTO STRICT env FROM billing_customers WHERE id=p_customer;
+ UPDATE billing_site_entitlements SET is_pro=false,verified_until=now(),updated_at=now() WHERE customer_id=p_customer;
+ FOR item IN SELECT value FROM jsonb_array_elements(p_site_grants) LOOP
+  IF NOT EXISTS(SELECT 1 FROM billing_checkouts WHERE customer_id=p_customer AND environment=env AND plugin_slug=item->>'plugin_slug' AND site_id=item->>'site_id' AND polar_checkout_id IS NOT NULL) THEN
+   RAISE EXCEPTION 'Unknown checkout site';
+  END IF;
+  INSERT INTO billing_site_entitlements(customer_id,plugin_slug,site_id,is_pro,verified_until)
+  VALUES(p_customer,item->>'plugin_slug',item->>'site_id',true,LEAST(now()+interval '1 hour',COALESCE((item->>'access_ends_at')::timestamptz,now()+interval '1 hour')))
+  ON CONFLICT(customer_id,plugin_slug,site_id) DO UPDATE SET is_pro=true,verified_until=EXCLUDED.verified_until,updated_at=now();
+ END LOOP;
+ FOR item IN SELECT value FROM jsonb_array_elements(p_orders) LOOP
+  UPDATE billing_orders SET site_id=item->>'site_id' WHERE environment=env AND customer_id=p_customer AND polar_order_id=item->>'id';
+ END LOOP;
+ FOR item IN SELECT value FROM jsonb_array_elements(p_subscriptions) LOOP
+  UPDATE billing_subscriptions SET site_id=item->>'site_id' WHERE environment=env AND customer_id=p_customer AND polar_subscription_id=item->>'id';
+ END LOOP;
+ RETURN true;
+END $$;
+REVOKE ALL ON FUNCTION billing_site_access(uuid,text,text,text),billing_apply_site_snapshot(uuid,timestamptz,text,jsonb,jsonb,jsonb,jsonb),billing_lock_checkout_site() FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION billing_site_has_purchase(uuid,text) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION billing_guard_site_checkout() FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION billing_site_has_purchase(uuid,text) TO service_role;
+GRANT EXECUTE ON FUNCTION billing_site_access(uuid,text,text,text),billing_apply_site_snapshot(uuid,timestamptz,text,jsonb,jsonb,jsonb,jsonb) TO service_role;
+-- Legacy account-wide display flags must not advertise a license on every site.
+UPDATE plugin_entitlements SET is_pro=false,verified_until=now() WHERE plugin_slug='whatsapp-commerce';
+UPDATE framer_users SET plan='free' WHERE plugin_slug='whatsapp-commerce';
+COMMIT;

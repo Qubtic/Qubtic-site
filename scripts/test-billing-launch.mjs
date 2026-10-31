@@ -37,11 +37,17 @@ function harness({ code = 202, url = 'https://sandbox.polar.sh/checkout/test', h
     },
   };
 }
-test('ready checkout redirects immediately and cancels polling', async () => {
+test('ready checkout redirects immediately and keeps progress visible while Polar responds', async () => {
   const h = harness({ code: 200 }); await h.flush();
   assert.deepEqual(h.navigations, ['https://sandbox.polar.sh/checkout/test']);
+  assert.equal(h.element('launch-spinner').hidden, false);
+  assert.equal(h.signals[0].aborted, true);
+  await h.advance(8000);
+  assert.match(h.element('launch-status').textContent, /opening automatically/);
+  assert.equal(h.calls(), 1);
+  assert.equal(h.navigations.length, 1);
+  h.listeners.get('pagehide')();
   assert.equal(h.timers.size, 0);
-  assert.equal(h.element('launch-spinner').hidden, true);
 });
 test('missing checkout allows creation race then stops with recovery', async () => {
   const h = harness({ code: 404 }); await h.advance(26000);

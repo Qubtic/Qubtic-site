@@ -7,7 +7,8 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 export type Cadence = 'monthly' | 'yearly' | 'lifetime';
 export interface Catalog { plugin_slug: string; cadence: Cadence; product_id: string; benefit_id: string; environment: string; enabled: boolean }
 export class BillingError extends Error { constructor(message: string, public status = 503) { super(message); } }
-export const billingHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Cache-Control': 'no-store' };
+export const billingHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Framer-Site-Id', 'Cache-Control': 'no-store' };
+export function siteId(value:unknown):string|null { return typeof value==='string' && /^[A-Za-z0-9_-]{1,128}$/.test(value) ? value : null; }
 export function environment() { if (!['sandbox','production'].includes(process.env.POLAR_ENVIRONMENT || '')) throw new BillingError('Billing is not configured yet.'); return process.env.POLAR_ENVIRONMENT as 'sandbox' | 'production'; }
 export function database() {
  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -57,9 +58,14 @@ export function safePolarUrl(value:string) {
  if(url.protocol!=='https:' || !['polar.sh','buy.polar.sh','sandbox.polar.sh','sandbox-api.polar.sh','api.polar.sh','sandbox.buy.polar.sh'].includes(url.hostname) || url.username || url.password) throw new BillingError('Invalid checkout destination.');
  return url.href;
 }
-export async function paidAccess(userId:string,plugin:string) {
+export async function paidAccess(userId:string,plugin:string,site?:string|null) {
  // Access is a current server record, never a browser plan or a legacy auth flag.
  if(!process.env.POLAR_ENVIRONMENT) return false;
+ if(plugin==='whatsapp-commerce') {
+  if(!siteId(site))return false;
+  const {data,error}=await database().rpc('billing_site_access',{p_user:userId,p_plugin:plugin,p_environment:environment(),p_site:site});check(error);
+  return data===true;
+ }
  const {data:member,error}=await database().from('billing_memberships').select('customer_id').eq('user_id',userId).eq('environment',environment()).eq('plugin_slug',plugin).maybeSingle(); check(error);
  if(!member) return false;
  const {data,error:e}=await database().from('plugin_entitlements').select('is_pro,verified_until').eq('customer_id',member.customer_id).eq('plugin_slug',plugin).maybeSingle(); check(e);
@@ -89,6 +95,31 @@ export function normalizeState(state:models.CustomerState,entries:Catalog[],orde
  });
  return {grants,orders:mappedOrders,subscriptions};
 }
+/** Site ownership comes from our saved checkout, never editable Polar/browser metadata. */
+export function normalizeSiteState(state:models.CustomerState,entries:Catalog[],orders:models.Order[],subscriptions:SubscriptionSnapshot[],checkouts:{site_id:string|null;polar_checkout_id:string|null;plugin_slug:string}[]) {
+ const bindings=new Map(checkouts.filter(c=>siteId(c.site_id)&&c.polar_checkout_id).map(c=>[c.polar_checkout_id!,c]));
+ const subscriptionSites=new Map<string,{site_id:string|null;plugin_slug:string}>();
+ for(const order of orders){
+  const binding=bindings.get(order.checkout_id||'');
+  const row=entries.find(r=>r.product_id===order.product_id);
+  if(!binding||!row||row.plugin_slug!==binding.plugin_slug||!order.subscription_id)continue;
+  const previous=subscriptionSites.get(order.subscription_id);
+  if(previous&&(previous.site_id!==binding.site_id||previous.plugin_slug!==binding.plugin_slug))throw new BillingError('Subscription site assignment mismatch.');
+  subscriptionSites.set(order.subscription_id,binding);
+ }
+ const orderSite=(order:models.Order)=>{
+  const binding=order.subscription_id?subscriptionSites.get(order.subscription_id):bindings.get(order.checkout_id||'');
+  return binding&&binding.plugin_slug===entries.find(r=>r.product_id===order.product_id)?.plugin_slug?binding.site_id:null;
+ };
+ const snapshot=normalizeState(state,entries,orders,subscriptions);
+ const siteGrants=[];
+ const sites=[...new Set(checkouts.filter(c=>c.plugin_slug==='whatsapp-commerce'&&siteId(c.site_id)).map(c=>c.site_id!))];
+ for(const site of sites){
+  const scoped=normalizeState(state,entries.filter(r=>r.plugin_slug==='whatsapp-commerce'),orders.filter(o=>orderSite(o)===site),subscriptions.filter(s=>subscriptionSites.get(s.id)?.site_id===site));
+  siteGrants.push(...scoped.grants.map(grant=>({...grant,site_id:site})));
+ }
+ return {...snapshot,siteGrants,orders:snapshot.orders.map(o=>({...o,site_id:orderSite(orders.find(raw=>raw.id===o.id)!)})),subscriptions:snapshot.subscriptions.map(s=>({...s,site_id:subscriptionSites.get(s.id)?.site_id||null}))};
+}
 export async function synchronize(customerId:string) {
  const db=database(); const sdk=polar(); const started=new Date().toISOString();
  const {data:customer,error}=await db.from('billing_customers').select('*').eq('id',customerId).eq('environment',environment()).single(); check(error);
@@ -102,7 +133,7 @@ export async function synchronize(customerId:string) {
   state=await sdk.customers.getState(id);
  } catch(error) {
   if(error && typeof error==='object' && 'statusCode' in error && error.statusCode===404){
-   if(customer.polar_customer_id){const {error:revokeError}=await db.rpc('billing_apply_snapshot',{p_customer:customer.id,p_started:started,p_polar_id:customer.polar_customer_id,p_grants:[],p_orders:[],p_subscriptions:[]});check(revokeError);}
+   if(customer.polar_customer_id){const {error:revokeError}=await db.rpc('billing_apply_site_snapshot',{p_customer:customer.id,p_started:started,p_polar_id:customer.polar_customer_id,p_grants:[],p_orders:[],p_subscriptions:[],p_site_grants:[]});check(revokeError);}
    return;
   }
   throw error;
@@ -113,8 +144,9 @@ export async function synchronize(customerId:string) {
  for await(const order of sdk.orders.iterList({customer_id:state.id,organization_id:process.env.POLAR_ORGANIZATION_ID,limit:100})) orders.push(order);
  const subscriptions:models.Subscription[]=[];
  for await(const sub of sdk.subscriptions.iterList({customer_id:state.id,organization_id:process.env.POLAR_ORGANIZATION_ID,limit:100})) subscriptions.push(sub);
- const snapshot=normalizeState(state,entries,orders,subscriptions);
- const {error:applyError}=await db.rpc('billing_apply_snapshot',{p_customer:customer.id,p_started:started,p_polar_id:state.id,p_grants:snapshot.grants,p_orders:snapshot.orders,p_subscriptions:snapshot.subscriptions}); check(applyError);
+ const {data:checkouts,error:checkoutError}=await db.from('billing_checkouts').select('site_id,polar_checkout_id,plugin_slug').eq('customer_id',customer.id).eq('environment',environment());check(checkoutError);
+ const snapshot=normalizeSiteState(state,entries,orders,subscriptions,checkouts||[]);
+ const {error:applyError}=await db.rpc('billing_apply_site_snapshot',{p_customer:customer.id,p_started:started,p_polar_id:state.id,p_grants:snapshot.grants,p_orders:snapshot.orders,p_subscriptions:snapshot.subscriptions,p_site_grants:snapshot.siteGrants}); check(applyError);
 }
 export async function webhook(request:Request) {
  const secret=process.env.POLAR_WEBHOOK_SECRET; if(!secret) throw new BillingError('Webhook is not configured.');
@@ -139,7 +171,7 @@ export async function processEvent(eventId:string) {
  if(type.startsWith('refund.') && !polarCustomerId && payload.data.order_id) polarCustomerId=(await polar().orders.get(payload.data.order_id)).customer_id;
  if(type==='customer.deleted' && polarCustomerId) {
   const {data:known,error:e}=await db.from('billing_customers').select('id').eq('polar_customer_id',polarCustomerId).eq('environment',environment()).maybeSingle();check(e);
-  if(known){const {error:revokeError}=await db.rpc('billing_apply_snapshot',{p_customer:known.id,p_started:new Date().toISOString(),p_polar_id:polarCustomerId,p_grants:[],p_orders:[],p_subscriptions:[]});check(revokeError);}
+  if(known){const {error:revokeError}=await db.rpc('billing_apply_site_snapshot',{p_customer:known.id,p_started:new Date().toISOString(),p_polar_id:polarCustomerId,p_grants:[],p_orders:[],p_subscriptions:[],p_site_grants:[]});check(revokeError);}
  } else if(relevant && polarCustomerId) {
   const customer=await polar().customers.get(polarCustomerId);
   if(customer.organization_id!==process.env.POLAR_ORGANIZATION_ID) throw new BillingError('Webhook organization mismatch.');

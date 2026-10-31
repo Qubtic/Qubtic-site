@@ -1,5 +1,5 @@
 import { billingSiteUrl } from '@/lib/billing/config.mjs';
-import { actor, BillingError, billingHeaders, catalog, check, cronAuthorized, database, environment, identity, limit, paidAccess, polar, processEvent, safePolarUrl, synchronize, webhook, type Cadence } from '@/lib/billing/core';
+import { actor, BillingError, billingHeaders, catalog, check, cronAuthorized, database, environment, identity, limit, paidAccess, polar, processEvent, safePolarUrl, siteId, synchronize, webhook, type Cadence } from '@/lib/billing/core';
 import { randomUUID } from 'node:crypto';
 export const runtime='nodejs';
 export const maxDuration=60;
@@ -43,14 +43,17 @@ async function handle(request:Request,{params}:Context){
    return reply({plans:rows.map(row=>({cadence:row.cadence,available:true}))});
   }
   const customerId=await identity(user.id);
+  const site=user.plugin==='whatsapp-commerce'?siteId(request.headers.get('x-framer-site-id')):null;
   if(action==='status' && request.method==='GET'){
-   const {data:orders,error}=await db.from('billing_orders').select('polar_order_id,cadence,status,amount,subtotal_amount,discount_amount,refunded_amount,currency,purchased_at').eq('environment',env).eq('customer_id',customerId).eq('plugin_slug',user.plugin).order('purchased_at',{ascending:false}).limit(100);check(error);
-   const {data:subscriptions,error:e}=await db.from('billing_subscriptions').select('cadence,status,current_period_end,cancel_at_period_end').eq('environment',env).eq('customer_id',customerId).eq('plugin_slug',user.plugin);check(e);
-   return reply({plugin:user.plugin,is_pro:await paidAccess(user.id,user.plugin),orders:orders||[],subscriptions:subscriptions||[]});
+   const orderQuery=db.from('billing_orders').select('polar_order_id,cadence,status,amount,subtotal_amount,discount_amount,refunded_amount,currency,purchased_at,site_id').eq('environment',env).eq('customer_id',customerId).eq('plugin_slug',user.plugin).order('purchased_at',{ascending:false}).limit(100);
+   const {data:orders,error}=await (user.plugin==='whatsapp-commerce'?orderQuery.eq('site_id',site||''):orderQuery);check(error);
+   const subscriptionQuery=db.from('billing_subscriptions').select('cadence,status,current_period_end,cancel_at_period_end').eq('environment',env).eq('customer_id',customerId).eq('plugin_slug',user.plugin);
+   const {data:subscriptions,error:e}=await (user.plugin==='whatsapp-commerce'?subscriptionQuery.eq('site_id',site||''):subscriptionQuery);check(e);
+   return reply({plugin:user.plugin,is_pro:await paidAccess(user.id,user.plugin,site),orders:orders||[],subscriptions:subscriptions||[]});
   }
   if(action==='refresh' && request.method==='POST'){
    await limit(`refresh:${user.id}`,6,60);await synchronize(customerId);
-   return reply({is_pro:await paidAccess(user.id,user.plugin)});
+   return reply({is_pro:await paidAccess(user.id,user.plugin,site)});
   }
   if(action==='portal' && request.method==='POST'){
    const {data,error}=await db.from('billing_customers').select('polar_customer_id').eq('id',customerId).single();check(error);
@@ -59,19 +62,24 @@ async function handle(request:Request,{params}:Context){
    return reply({url:safePolarUrl(session.customer_portal_url)});
   }
   if(action==='checkout' && request.method==='POST'){
+   if(user.plugin==='whatsapp-commerce'&&!site)throw new BillingError('Open checkout from the Framer site you want to upgrade.',400);
    await limit(`checkout:${user.id}`,5,300);
    const raw=await request.text();if(Buffer.byteLength(raw)>4096)throw new BillingError('Request too large.',413);
    const body=(()=>{try{return JSON.parse(raw);}catch{return null;}})() as {cadence?:Cadence;request_id?:string;replace_previous?:boolean}|null;
    if(!body || (body.cadence && !['monthly','yearly','lifetime'].includes(body.cadence)) || !/^[0-9a-f-]{36}$/i.test(body.request_id||'')) throw new BillingError('Choose a valid billing period.',400);
-   const [entries,alreadyPro,existingResult]=await Promise.all([catalog(),paidAccess(user.id,user.plugin),db.from('billing_checkouts').select('*').eq('user_id',user.id).eq('request_key',body.request_id).maybeSingle()]);
+   const [entries,alreadyPro,existingResult]=await Promise.all([catalog(),paidAccess(user.id,user.plugin,site),db.from('billing_checkouts').select('*').eq('user_id',user.id).eq('request_key',body.request_id).maybeSingle()]);
    const rows=entries.filter(item=>item.plugin_slug===user.plugin);
    const selectable=['yearly','monthly','lifetime'].map(cadence=>rows.find(item=>item.cadence===cadence));
    if(selectable.some(item=>!item)) throw new BillingError('Pro checkout is not fully configured yet.',409);
    const row=selectable[0]!;
    if(alreadyPro) throw new BillingError('Pro is already active. Manage billing to change your plan.',409);
+   if(site){
+    const {data:hasPurchase,error:purchaseError}=await db.rpc('billing_site_has_purchase',{p_customer:customerId,p_site:site});check(purchaseError);
+    if(hasPurchase===true)throw new BillingError('This site already has a Pro purchase. Refresh billing or manage its existing subscription.',409);
+   }
    const {data:existing,error:existingError}=existingResult;check(existingError);
    if(existing){
-    if(existing.environment!==env || existing.product_id!==row.product_id) throw new BillingError('Checkout request does not match.',409);
+    if(existing.environment!==env || existing.product_id!==row.product_id || (existing.site_id||null)!==site) throw new BillingError('Checkout request does not match.',409);
     if(existing.status==='open' && existing.checkout_url && Date.parse(existing.expires_at)>Date.now()) return reply({url:safePolarUrl(existing.checkout_url)});
     throw new BillingError('This checkout request is already processing or expired. Start a new checkout.',409);
    }
@@ -84,7 +92,8 @@ async function handle(request:Request,{params}:Context){
     if((selected!.cadence==='lifetime' && product.is_recurring)||(selected!.cadence!=='lifetime' && (!product.is_recurring || product.recurring_interval!==(selected!.cadence==='monthly'?'month':'year')))) throw new BillingError('Plan billing interval does not match.');
    }));
    const {error:expiryError}=await db.from('billing_checkouts').update({status:'expired'}).eq('user_id',user.id).eq('environment',env).in('status',['creating','open']).lt('expires_at',new Date().toISOString());check(expiryError);
-   const {data:openCheckout,error:openError}=await db.from('billing_checkouts').select('*').eq('user_id',user.id).eq('environment',env).in('status',['creating','open']).maybeSingle();check(openError);
+   const openQuery=db.from('billing_checkouts').select('*').eq('user_id',user.id).eq('environment',env).in('status',['creating','open']);
+   const {data:openCheckout,error:openError}=await (user.plugin==='whatsapp-commerce'?openQuery.eq('site_id',site):openQuery).maybeSingle();check(openError);
    if(openCheckout){
     if(!openCheckout.checkout_url || !openCheckout.polar_checkout_id || openCheckout.plugin_slug!==user.plugin) throw new BillingError('Another checkout is still processing. Please try again shortly.',409);
     const previous=await sdk.checkouts.get(openCheckout.polar_checkout_id);
@@ -100,9 +109,9 @@ async function handle(request:Request,{params}:Context){
     const {error:replaceError}=await db.from('billing_checkouts').update({status:'superseded'}).eq('id',openCheckout.id).eq('status','open');check(replaceError);
    }
    const id=randomUUID();
-   const {error:insertError}=await db.from('billing_checkouts').insert({id,user_id:user.id,customer_id:customerId,environment:env,plugin_slug:user.plugin,cadence:row.cadence,product_id:row.product_id,request_key:body.request_id});check(insertError);
+   const {error:insertError}=await db.from('billing_checkouts').insert({id,user_id:user.id,customer_id:customerId,environment:env,plugin_slug:user.plugin,cadence:row.cadence,product_id:row.product_id,request_key:body.request_id,site_id:site});check(insertError);
    // The account ID comes exclusively from verified database identity. No bearer tokens in URLs.
-   const checkout=await sdk.checkouts.create({products:selectable.map(item=>item!.product_id),external_customer_id:customerId,customer_email:user.email,customer_name:user.name,allow_trial:false,allow_discount_codes:true,success_url:`${billingSiteUrl(process.env)}/billing/return`,return_url:`${billingSiteUrl(process.env)}/billing/return`,metadata:{qubtic_checkout_id:id,plugin_slug:user.plugin}});
+   const checkout=await sdk.checkouts.create({products:selectable.map(item=>item!.product_id),external_customer_id:customerId,customer_email:user.email,customer_name:user.name,allow_trial:false,allow_discount_codes:true,success_url:`${billingSiteUrl(process.env)}/billing/return`,return_url:`${billingSiteUrl(process.env)}/billing/return`,metadata:{qubtic_checkout_id:id,plugin_slug:user.plugin,...(site?{site_id:site}:{})}});
    const url=safePolarUrl(checkout.url);
    const {error:updateError}=await db.from('billing_checkouts').update({polar_checkout_id:checkout.id,checkout_url:url,status:'open',expires_at:checkout.expires_at}).eq('id',id).eq('status','creating');check(updateError);
    return reply({url});

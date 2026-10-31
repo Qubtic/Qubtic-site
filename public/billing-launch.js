@@ -12,13 +12,13 @@
   const opener = window.opener;
   const started = Date.now();
 
-  function stop() {
+  function stop(hideSpinner = true) {
     stopped = true;
     clearTimeout(timer);
     clearTimeout(deadline);
     controller?.abort();
     window.removeEventListener('message', receive);
-    spinner.hidden = true;
+    if (hideSpinner) spinner.hidden = true;
   }
   function fail(message) {
     stop();
@@ -33,9 +33,17 @@
       const link = document.getElementById('launch-link');
       link.href = url.href;
       document.getElementById('launch-link-container').hidden = false;
-      stop();
-      status.textContent = 'Your checkout is ready. Opening Polar…';
-      try { window.location.replace(url.href); } catch { status.textContent = 'Your checkout is ready. Select Open Polar checkout to continue.'; }
+      // Stop resolving, but keep showing progress until the destination commits.
+      // The browser keeps this document visible while Polar returns its response.
+      stop(false);
+      status.textContent = 'Connecting to Polar’s secure payment page…';
+      timer = setTimeout(() => {
+        status.textContent = 'Polar is taking longer to respond. Your checkout is opening automatically; please keep this tab open.';
+      }, 8000);
+      try { window.location.replace(url.href); } catch {
+        stop();
+        status.textContent = 'Your browser could not open checkout automatically. Select Open Polar checkout to continue.';
+      }
       return true;
     } catch { return false; }
   }
