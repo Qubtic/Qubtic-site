@@ -47,6 +47,7 @@
 }
 
 .qubtic-billing-plan {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -58,6 +59,7 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   box-sizing: border-box;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
 }
 
 .qubtic-billing-plan-header {
@@ -428,4 +430,271 @@
   margin: 0;
   font-size: 10.5px;
   color: var(--qb-muted);
+}
+
+/* Modal and Spinner */
+.qubtic-btn-spinner-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+@keyframes qubtic-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.qubtic-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: qubtic-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes qubtic-modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes qubtic-modal-pop {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.qubtic-billing-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 10px;
+  border-radius: 16px;
+  box-sizing: border-box;
+  animation: qubtic-modal-fade-in 0.2s ease-out;
+  overflow: hidden;
+  background: var(--qb-bg);
+}
+
+[data-theme="dark"] .qubtic-billing-modal-backdrop {
+  background: rgba(24, 32, 27, 0.96);
+  backdrop-filter: blur(10px);
+}
+
+[data-theme="light"] .qubtic-billing-modal-backdrop {
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(10px);
+}
+
+.qubtic-billing-modal {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  padding: 12px 10px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  overflow-y: auto;
+  animation: qubtic-modal-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--qb-plan-bg);
+  border: 1px solid var(--qb-border);
+  color: var(--qb-text);
+}
+
+.qubtic-billing-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.qubtic-billing-modal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qubtic-billing-modal-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.qubtic-billing-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: inherit;
+}
+
+.qubtic-billing-modal-close {
+  background: transparent !important;
+  border: 1px solid var(--qb-border) !important;
+  border-radius: 50% !important;
+  width: 28px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  color: var(--qb-muted) !important;
+  font-size: 13px !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+
+.qubtic-billing-modal-plan-summary {
+  padding: 12px 14px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-sizing: border-box;
+  background: var(--qb-subtle);
+  border: 1px solid var(--qb-border);
+}
+
+.qubtic-billing-modal-plan-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.qubtic-billing-modal-plan-tier {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--qb-accent);
+}
+
+.qubtic-billing-modal-plan-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: var(--qb-highlight);
+  color: var(--qb-success);
+}
+
+.qubtic-billing-modal-plan-cadence {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--qb-text);
+}
+
+.qubtic-billing-modal-guarantee {
+  font-size: 11px;
+  color: var(--qb-muted);
+}
+
+.qubtic-billing-modal-status-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  box-sizing: border-box;
+  background: var(--qb-subtle);
+  border: 1px solid var(--qb-border);
+}
+
+.qubtic-modal-spinner {
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid rgba(246, 222, 175, 0.2);
+  border-top-color: var(--qb-accent);
+  border-radius: 50%;
+  animation: qubtic-spin 0.75s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  flex-shrink: 0;
+}
+
+.qubtic-billing-modal-status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11.5px;
+  color: var(--qb-muted);
+}
+
+.qubtic-billing-modal-status-info strong {
+  color: var(--qb-text);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.qubtic-billing-modal-status-ready {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  box-sizing: border-box;
+  background: var(--qb-highlight);
+  border: 1px solid var(--qb-border);
+}
+
+.qubtic-billing-modal-ready-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.qubtic-billing-modal-ready-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #10b981;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.qubtic-billing-modal-cta-btn {
+  width: 100% !important;
+  min-height: 42px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  justify-content: center !important;
+}
+
+.qubtic-billing-modal-error {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.qubtic-billing-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--qb-border);
+}
+
+.qubtic-billing-modal-dismiss-btn {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-size: 11.5px !important;
+  color: var(--qb-muted) !important;
+  cursor: pointer !important;
+  text-decoration: underline !important;
+  padding: 4px 6px !important;
 }
