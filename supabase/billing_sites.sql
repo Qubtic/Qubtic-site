@@ -30,28 +30,45 @@ DROP TRIGGER IF EXISTS billing_checkout_site_lock ON billing_checkouts;
 CREATE TRIGGER billing_checkout_site_lock BEFORE UPDATE ON billing_checkouts FOR EACH ROW EXECUTE FUNCTION billing_lock_checkout_site();
 CREATE OR REPLACE FUNCTION billing_site_access(p_user uuid,p_plugin text,p_environment text,p_site text) RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
- SELECT EXISTS(SELECT 1 FROM billing_memberships m JOIN billing_site_entitlements e
- ON e.customer_id=m.customer_id AND e.plugin_slug=m.plugin_slug
- JOIN framer_users u ON u.id=m.user_id
- WHERE m.user_id=p_user AND m.plugin_slug=p_plugin AND m.environment=p_environment
- AND u.status='active' AND u.metadata->>'email_verified'='true'
- AND e.site_id=p_site AND e.is_pro AND e.verified_until>now());
+ SELECT EXISTS(
+  SELECT 1 FROM framer_users u
+  JOIN billing_memberships m ON m.user_id=u.id AND m.plugin_slug=p_plugin AND m.environment=p_environment
+  WHERE u.id=p_user AND u.status='active' AND u.metadata->>'email_verified'='true'
+  AND p_site IS NOT NULL AND p_site<>''
+  AND EXISTS(
+    SELECT 1 FROM billing_site_entitlements e
+    JOIN billing_customers c ON c.id=e.customer_id AND c.environment=p_environment
+    WHERE e.plugin_slug=p_plugin AND e.site_id=p_site AND e.is_pro AND e.verified_until>now()
+  )
+ );
 $$;
 CREATE OR REPLACE FUNCTION billing_site_has_purchase(p_customer uuid,p_site text) RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
- SELECT EXISTS(SELECT 1 FROM billing_subscriptions WHERE customer_id=p_customer AND plugin_slug='whatsapp-commerce' AND site_id=p_site AND status='active' AND current_period_end>now())
- OR EXISTS(SELECT 1 FROM billing_orders WHERE customer_id=p_customer AND plugin_slug='whatsapp-commerce' AND site_id=p_site AND cadence='lifetime' AND status IN ('paid','partially_refunded') AND amount>refunded_amount);
-$$;
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$
+DECLARE env text;
+BEGIN
+ SELECT environment INTO env FROM billing_customers WHERE id=p_customer;
+ IF env IS NULL OR p_site IS NULL OR p_site='' THEN RETURN false; END IF;
+ RETURN EXISTS(
+  SELECT 1 FROM billing_subscriptions s
+  JOIN billing_customers c ON c.id=s.customer_id AND c.environment=env
+  WHERE s.plugin_slug='whatsapp-commerce' AND s.site_id=p_site AND s.status='active' AND s.current_period_end>now()
+ )
+ OR EXISTS(
+  SELECT 1 FROM billing_orders o
+  JOIN billing_customers c ON c.id=o.customer_id AND c.environment=env
+  WHERE o.plugin_slug='whatsapp-commerce' AND o.site_id=p_site AND o.cadence='lifetime' AND o.status IN ('paid','partially_refunded') AND o.amount>o.refunded_amount
+ );
+END $$;
 CREATE OR REPLACE FUNCTION billing_guard_site_checkout() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$
 BEGIN
  IF NEW.plugin_slug='whatsapp-commerce' AND NEW.site_id IS NOT NULL THEN
   -- Serialize against webhook snapshots so a just-paid site cannot race a second purchase.
   PERFORM 1 FROM billing_customers WHERE id=NEW.customer_id FOR UPDATE;
-  IF EXISTS(SELECT 1 FROM billing_orders WHERE customer_id=NEW.customer_id AND plugin_slug='whatsapp-commerce' AND site_id=NEW.site_id AND cadence='lifetime' AND status IN ('paid','partially_refunded') AND amount>refunded_amount) THEN
+  IF EXISTS(SELECT 1 FROM billing_orders o JOIN billing_customers c ON c.id=o.customer_id AND c.environment=NEW.environment WHERE o.plugin_slug='whatsapp-commerce' AND o.site_id=NEW.site_id AND o.cadence='lifetime' AND o.status IN ('paid','partially_refunded') AND o.amount>o.refunded_amount) THEN
    RAISE EXCEPTION 'This site already has a Pro purchase';
   END IF;
-  IF EXISTS(SELECT 1 FROM billing_subscriptions WHERE customer_id=NEW.customer_id AND plugin_slug='whatsapp-commerce' AND site_id=NEW.site_id AND status='active' AND current_period_end>now()) THEN
-   IF EXISTS(SELECT 1 FROM billing_subscriptions WHERE customer_id=NEW.customer_id AND plugin_slug='whatsapp-commerce' AND site_id=NEW.site_id AND status='active' AND current_period_end>now() AND cadence='yearly') THEN
+  IF EXISTS(SELECT 1 FROM billing_subscriptions s JOIN billing_customers c ON c.id=s.customer_id AND c.environment=NEW.environment WHERE s.plugin_slug='whatsapp-commerce' AND s.site_id=NEW.site_id AND s.status='active' AND s.current_period_end>now()) THEN
+   IF EXISTS(SELECT 1 FROM billing_subscriptions s2 JOIN billing_customers c2 ON c2.id=s2.customer_id AND c2.environment=NEW.environment WHERE s2.plugin_slug='whatsapp-commerce' AND s2.site_id=NEW.site_id AND s2.status='active' AND s2.current_period_end>now() AND s2.cadence='yearly') THEN
     IF NEW.cadence<>'lifetime' THEN
      RAISE EXCEPTION 'This site already has a Pro purchase';
     END IF;

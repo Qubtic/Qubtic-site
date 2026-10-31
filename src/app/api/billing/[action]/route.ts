@@ -45,21 +45,51 @@ async function handle(request:Request,{params}:Context){
   const customerId=await identity(user.id);
   const site=user.plugin==='whatsapp-commerce'?siteId(request.headers.get('x-framer-site-id')):null;
   if(action==='status' && request.method==='GET'){
-   const orderQuery=db.from('billing_orders').select('polar_order_id,cadence,status,amount,subtotal_amount,discount_amount,refunded_amount,currency,purchased_at,site_id').eq('environment',env).eq('customer_id',customerId).eq('plugin_slug',user.plugin).order('purchased_at',{ascending:false}).limit(100);
-   const {data:orders,error}=await (user.plugin==='whatsapp-commerce'?orderQuery.eq('site_id',site||''):orderQuery);check(error);
-   const subscriptionQuery=db.from('billing_subscriptions').select('cadence,status,current_period_end,cancel_at_period_end').eq('environment',env).eq('customer_id',customerId).eq('plugin_slug',user.plugin);
-   const {data:subscriptions,error:e}=await (user.plugin==='whatsapp-commerce'?subscriptionQuery.eq('site_id',site||''):subscriptionQuery);check(e);
-   return reply({plugin:user.plugin,is_pro:await paidAccess(user.id,user.plugin,site),orders:orders||[],subscriptions:subscriptions||[]});
+   const orderQuery=db.from('billing_orders').select('polar_order_id,cadence,status,amount,subtotal_amount,discount_amount,refunded_amount,currency,purchased_at,site_id,customer_id').eq('environment',env).eq('plugin_slug',user.plugin).order('purchased_at',{ascending:false}).limit(100);
+   const {data:orders,error}=await (user.plugin==='whatsapp-commerce'&&site?orderQuery.eq('site_id',site):orderQuery.eq('customer_id',customerId));check(error);
+   const subscriptionQuery=db.from('billing_subscriptions').select('cadence,status,current_period_end,cancel_at_period_end,site_id,customer_id').eq('environment',env).eq('plugin_slug',user.plugin);
+   const {data:subscriptions,error:e}=await (user.plugin==='whatsapp-commerce'&&site?subscriptionQuery.eq('site_id',site):subscriptionQuery.eq('customer_id',customerId));check(e);
+   return reply({
+    plugin:user.plugin,
+    is_pro:await paidAccess(user.id,user.plugin,site),
+    orders:(orders||[]).map(o=>({
+     polar_order_id:o.polar_order_id,
+     cadence:o.cadence,
+     status:o.status,
+     amount:o.amount,
+     subtotal_amount:o.subtotal_amount,
+     discount_amount:o.discount_amount,
+     refunded_amount:o.refunded_amount,
+     currency:o.currency,
+     purchased_at:o.purchased_at,
+     site_id:o.site_id,
+     is_payer:o.customer_id===customerId
+    })),
+    subscriptions:(subscriptions||[]).map(s=>({
+     cadence:s.cadence,
+     status:s.status,
+     current_period_end:s.current_period_end,
+     cancel_at_period_end:s.cancel_at_period_end,
+     site_id:s.site_id,
+     is_payer:s.customer_id===customerId
+    }))
+   });
   }
   if(action==='refresh' && request.method==='POST'){
    await limit(`refresh:${user.id}`,6,60);await synchronize(customerId);
+   if(user.plugin==='whatsapp-commerce'&&site){
+    const {data:recentSiteCheckouts}=await db.from('billing_checkouts').select('customer_id').eq('environment',env).eq('plugin_slug','whatsapp-commerce').eq('site_id',site).order('created_at',{ascending:false}).limit(3);
+    for(const c of recentSiteCheckouts||[]){
+     if(c.customer_id&&c.customer_id!==customerId){try{await synchronize(c.customer_id);}catch{}}
+    }
+   }
    return reply({is_pro:await paidAccess(user.id,user.plugin,site)});
   }
   if(action==='cancel' && request.method==='POST'){
    const raw=await request.text();
    const body=(()=>{try{return JSON.parse(raw);}catch{return {};}})() as {cancel_at_period_end?:boolean};
    const cancelAtPeriodEnd=body.cancel_at_period_end!==false;
-   const subQuery=db.from('billing_subscriptions').select('polar_subscription_id,cadence,status,current_period_end,cancel_at_period_end').eq('environment',env).eq('customer_id',customerId).eq('plugin_slug',user.plugin).eq('status','active');
+   const subQuery=db.from('billing_subscriptions').select('polar_subscription_id,cadence,status,current_period_end,cancel_at_period_end,customer_id').eq('environment',env).eq('customer_id',customerId).eq('plugin_slug',user.plugin).eq('status','active');
    const {data:sub,error:subError}=await (user.plugin==='whatsapp-commerce'?subQuery.eq('site_id',site||''):subQuery).maybeSingle();
    check(subError);
    if(!sub)throw new BillingError('No active recurring subscription found.',404);
@@ -82,15 +112,15 @@ async function handle(request:Request,{params}:Context){
    const body=(()=>{try{return JSON.parse(raw);}catch{return null;}})() as {cadence?:Cadence;request_id?:string;replace_previous?:boolean}|null;
    if(!body || (body.cadence && !['monthly','yearly','lifetime'].includes(body.cadence)) || !/^[0-9a-f-]{36}$/i.test(body.request_id||'')) throw new BillingError('Choose a valid billing period.',400);
 
-   const subQuery=db.from('billing_subscriptions').select('polar_subscription_id,cadence,status,current_period_end,cancel_at_period_end,site_id').eq('environment',env).eq('customer_id',customerId).eq('plugin_slug',user.plugin).eq('status','active');
-   const lifeQuery=db.from('billing_orders').select('polar_order_id,cadence,status,amount,refunded_amount,currency,purchased_at,site_id').eq('environment',env).eq('customer_id',customerId).eq('plugin_slug',user.plugin).eq('cadence','lifetime').in('status',['paid','partially_refunded']);
+   const baseSubQuery=db.from('billing_subscriptions').select('polar_subscription_id,cadence,status,current_period_end,cancel_at_period_end,site_id,customer_id').eq('environment',env).eq('plugin_slug',user.plugin).eq('status','active');
+   const baseLifeQuery=db.from('billing_orders').select('polar_order_id,cadence,status,amount,refunded_amount,currency,purchased_at,site_id,customer_id').eq('environment',env).eq('plugin_slug',user.plugin).eq('cadence','lifetime').in('status',['paid','partially_refunded']);
 
    const [entries,alreadyPro,existingResult,activeSubsResult,lifeOrdersResult]=await Promise.all([
     catalog(),
     paidAccess(user.id,user.plugin,site),
     db.from('billing_checkouts').select('*').eq('user_id',user.id).eq('request_key',body.request_id).maybeSingle(),
-    (user.plugin==='whatsapp-commerce'&&site?subQuery.eq('site_id',site):subQuery),
-    (user.plugin==='whatsapp-commerce'&&site?lifeQuery.eq('site_id',site):lifeQuery)
+    (user.plugin==='whatsapp-commerce'&&site?baseSubQuery.eq('site_id',site):baseSubQuery.eq('customer_id',customerId)),
+    (user.plugin==='whatsapp-commerce'&&site?baseLifeQuery.eq('site_id',site):baseLifeQuery.eq('customer_id',customerId))
    ]);
    check(activeSubsResult.error);
    check(lifeOrdersResult.error);
@@ -104,7 +134,7 @@ async function handle(request:Request,{params}:Context){
 
    if(alreadyPro || activeSub || hasLifetime){
     if(hasLifetime){
-     throw new BillingError('Pro Lifetime is already active for this account.',409);
+     throw new BillingError('Pro Lifetime is already active for this '+(site?'site':'account')+'.',409);
     }
     if(activeSub){
      if(activeSub.cadence==='yearly'){
