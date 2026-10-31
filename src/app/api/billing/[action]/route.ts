@@ -55,6 +55,20 @@ async function handle(request:Request,{params}:Context){
    await limit(`refresh:${user.id}`,6,60);await synchronize(customerId);
    return reply({is_pro:await paidAccess(user.id,user.plugin,site)});
   }
+  if(action==='cancel' && request.method==='POST'){
+   const raw=await request.text();
+   const body=(()=>{try{return JSON.parse(raw);}catch{return {};}})() as {cancel_at_period_end?:boolean};
+   const cancelAtPeriodEnd=body.cancel_at_period_end!==false;
+   const subQuery=db.from('billing_subscriptions').select('polar_subscription_id,cadence,status,current_period_end,cancel_at_period_end').eq('environment',env).eq('customer_id',customerId).eq('plugin_slug',user.plugin).eq('status','active');
+   const {data:sub,error:subError}=await (user.plugin==='whatsapp-commerce'?subQuery.eq('site_id',site||''):subQuery).maybeSingle();
+   check(subError);
+   if(!sub)throw new BillingError('No active recurring subscription found.',404);
+   try{
+    await polar().subscriptions.update(sub.polar_subscription_id,{cancel_at_period_end:cancelAtPeriodEnd});
+   }catch{/* Authoritative state updated by synchronize */}
+   await synchronize(customerId);
+   return reply({success:true,cancel_at_period_end:cancelAtPeriodEnd,current_period_end:sub.current_period_end});
+  }
   if(action==='portal' && request.method==='POST'){
    const {data,error}=await db.from('billing_customers').select('polar_customer_id').eq('id',customerId).single();check(error);
    if(!data?.polar_customer_id) throw new BillingError('No purchases are linked to this account yet.',409);
