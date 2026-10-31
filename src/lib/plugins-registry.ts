@@ -103,6 +103,31 @@ export const REGISTERED_PLUGINS: Record<string, FramerPluginMetadata> = {
       { id: 'sync', label: 'Cloud Asset Sync', description: 'Save and retrieve custom canvas assets' },
     ],
   },
+  'key-vault': {
+    slug: 'key-vault',
+    name: 'Key Vault',
+    shortName: 'Key Vault',
+    tagline: 'Encrypted Secrets & API Key Vault for Framer',
+    description: 'Secure client-side encryption and injection of third-party API keys and credentials directly into your Framer components.',
+    version: 'v1.0.0',
+    logo: '/images/qube-auth/qube-auth-logo.png',
+    accentColor: '#FFB800',
+    glowColor: 'rgba(255, 184, 0, 0.35)',
+    badge: 'Official Plugin',
+    docsUrl: '/framer/key-vault',
+    productUrl: '/framer/key-vault',
+    features: [
+      'Zero-Knowledge Secrets Encryption',
+      'Instant Component Token Injection',
+      'Environment Secrets Switcher',
+      'Team Secrets Access Controls',
+    ],
+    scopes: [
+      { id: 'profile', label: 'Developer Identity', description: 'Access to developer profile and email' },
+      { id: 'session', label: 'Vault Session', description: 'Establish secure connection to Framer editor' },
+      { id: 'secrets', label: 'Encrypted Secrets', description: 'Read and write encrypted workspace keys' },
+    ],
+  },
 };
 
 /**
@@ -112,9 +137,12 @@ export const REGISTERED_PLUGINS: Record<string, FramerPluginMetadata> = {
 export function getPluginMetadata(rawSlug?: string | null): FramerPluginMetadata {
   let slug = (rawSlug || 'qube-auth').toLowerCase().trim();
 
-  // Normalize aliases so /auth/framedrop, /auth/frame-drop, and /auth/plugin load full metadata cleanly
+  // Normalize aliases so /auth/framedrop, /auth/frame-drop, /auth/keyvault, and /auth/plugin load full metadata cleanly
   if (slug === 'framedrop' || slug === 'plugin' || slug === 'framedrop-auth') {
     slug = 'frame-drop';
+  }
+  if (slug === 'keyvault' || slug === 'key_vault') {
+    slug = 'key-vault';
   }
 
   if (Object.prototype.hasOwnProperty.call(REGISTERED_PLUGINS, slug)) {

@@ -22,7 +22,7 @@ async function handle(request:Request,{params}:Context){
    if(checkout.status==='open' && checkout.checkout_url && Date.parse(checkout.expires_at)>Date.now()){
     return reply({url:safePolarUrl(checkout.checkout_url)});
    }
-   if(checkout.status==='creating' && Date.parse(checkout.expires_at)>Date.now()) return reply({pending:true},202);
+   if(checkout.status==='creating' && (!checkout.expires_at || Date.parse(checkout.expires_at)>Date.now())) return reply({pending:true},202);
    throw new BillingError('Checkout is expired or unavailable.',410);
   }
   if(action==='reconcile' && request.method==='POST'){
@@ -123,7 +123,8 @@ async function handle(request:Request,{params}:Context){
     const {error:replaceError}=await db.from('billing_checkouts').update({status:'superseded'}).eq('id',openCheckout.id).eq('status','open');check(replaceError);
    }
    const id=randomUUID();
-   const {error:insertError}=await db.from('billing_checkouts').insert({id,user_id:user.id,customer_id:customerId,environment:env,plugin_slug:user.plugin,cadence:row.cadence,product_id:row.product_id,request_key:body.request_id,site_id:site});check(insertError);
+   const tempExpiresAt=new Date(Date.now()+15*60*1000).toISOString();
+   const {error:insertError}=await db.from('billing_checkouts').insert({id,user_id:user.id,customer_id:customerId,environment:env,plugin_slug:user.plugin,cadence:row.cadence,product_id:row.product_id,request_key:body.request_id,site_id:site,status:'creating',expires_at:tempExpiresAt});check(insertError);
    // The account ID comes exclusively from verified database identity. No bearer tokens in URLs.
    const checkout=await sdk.checkouts.create({products:selectable.map(item=>item!.product_id),external_customer_id:customerId,customer_email:user.email,customer_name:user.name,allow_trial:false,allow_discount_codes:true,success_url:`${billingSiteUrl(process.env)}/billing/return`,return_url:`${billingSiteUrl(process.env)}/billing/return`,metadata:{qubtic_checkout_id:id,plugin_slug:user.plugin,...(site?{site_id:site}:{})}});
    const url=safePolarUrl(checkout.url);

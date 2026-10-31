@@ -217,40 +217,101 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
     try {
       const storedToken = localStorage.getItem(`qubtic_framer_token:${plugin.slug}`) || (plugin.slug === 'whatsapp-commerce' ? null : localStorage.getItem('qubtic_framer_token'));
       if (storedToken && pairingStatus === 'idle') {
-        setPairingStatus('confirming');
-        fetch('/api/framer-auth/pair/confirm', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${storedToken}`,
-          },
-          body: JSON.stringify({ user_code: pairingCode.trim() }),
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data && data.success) {
-              setPairingStatus('confirmed');
-              setStatusMessage('Framer plugin paired successfully with your active account!');
-              if (data.user) {
-                setSuccessData({
-                  token: storedToken,
-                  sessionCode: data.sessionCode || (plugin.slug === 'whatsapp-commerce' ? 'WC-' : 'FD-') + Math.random().toString(36).substring(2, 8).toUpperCase(),
-                  user: data.user,
-                  isNew: false,
-                });
-              }
-            } else {
-              setPairingStatus('failed');
-            }
+        const timer = setTimeout(() => {
+          setPairingStatus('confirming');
+          fetch('/api/framer-auth/pair/confirm', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${storedToken}`,
+            },
+            body: JSON.stringify({ user_code: pairingCode.trim() }),
           })
-          .catch(() => {
-            setPairingStatus('failed');
-          });
+            .then((res) => res.json())
+            .then((data) => {
+              if (data && data.success) {
+                setPairingStatus('confirmed');
+                setStatusMessage('Framer plugin paired successfully with your active account!');
+                if (data.user) {
+                  setSuccessData({
+                    token: storedToken,
+                    sessionCode: data.sessionCode || (plugin.slug === 'whatsapp-commerce' ? 'WC-' : 'FD-') + Math.random().toString(36).substring(2, 8).toUpperCase(),
+                    user: data.user,
+                    isNew: false,
+                  });
+                }
+              } else {
+                setPairingStatus('failed');
+              }
+            })
+            .catch(() => {
+              setPairingStatus('failed');
+            });
+        }, 0);
+        return () => clearTimeout(timer);
       }
     } catch {
       // ignore
     }
   }, [pairingCode, pairingStatus, plugin.slug]);
+
+  // Handle Google OAuth callback return state
+  useEffect(() => {
+    const isGoogleAuth = searchParams.get('google_auth') === 'success';
+    const googleToken = searchParams.get('token');
+    const googleError = searchParams.get('error');
+
+    if (googleError) {
+      const errorTimer = setTimeout(() => {
+        if (googleError === 'google_not_configured' || googleError === 'google_credentials_missing') {
+          setErrorMessage('Google Sign-In is not configured yet. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.');
+        } else if (googleError === 'google_access_denied') {
+          setErrorMessage('Google Sign-In was cancelled.');
+        } else {
+          setErrorMessage('Google Sign-In could not be completed. Please try again or use your password.');
+        }
+      }, 0);
+      return () => clearTimeout(errorTimer);
+    }
+
+    if (isGoogleAuth && googleToken) {
+      const googleEmail = searchParams.get('email') || '';
+      const googleName = searchParams.get('name') || googleEmail.split('@')[0];
+      const isNewUser = searchParams.get('is_new') === '1';
+
+      try {
+        localStorage.setItem(`qubtic_framer_token:${plugin.slug}`, googleToken);
+        localStorage.setItem('qubtic_framer_token', googleToken);
+      } catch {
+        // ignore
+      }
+
+      const syncTimer = setTimeout(() => {
+        const sessionCode =
+          pairingCode ||
+          (plugin.slug === 'whatsapp-commerce' ? 'WC-' : (plugin.slug === 'key-vault' ? 'KV-' : 'FD-')) +
+            Math.random().toString(36).substring(2, 8).toUpperCase();
+
+        setStatusMessage('Google authentication verified successfully!');
+        setSuccessData({
+          token: googleToken,
+          sessionCode,
+          user: {
+            id: searchParams.get('user_id') || 'usr_google',
+            email: googleEmail,
+            name: googleName,
+            plan: 'free',
+            plugin_slug: plugin.slug,
+            team_name: 'Personal Workspace',
+            team_role: 'Owner',
+          },
+          isNew: isNewUser,
+        });
+      }, 0);
+
+      return () => clearTimeout(syncTimer);
+    }
+  }, [searchParams, plugin.slug, pairingCode]);
 
   // Handle postMessage handshake when successData is set
   useEffect(() => {
@@ -450,6 +511,19 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
       setErrorMessage(err instanceof Error ? err.message : 'Network error requesting password reset.');
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleSignIn = () => {
+    setIsLoading(true);
+    setErrorMessage('');
+    const targetUrl = new URL('/api/framer-auth/google', window.location.origin);
+    targetUrl.searchParams.set('plugin', plugin.slug);
+    if (pairingCode) targetUrl.searchParams.set('code', pairingCode.trim());
+    if (returnUrlParam) targetUrl.searchParams.set('return_url', returnUrlParam);
+    if (framerProjectId) targetUrl.searchParams.set('project', framerProjectId);
+    if (framerUserId) targetUrl.searchParams.set('framer_user', framerUserId);
+    targetUrl.searchParams.set('mode', activeTab === 'signup' ? 'signup' : 'signin');
+    window.location.href = targetUrl.toString();
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -875,6 +949,27 @@ export default function QubticFramerAuthPortal({ initialPlugin }: QubticFramerAu
 
               {/* Form Body */}
               <form onSubmit={handleSubmit} className="qubtic-auth-form">
+                {/* Google Sign-In Integration */}
+                {(activeTab === 'signin' || (activeTab === 'signup' && !signupOtpSent)) && (
+                  <div className="qubtic-auth-social-wrapper">
+                    <button
+                      type="button"
+                      onClick={handleGoogleSignIn}
+                      className="qubtic-auth-google-btn"
+                      disabled={isLoading}
+                      aria-label="Continue with Google"
+                    >
+                      <svg className="qubtic-auth-google-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                      </svg>
+                      <span>{activeTab === 'signup' ? 'Sign up with Google' : 'Continue with Google'}</span>
+                    </button>
+                    <div className="qubtic-auth-divider">or continue with email</div>
+                  </div>
+                )}
                 {/* Email Address - Hidden during signup OTP step to focus on the code */}
                 {!(activeTab === 'signup' && signupOtpSent) && (
                   <div className="qubtic-auth-group">
