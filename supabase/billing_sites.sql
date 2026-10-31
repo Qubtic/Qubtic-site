@@ -47,7 +47,20 @@ BEGIN
  IF NEW.plugin_slug='whatsapp-commerce' AND NEW.site_id IS NOT NULL THEN
   -- Serialize against webhook snapshots so a just-paid site cannot race a second purchase.
   PERFORM 1 FROM billing_customers WHERE id=NEW.customer_id FOR UPDATE;
-  IF billing_site_has_purchase(NEW.customer_id,NEW.site_id) THEN RAISE EXCEPTION 'This site already has a Pro purchase'; END IF;
+  IF EXISTS(SELECT 1 FROM billing_orders WHERE customer_id=NEW.customer_id AND plugin_slug='whatsapp-commerce' AND site_id=NEW.site_id AND cadence='lifetime' AND status IN ('paid','partially_refunded') AND amount>refunded_amount) THEN
+   RAISE EXCEPTION 'This site already has a Pro purchase';
+  END IF;
+  IF EXISTS(SELECT 1 FROM billing_subscriptions WHERE customer_id=NEW.customer_id AND plugin_slug='whatsapp-commerce' AND site_id=NEW.site_id AND status='active' AND current_period_end>now()) THEN
+   IF EXISTS(SELECT 1 FROM billing_subscriptions WHERE customer_id=NEW.customer_id AND plugin_slug='whatsapp-commerce' AND site_id=NEW.site_id AND status='active' AND current_period_end>now() AND cadence='yearly') THEN
+    IF NEW.cadence<>'lifetime' THEN
+     RAISE EXCEPTION 'This site already has a Pro purchase';
+    END IF;
+   ELSE
+    IF NEW.cadence NOT IN ('yearly','lifetime') THEN
+     RAISE EXCEPTION 'This site already has a Pro purchase';
+    END IF;
+   END IF;
+  END IF;
  END IF;
  RETURN NEW;
 END $$;

@@ -10,7 +10,7 @@ function harness(){
  const state={id:'polar1',external_id:customer,organization_id:'org1',deleted_at:null,granted_benefits:[{benefit_id:benefit}],active_subscriptions:[]};
  const order={id:'order1',customer_id:'polar1',customer:{organization_id:'org1'},product_id:product,status:'paid',total_amount:4900,refunded_amount:0,currency:'usd',created_at:'2026-10-30T00:00:00Z',subscription_id:null};
  const discountId=randomUUID();
- const sdk={discounts:{get:async()=>({id:discountId,organization_id:'org1',products:[{id:product}],type:'fixed',duration:'once',currency:'usd',amount:2000,starts_at:null,ends_at:null,max_redemptions:null,redemptions_count:0})},subscriptions:{iterList:async function*(){for(const sub of state.active_subscriptions)yield sub;},update:async(id,body)=>{const s=state.active_subscriptions.find(x=>x.id===id);if(s&&body.cancel_at_period_end!==undefined)s.cancel_at_period_end=body.cancel_at_period_end;return s;}},customers:{getExternal:async()=>state,get:async()=>{if(apiError)throw new Error('API offline');return state;},getState:async()=>{if(apiError)throw new Error('API offline');return state;}},orders:{get:async()=>order,iterList:async function*(){yield order;}},products:{get:async id=>({organization_id:'org1',is_archived:false,is_recurring:id!==product,recurring_interval:id===monthlyProduct?'month':id===yearlyProduct?'year':null,prices:[{amount_type:'fixed',price_amount:4900,price_currency:'usd',is_archived:false}],benefits:[{id:benefit}]})},checkouts:{get:async()=>({status:'open',products:checkoutProducts}),create:async body=>{calls.push(body);return{id:'checkout1',url:'https://buy.polar.sh/test',expires_at:'2099-01-01T00:00:00Z'};}},customerSessions:{create:async body=>{calls.push(body);return{customer_portal_url:'https://polar.sh/portal/test'};}}};
+ const sdk={discounts:{get:async()=>({id:discountId,organization_id:'org1',products:[{id:product}],type:'fixed',duration:'once',currency:'usd',amount:2000,starts_at:null,ends_at:null,max_redemptions:null,redemptions_count:0}),create:async body=>{calls.push({method:'discounts.create',...body});return{id:discountId,...body};}},subscriptions:{iterList:async function*(){for(const sub of state.active_subscriptions)yield sub;},update:async(id,body)=>{const s=state.active_subscriptions.find(x=>x.id===id);if(s&&body.cancel_at_period_end!==undefined)s.cancel_at_period_end=body.cancel_at_period_end;return s;},revoke:async id=>{calls.push({method:'subscriptions.revoke',id});return{id,status:'canceled'};}},customers:{getExternal:async()=>state,get:async()=>{if(apiError)throw new Error('API offline');return state;},getState:async()=>{if(apiError)throw new Error('API offline');return state;}},orders:{get:async()=>order,iterList:async function*(){yield order;}},products:{get:async id=>({organization_id:'org1',is_archived:false,is_recurring:id!==product,recurring_interval:id===monthlyProduct?'month':id===yearlyProduct?'year':null,prices:[{amount_type:'fixed',price_amount:4900,price_currency:'usd',is_archived:false}],benefits:[{id:benefit}]})},checkouts:{get:async()=>({status:'open',products:checkoutProducts}),create:async body=>{calls.push(body);return{id:'checkout1',url:'https://buy.polar.sh/test',expires_at:'2099-01-01T00:00:00Z'};}},customerSessions:{create:async body=>{calls.push(body);return{customer_portal_url:'https://polar.sh/portal/test'};}}};
  const db={rpc:async(name,args)=>{calls.push({name,args});if(databaseError)return{error:{}};if(name==='billing_identity')return{data:customer};if(name==='billing_throttle')return{data:true};if(name==='billing_site_has_purchase')return{data:tables.billing_subscriptions.some(s=>s.site_id===args.p_site&&s.status==='active'&&Date.parse(s.current_period_end)>Date.now())};if(name==='billing_site_access')return{data:paid&&args.p_site==='site-a'};if(name==='billing_apply_snapshot'||name==='billing_apply_site_snapshot'){paid=args.p_grants.length>0;return{data:true};}return{data:null};},from(table){let filters=[],op='select',payload,upsertOptions;const q={select(){return q;},eq(k,v){filters.push(row=>row[k]===v);return q;},in(k,v){filters.push(row=>v.includes(row[k]));return q;},lt(k,v){filters.push(row=>row[k]<v);return q;},not(){return q;},order(){return q;},limit(){return q;},insert(v){op='insert';payload=v;return q;},update(v){op='update';payload=v;return q;},upsert(v,o){op='upsert';payload=v;upsertOptions=o;return q;},async maybeSingle(){const r=await q;return{...r,data:r.data?.[0]||null};},async single(){return q.maybeSingle();},then(resolve){if(databaseError)return Promise.resolve({error:{message:'private db error'}}).then(resolve);let rows=(tables[table]||[]).filter(row=>filters.every(f=>f(row)));if(table==='plugin_entitlements')rows=paid?[{is_pro:true,verified_until:'2099-01-01'}]:[];if(op==='insert'){rows=[{id:randomUUID(),created_at:new Date().toISOString(),status:'creating',...payload}];tables[table].push(...rows);}if(op==='upsert'){const existing=tables[table].find(row=>row.event_id===payload.event_id&&row.environment===payload.environment);if(!existing){rows=[{attempts:0,status:'pending',...payload}];tables[table].push(...rows);}else if(!upsertOptions?.ignoreDuplicates)Object.assign(existing,payload);}if(op==='update')for(const row of rows)Object.assign(row,payload);return Promise.resolve({data:structuredClone(rows),error:null}).then(resolve);}};return q;}};
  const core=load('src/lib/billing/core.ts',{'./config.mjs':{configuredCatalog:()=>desiredCatalog,catalogMatches:billingConfiguration.catalogMatches},'server-only':{},'@supabase/supabase-js':{createClient:()=>db},'@polar-sh/sdk/2026-10':{...realSdk,createPolar:()=>sdk}});const route=load('src/app/api/billing/[action]/route.ts',{'@/lib/billing/core':core,'@/lib/billing/config.mjs':billingConfiguration});
  const request=async(action,body,token='token',site='site-a')=>{const r=await route[body===undefined?'GET':'POST'](new Request('https://example.test/api/billing/'+action,{method:body===undefined?'GET':'POST',headers:{'X-Framer-Site-Id':site,Authorization:`Bearer ${token}`,...(body===undefined?{}:{'Content-Type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)})}),{params:Promise.resolve({action:action.split('?')[0]})});return{status:r.status,data:await r.json()};};
@@ -134,4 +134,74 @@ test('cancel action updates recurring cancellation and leaves Pro active until p
  assert.equal(res.status,200);
  assert.equal(res.data.cancel_at_period_end,true);
  assert.equal(res.data.current_period_end,end);
+});
+
+test('monthly subscriber upgrading to yearly gets automatically calculated proration discount and upgrade checkout',async()=>{
+ const h=harness();
+ const now=Date.now();
+ // Monthly period: started 5 days ago, ends in 25 days (total 30 days)
+ const start=new Date(now - 5*86400000).toISOString();
+ const end=new Date(now + 25*86400000).toISOString();
+ h.tables.billing_subscriptions.push({polar_subscription_id:'sub_month',environment:'sandbox',customer_id:h.customer,plugin_slug:'whatsapp-commerce',site_id:'site-a',cadence:'monthly',status:'active',current_period_end:end,cancel_at_period_end:false});
+ h.tables.billing_orders.push({environment:'sandbox',polar_order_id:'order_month',customer_id:h.customer,plugin_slug:'whatsapp-commerce',cadence:'monthly',product_id:h.monthlyProduct,status:'paid',amount:500,subtotal_amount:500,discount_amount:0,refunded_amount:0,currency:'usd',purchased_at:start,subscription_id:'sub_month',site_id:'site-a'});
+
+ const response=await h.request('checkout',{cadence:'yearly',request_id:randomUUID()});
+ assert.equal(response.status,200);
+ assert.ok(response.data.url);
+
+ // Verify a discount was created for the remaining unused days
+ const discountCall=h.calls.find(c=>c.method==='discounts.create');
+ assert.ok(discountCall,'Proration discount must be created');
+ assert.equal(discountCall.type,'fixed');
+ assert.equal(discountCall.duration,'once');
+ assert.deepEqual(discountCall.products,[h.yearlyProduct]);
+ // 500 cents * (25 / 30) = ~417 cents
+ assert.ok(discountCall.amount>=400 && discountCall.amount<=425,'Unused credit calculation should match ~25 days of $5 monthly');
+
+ // Verify checkout creation has upgrade metadata, yearly product, and discount attached
+ const checkoutCall=h.calls.find(c=>c.external_customer_id&&c.metadata?.is_upgrade==='true');
+ assert.ok(checkoutCall);
+ assert.deepEqual(checkoutCall.products,[h.yearlyProduct]);
+ assert.equal(checkoutCall.metadata.previous_subscription_id,'sub_month');
+ assert.equal(checkoutCall.discount_id,h.discountId);
+});
+
+test('monthly subscriber upgrading to lifetime opens full-price checkout with NO discount',async()=>{
+ const h=harness();
+ const end=new Date(Date.now() + 25*86400000).toISOString();
+ h.tables.billing_subscriptions.push({polar_subscription_id:'sub_month2',environment:'sandbox',customer_id:h.customer,plugin_slug:'whatsapp-commerce',site_id:'site-a',cadence:'monthly',status:'active',current_period_end:end,cancel_at_period_end:false});
+ h.tables.billing_orders.push({environment:'sandbox',polar_order_id:'order_month2',customer_id:h.customer,plugin_slug:'whatsapp-commerce',cadence:'monthly',product_id:h.monthlyProduct,status:'paid',amount:500,subtotal_amount:500,discount_amount:0,refunded_amount:0,currency:'usd',purchased_at:new Date().toISOString(),subscription_id:'sub_month2',site_id:'site-a'});
+
+ const response=await h.request('checkout',{cadence:'lifetime',request_id:randomUUID()});
+ assert.equal(response.status,200);
+ assert.ok(response.data.url);
+
+ // Lifetime MUST NOT create a discount
+ const discountCall=h.calls.find(c=>c.method==='discounts.create');
+ assert.equal(discountCall,undefined,'Strictly NO discount for lifetime package');
+
+ const checkoutCall=h.calls.find(c=>c.external_customer_id&&c.metadata?.is_upgrade==='true');
+ assert.ok(checkoutCall);
+ assert.deepEqual(checkoutCall.products,[h.product]);
+ assert.equal(checkoutCall.discount_id,undefined,'Lifetime checkout must have no discount');
+});
+
+test('monthly subscriber attempting duplicate monthly checkout is rejected',async()=>{
+ const h=harness();
+ const end=new Date(Date.now() + 25*86400000).toISOString();
+ h.tables.billing_subscriptions.push({polar_subscription_id:'sub_month3',environment:'sandbox',customer_id:h.customer,plugin_slug:'whatsapp-commerce',site_id:'site-a',cadence:'monthly',status:'active',current_period_end:end,cancel_at_period_end:false});
+
+ const response=await h.request('checkout',{cadence:'monthly',request_id:randomUUID()});
+ assert.equal(response.status,409);
+ assert.match(response.data.error,/Pro is already active/);
+});
+
+test('lifetime subscriber attempting any checkout is rejected',async()=>{
+ const h=harness();
+ h.tables.billing_orders.push({environment:'sandbox',polar_order_id:'order_life',customer_id:h.customer,plugin_slug:'whatsapp-commerce',cadence:'lifetime',product_id:h.product,status:'paid',amount:9900,subtotal_amount:9900,discount_amount:0,refunded_amount:0,currency:'usd',purchased_at:new Date().toISOString(),subscription_id:null,site_id:'site-a'});
+
+ const yearlyRes=await h.request('checkout',{cadence:'yearly',request_id:randomUUID()});
+ assert.equal(yearlyRes.status,409);
+ const lifeRes=await h.request('checkout',{cadence:'lifetime',request_id:randomUUID()});
+ assert.equal(lifeRes.status,409);
 });

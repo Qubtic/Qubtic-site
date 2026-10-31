@@ -81,19 +81,76 @@ async function handle(request:Request,{params}:Context){
    const raw=await request.text();if(Buffer.byteLength(raw)>4096)throw new BillingError('Request too large.',413);
    const body=(()=>{try{return JSON.parse(raw);}catch{return null;}})() as {cadence?:Cadence;request_id?:string;replace_previous?:boolean}|null;
    if(!body || (body.cadence && !['monthly','yearly','lifetime'].includes(body.cadence)) || !/^[0-9a-f-]{36}$/i.test(body.request_id||'')) throw new BillingError('Choose a valid billing period.',400);
-   const [entries,alreadyPro,existingResult]=await Promise.all([catalog(),paidAccess(user.id,user.plugin,site),db.from('billing_checkouts').select('*').eq('user_id',user.id).eq('request_key',body.request_id).maybeSingle()]);
-   const rows=entries.filter(item=>item.plugin_slug===user.plugin);
-   const selectable=['yearly','monthly','lifetime'].map(cadence=>rows.find(item=>item.cadence===cadence));
-   if(selectable.some(item=>!item)) throw new BillingError('Pro checkout is not fully configured yet.',409);
-   const row=selectable[0]!;
-   if(alreadyPro) throw new BillingError('Pro is already active. Manage billing to change your plan.',409);
-   if(site){
+
+   const subQuery=db.from('billing_subscriptions').select('polar_subscription_id,cadence,status,current_period_end,cancel_at_period_end,site_id').eq('environment',env).eq('customer_id',customerId).eq('plugin_slug',user.plugin).eq('status','active');
+   const lifeQuery=db.from('billing_orders').select('polar_order_id,cadence,status,amount,refunded_amount,currency,purchased_at,site_id').eq('environment',env).eq('customer_id',customerId).eq('plugin_slug',user.plugin).eq('cadence','lifetime').in('status',['paid','partially_refunded']);
+
+   const [entries,alreadyPro,existingResult,activeSubsResult,lifeOrdersResult]=await Promise.all([
+    catalog(),
+    paidAccess(user.id,user.plugin,site),
+    db.from('billing_checkouts').select('*').eq('user_id',user.id).eq('request_key',body.request_id).maybeSingle(),
+    (user.plugin==='whatsapp-commerce'&&site?subQuery.eq('site_id',site):subQuery),
+    (user.plugin==='whatsapp-commerce'&&site?lifeQuery.eq('site_id',site):lifeQuery)
+   ]);
+   check(activeSubsResult.error);
+   check(lifeOrdersResult.error);
+
+   const activeSub=(activeSubsResult.data||[]).find(s=>Date.parse(s.current_period_end)>Date.now());
+   const hasLifetime=(lifeOrdersResult.data||[]).some(o=>o.amount>o.refunded_amount);
+
+   let isUpgrade=false;
+   let upgradeFrom:Cadence|null=null;
+   let upgradeTo:Cadence|null=null;
+
+   if(alreadyPro || activeSub || hasLifetime){
+    if(hasLifetime){
+     throw new BillingError('Pro Lifetime is already active for this account.',409);
+    }
+    if(activeSub){
+     if(activeSub.cadence==='yearly'){
+      if(body.cadence==='lifetime'){
+       isUpgrade=true;
+       upgradeFrom='yearly';
+       upgradeTo='lifetime';
+      }else{
+       throw new BillingError('Pro is already active. Manage billing to change your plan.',409);
+      }
+     }else if(activeSub.cadence==='monthly'){
+      if(body.cadence==='yearly'){
+       isUpgrade=true;
+       upgradeFrom='monthly';
+       upgradeTo='yearly';
+      }else if(body.cadence==='lifetime'){
+       isUpgrade=true;
+       upgradeFrom='monthly';
+       upgradeTo='lifetime';
+      }else{
+       throw new BillingError('Pro is already active. Manage billing to change your plan.',409);
+      }
+     }else{
+      throw new BillingError('Pro is already active. Manage billing to change your plan.',409);
+     }
+    }else{
+     throw new BillingError('Pro is already active. Manage billing to change your plan.',409);
+    }
+   }
+
+   if(site && !isUpgrade){
     const {data:hasPurchase,error:purchaseError}=await db.rpc('billing_site_has_purchase',{p_customer:customerId,p_site:site});check(purchaseError);
     if(hasPurchase===true)throw new BillingError('This site already has a Pro purchase. Refresh billing or manage its existing subscription.',409);
    }
+
+   const rows=entries.filter(item=>item.plugin_slug===user.plugin);
+   const selectable=['yearly','monthly','lifetime'].map(cadence=>rows.find(item=>item.cadence===cadence));
+   if(selectable.some(item=>!item)) throw new BillingError('Pro checkout is not fully configured yet.',409);
+
+   const targetCadence=isUpgrade && upgradeTo ? upgradeTo : (body.cadence || 'yearly');
+   const targetRow=rows.find(item=>item.cadence===targetCadence) || selectable[0]!;
+   const row=isUpgrade ? targetRow : selectable[0]!;
+
    const {data:existing,error:existingError}=existingResult;check(existingError);
    if(existing){
-    if(existing.environment!==env || existing.product_id!==row.product_id || (existing.site_id||null)!==site) throw new BillingError('Checkout request does not match.',409);
+    if(existing.environment!==env || existing.product_id!==targetRow.product_id || (existing.site_id||null)!==site) throw new BillingError('Checkout request does not match.',409);
     if(existing.status==='open' && existing.checkout_url && Date.parse(existing.expires_at)>Date.now()) return reply({url:safePolarUrl(existing.checkout_url)});
     throw new BillingError('This checkout request is already processing or expired. Start a new checkout.',409);
    }
@@ -105,28 +162,117 @@ async function handle(request:Request,{params}:Context){
     if(!prices.length||prices.some(price=>price.amount_type!=='fixed'||!('price_amount' in price)||typeof price.price_amount!=='number'||price.price_amount<=0))throw new BillingError('Pro requires a configured fixed paid price.');
     if((selected!.cadence==='lifetime' && product.is_recurring)||(selected!.cadence!=='lifetime' && (!product.is_recurring || product.recurring_interval!==(selected!.cadence==='monthly'?'month':'year')))) throw new BillingError('Plan billing interval does not match.');
    }));
+
+   // Calculate prorated discount for Monthly -> Yearly upgrade
+   let discountId:string|undefined;
+   if(isUpgrade && upgradeFrom==='monthly' && upgradeTo==='yearly' && activeSub){
+    const {data:subOrders,error:subOrdersErr}=await db.from('billing_orders').select('amount,refunded_amount,currency,purchased_at').eq('environment',env).eq('customer_id',customerId).eq('subscription_id',activeSub.polar_subscription_id).in('status',['paid','partially_refunded']).order('purchased_at',{ascending:false}).limit(1);
+    check(subOrdersErr);
+
+    let paidAmount=0;
+    let currency='usd';
+    let periodStart=0;
+    if(subOrders && subOrders.length>0){
+     paidAmount=Math.max(0,subOrders[0].amount - subOrders[0].refunded_amount);
+     currency=subOrders[0].currency||'usd';
+     periodStart=Date.parse(subOrders[0].purchased_at);
+    }else{
+     const monthlyRow=rows.find(r=>r.cadence==='monthly');
+     if(monthlyRow){
+      try{
+       const mProd=await sdk.products.get(monthlyRow.product_id);
+       const mPrice=mProd.prices.find(p=>!p.is_archived && p.amount_type==='fixed');
+       if(mPrice && 'price_amount' in mPrice && typeof mPrice.price_amount==='number'){
+        paidAmount=mPrice.price_amount;
+        currency=('price_currency' in mPrice && typeof mPrice.price_currency==='string'?mPrice.price_currency:'usd');
+       }
+      }catch{/* Fallback to zero credit */}
+     }
+    }
+
+    const periodEnd=Date.parse(activeSub.current_period_end);
+    const remainingMs=Math.max(0,periodEnd - Date.now());
+    const defaultCycleMs=30*24*60*60*1000;
+    const totalCycleMs=(periodStart>0 && periodEnd>periodStart)?Math.max(defaultCycleMs,periodEnd - periodStart):defaultCycleMs;
+    const unusedRatio=Math.min(1,Math.max(0,remainingMs/totalCycleMs));
+    let unusedCreditCents=Math.round(paidAmount*unusedRatio);
+
+    try{
+     const yProd=await sdk.products.get(targetRow.product_id);
+     const yPrice=yProd.prices.find(p=>!p.is_archived && p.amount_type==='fixed');
+     if(yPrice && 'price_amount' in yPrice && typeof yPrice.price_amount==='number'){
+      if(unusedCreditCents>=yPrice.price_amount){
+       unusedCreditCents=Math.max(0,yPrice.price_amount - 100);
+      }
+     }
+    }catch{/* Keep unusedCreditCents */}
+
+    if(unusedCreditCents>0){
+     try{
+      const discount=await sdk.discounts.create({
+       organization_id:process.env.POLAR_ORGANIZATION_ID,
+       name:`Prorated Monthly Credit ($${(unusedCreditCents/100).toFixed(2)})`,
+       type:'fixed',
+       amount:unusedCreditCents,
+       currency:currency.toLowerCase() as any,
+       duration:'once',
+       products:[targetRow.product_id],
+       max_redemptions:1
+      });
+      discountId=discount.id;
+     }catch{/* Continue without discount if discount creation is not available */}
+    }
+   }
+
    const {error:expiryError}=await db.from('billing_checkouts').update({status:'expired'}).eq('user_id',user.id).eq('environment',env).in('status',['creating','open']).lt('expires_at',new Date().toISOString());check(expiryError);
+
+   const targetProducts=isUpgrade?[targetRow.product_id]:selectable.map(item=>item!.product_id);
+
    const openQuery=db.from('billing_checkouts').select('*').eq('user_id',user.id).eq('environment',env).in('status',['creating','open']);
    const {data:openCheckout,error:openError}=await (user.plugin==='whatsapp-commerce'?openQuery.eq('site_id',site):openQuery).maybeSingle();check(openError);
    if(openCheckout){
     if(!openCheckout.checkout_url || !openCheckout.polar_checkout_id || openCheckout.plugin_slug!==user.plugin) throw new BillingError('Another checkout is still processing. Please try again shortly.',409);
     const previous=await sdk.checkouts.get(openCheckout.polar_checkout_id);
     if(previous.status!=='open') throw new BillingError('Your previous checkout changed status. Refresh billing before starting another.',409);
-    const available=previous.products.map(item=>item.id).sort().join(',')===selectable.map(item=>item!.product_id).sort().join(',');
-    if(available){
+    const available=previous.products.map(item=>item.id).sort().join(',')===targetProducts.slice().sort().join(',');
+    const discountMatches=!discountId || ('discount_id' in previous && previous.discount_id===discountId);
+    if(available && discountMatches){
      // Rebind the polling fallback to this launch tab when reusing an open checkout.
      const {data:rebound,error:rebindError}=await db.from('billing_checkouts').update({request_key:body.request_id}).eq('id',openCheckout.id).eq('status','open').select('id').maybeSingle();check(rebindError);
      if(!rebound)throw new BillingError('Checkout changed status. Refresh billing and try again.',409);
      return reply({url:safePolarUrl(openCheckout.checkout_url)});
     }
-    if(body.replace_previous!==true)return reply({error:'An earlier checkout is still open. Continue it or start a new Pro checkout to choose a plan.',previous_url:safePolarUrl(openCheckout.checkout_url),can_replace:true},409);
+    if(body.replace_previous!==true)return reply({
+     error:isUpgrade
+      ?'An earlier checkout is still open. Continue it or start a new checkout to complete your upgrade.'
+      :'An earlier checkout is still open. Continue it or start a new Pro checkout to choose a plan.',
+     previous_url:safePolarUrl(openCheckout.checkout_url),
+     can_replace:true
+    },409);
     const {error:replaceError}=await db.from('billing_checkouts').update({status:'superseded'}).eq('id',openCheckout.id).eq('status','open');check(replaceError);
    }
    const id=randomUUID();
    const tempExpiresAt=new Date(Date.now()+15*60*1000).toISOString();
-   const {error:insertError}=await db.from('billing_checkouts').insert({id,user_id:user.id,customer_id:customerId,environment:env,plugin_slug:user.plugin,cadence:row.cadence,product_id:row.product_id,request_key:body.request_id,site_id:site,status:'creating',expires_at:tempExpiresAt});check(insertError);
+   const {error:insertError}=await db.from('billing_checkouts').insert({id,user_id:user.id,customer_id:customerId,environment:env,plugin_slug:user.plugin,cadence:targetRow.cadence,product_id:targetRow.product_id,request_key:body.request_id,site_id:site,status:'creating',expires_at:tempExpiresAt});check(insertError);
    // The account ID comes exclusively from verified database identity. No bearer tokens in URLs.
-   const checkout=await sdk.checkouts.create({products:selectable.map(item=>item!.product_id),external_customer_id:customerId,customer_email:user.email,customer_name:user.name,allow_trial:false,allow_discount_codes:true,success_url:`${billingSiteUrl(process.env)}/billing/return`,return_url:`${billingSiteUrl(process.env)}/billing/return`,metadata:{qubtic_checkout_id:id,plugin_slug:user.plugin,...(site?{site_id:site}:{})}});
+   const checkout=await sdk.checkouts.create({
+    products:targetProducts,
+    external_customer_id:customerId,
+    customer_email:user.email,
+    customer_name:user.name,
+    allow_trial:false,
+    allow_discount_codes:true,
+    ...(discountId?{discount_id:discountId}:{}),
+    success_url:`${billingSiteUrl(process.env)}/billing/return`,
+    return_url:`${billingSiteUrl(process.env)}/billing/return`,
+    metadata:{
+     qubtic_checkout_id:id,
+     plugin_slug:user.plugin,
+     is_upgrade:isUpgrade?'true':'false',
+     ...(isUpgrade&&activeSub?{previous_subscription_id:activeSub.polar_subscription_id}:{}),
+     ...(site?{site_id:site}:{})
+    }
+   });
    const url=safePolarUrl(checkout.url);
    const {error:updateError}=await db.from('billing_checkouts').update({polar_checkout_id:checkout.id,checkout_url:url,status:'open',expires_at:checkout.expires_at}).eq('id',id).eq('status','creating');check(updateError);
    return reply({url});

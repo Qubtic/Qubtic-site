@@ -345,17 +345,28 @@ export function BillingPanel({
     status?.is_pro && currentCadence === 'yearly' && selectedCadence === 'monthly'
   );
 
+  const remainingMs = activeSub ? Math.max(0, Date.parse(activeSub.current_period_end) - Date.now()) : 0;
+  const daysRemaining = Math.max(0, Math.ceil(remainingMs / (24 * 60 * 60 * 1000)));
+  const lastMonthlyOrder = status?.orders?.find(
+    (o) => o.cadence === 'monthly' && ['paid', 'partially_refunded'].includes(o.status)
+  );
+  const monthlyPaidAmount = lastMonthlyOrder
+    ? Math.max(0, lastMonthlyOrder.amount - lastMonthlyOrder.refunded_amount)
+    : 500;
+  const monthlyTotalMs = 30 * 24 * 60 * 60 * 1000;
+  const proratedCreditCents = Math.round(monthlyPaidAmount * Math.min(1, remainingMs / monthlyTotalMs));
+
   async function handlePlanAction() {
     if (!status?.is_pro) {
       await open('checkout');
       return;
     }
     if (isCurrentPlan) return;
-    if (isUpgradeToLifetime) {
+    if (isUpgradeToLifetime || isUpgradeToYearly) {
       await open('checkout');
       return;
     }
-    if (isUpgradeToYearly || isSwitchToMonthly) {
+    if (isSwitchToMonthly) {
       await open('portal');
       return;
     }
@@ -415,7 +426,6 @@ export function BillingPanel({
             <div className="qubtic-billing-active-summary">
               <div className="qubtic-billing-active-summary-row">
                 <div className="qubtic-billing-status-badge-wrap">
-                  <span className="qubtic-billing-status-dot" aria-hidden="true" />
                   <span className="qubtic-billing-active-pill">Auto-renewal active</span>
                 </div>
                 <span className="qubtic-billing-active-period">
@@ -562,6 +572,32 @@ export function BillingPanel({
             </span>
           </div>
 
+          {/* Prorated Upgrade or Lifetime Explanations */}
+          {isUpgradeToYearly && (
+            <div className="qubtic-billing-upgrade-banner" role="status">
+              <span className="qubtic-billing-upgrade-icon" aria-hidden="true">🏷️</span>
+              <div className="qubtic-billing-upgrade-info">
+                <strong className="qubtic-billing-upgrade-title">Automatic proration discount applied</strong>
+                <span className="qubtic-billing-upgrade-desc">
+                  {proratedCreditCents > 0
+                    ? `You have ~${daysRemaining} unused days on your monthly plan. A credit of $${(proratedCreditCents / 100).toFixed(2)} will be automatically deducted from your yearly checkout.`
+                    : 'Your upgraded yearly plan will start immediately.'}
+                </span>
+              </div>
+            </div>
+          )}
+          {isUpgradeToLifetime && (
+            <div className="qubtic-billing-upgrade-banner" role="status">
+              <span className="qubtic-billing-upgrade-icon" aria-hidden="true">👑</span>
+              <div className="qubtic-billing-upgrade-info">
+                <strong className="qubtic-billing-upgrade-title">Lifetime license</strong>
+                <span className="qubtic-billing-upgrade-desc">
+                  One-time payment for permanent access and all future updates. No recurring subscription.
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Perks list: compact strip for active Pro, full list for free users */}
           {status?.is_pro ? (
             <div className="qubtic-billing-active-perks-strip">
@@ -601,7 +637,7 @@ export function BillingPanel({
             {actionButtonText}
           </button>
 
-          {destination && destinationAction === 'checkout' && !status?.is_pro && (
+          {destination && destinationAction === 'checkout' && (
             <div className="qubtic-billing-destination-box">
               <div className="qubtic-billing-destination-content">
                 <span className="qubtic-billing-destination-icon">🚀</span>
@@ -627,7 +663,7 @@ export function BillingPanel({
             <span>Powered by Polar</span>
           </div>
 
-          {previousUrl && !status?.is_pro && (
+          {previousUrl && (
             <div className="qubtic-billing-recovery">
               <div className="qubtic-billing-recovery-header">
                 <span className="qubtic-billing-recovery-icon">⚠️</span>

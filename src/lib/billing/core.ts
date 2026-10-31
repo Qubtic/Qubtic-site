@@ -147,6 +147,16 @@ export async function synchronize(customerId:string) {
  const {data:checkouts,error:checkoutError}=await db.from('billing_checkouts').select('site_id,polar_checkout_id,plugin_slug').eq('customer_id',customer.id).eq('environment',environment());check(checkoutError);
  const snapshot=normalizeSiteState(state,entries,orders,subscriptions,checkouts||[]);
  const {error:applyError}=await db.rpc('billing_apply_site_snapshot',{p_customer:customer.id,p_started:started,p_polar_id:state.id,p_grants:snapshot.grants,p_orders:snapshot.orders,p_subscriptions:snapshot.subscriptions,p_site_grants:snapshot.siteGrants}); check(applyError);
+ for(const sub of snapshot.subscriptions){
+  if(sub.cadence==='monthly' && sub.status==='active'){
+   const subSite=sub.site_id;
+   const upgraded=snapshot.orders.some(o=>o.cadence==='lifetime'&&['paid','partially_refunded'].includes(o.status)&&o.amount>o.refunded_amount&&(o.site_id===subSite))
+     || snapshot.subscriptions.some(s=>s.id!==sub.id&&s.cadence==='yearly'&&s.status==='active'&&Date.parse(s.current_period_end)>Date.now()&&(s.site_id===subSite));
+   if(upgraded){
+    try{await sdk.subscriptions.revoke(sub.id);}catch{/* Obsolete subscription revoked */}
+   }
+  }
+ }
 }
 export async function webhook(request:Request) {
  const secret=process.env.POLAR_WEBHOOK_SECRET; if(!secret) throw new BillingError('Webhook is not configured.');

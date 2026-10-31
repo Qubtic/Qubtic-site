@@ -1,4 +1,5 @@
 import 'server-only';
+import { supabase } from './supabase';
 import { paidAccess } from './billing/core';
 import { initiatePairingSession, resolvePairingSession, verifyFramerSessionToken, revokeCommerceSession, getPairingSession } from './framer-auth';
 
@@ -31,8 +32,39 @@ export async function commerceRequest(request: Request, action: string) {
     if (action === 'access' && ['GET', 'POST'].includes(request.method)) {
       const user = await verifyFramerSessionToken(bearer(request), PRODUCT);
       if (!user || user.plugin_slug !== PRODUCT || user.status !== 'active' || user.metadata?.email_verified !== true) return reply({ error: 'Sign in to WhatsApp Commerce first.' }, 401);
-      const isPro=await paidAccess(user.id,PRODUCT,request.headers.get('x-framer-site-id'));
-      return reply({ authenticated: true, product: PRODUCT, email: user.email, name: user.name, company_name: user.company_name, website_url: user.website_url, plan: isPro ? 'pro' : 'free', is_pro: isPro });
+      const isPro = await paidAccess(user.id, PRODUCT, request.headers.get('x-framer-site-id'));
+
+      let avatarUrl = (typeof user.metadata?.avatar_url === 'string' && user.metadata.avatar_url.trim())
+        || (typeof (user as any).avatar_url === 'string' && (user as any).avatar_url.trim())
+        || (typeof user.metadata?.picture === 'string' && user.metadata.picture.trim())
+        || null;
+
+      if (!avatarUrl && user.email) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('avatar_url')
+            .eq('email', user.email)
+            .maybeSingle();
+          if (profile?.avatar_url && typeof profile.avatar_url === 'string') {
+            avatarUrl = profile.avatar_url.trim();
+          }
+        } catch {
+          // Ignore if profiles table is not accessible
+        }
+      }
+
+      return reply({
+        authenticated: true,
+        product: PRODUCT,
+        email: user.email,
+        name: user.name,
+        company_name: user.company_name,
+        website_url: user.website_url,
+        plan: isPro ? 'pro' : 'free',
+        is_pro: isPro,
+        avatar_url: avatarUrl || undefined,
+      });
     }
     if (action === 'signout' && request.method === 'POST') {
       await revokeCommerceSession(bearer(request));
