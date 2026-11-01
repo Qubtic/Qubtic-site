@@ -34,6 +34,14 @@ export interface FramerUserRecord {
 export const PAIRING_TTL_SECONDS = 600; // 10 minutes
 export const PAIRING_POLL_INTERVAL_SECONDS = 3;
 
+function isCommercePlugin(slug?: string): boolean {
+  return slug === 'whatsapp-commerce' || slug === 'telegram-commerce';
+}
+
+function requiresCommercePersistence(slug?: string): boolean {
+  return process.env.NODE_ENV === 'production' && isCommercePlugin(slug);
+}
+
 /**
  * Evaluates Early Bird Pro entitlement status based on registration timestamp.
  * Retired: registration dates never grant Pro. Kept as a compatibility helper.
@@ -194,7 +202,7 @@ export async function createOrUpdateFramerUser(params: {
   const normalizedEmail = params.email.toLowerCase().trim();
   const pluginSlug = params.pluginSlug.toLowerCase().trim();
   const plugin = getPluginMetadata(pluginSlug);
-  const commerce = plugin.slug === 'whatsapp-commerce';
+  const commerce = isCommercePlugin(plugin.slug);
   const now = new Date().toISOString();
   const token = generateFramerAuthToken(pluginSlug);
 
@@ -334,7 +342,7 @@ export async function createOrUpdateFramerUser(params: {
     console.warn('Supabase framer_users query failed, falling back to local store:', sbErr);
   }
 
-  if (commerce && process.env.NODE_ENV === 'production') throw new Error('WhatsApp Commerce account database is unavailable.');
+  if (commerce && process.env.NODE_ENV === 'production') throw new Error('Commerce account database is unavailable.');
   // 2. Local Fallback (ensures zero crashes if Supabase table is not yet migrated)
   const localList = readLocalUsers();
   const existingIdx = localList.findIndex(
@@ -475,6 +483,8 @@ export async function findFramerUser(
     // Ignore and fallback to local
   }
 
+  if (requiresCommercePersistence(cleanPluginSlug)) return null;
+
   // 2. Check local fallback
   const localList = readLocalUsers();
   const match = localList.find(
@@ -492,7 +502,11 @@ export async function verifyFramerSessionToken(
   expectedPlugin?: string
 ): Promise<FramerUserRecord | null> {
   if (!token) return null;
-  if (token.startsWith('qbt_fr_whatsapp_')) expectedPlugin = expectedPlugin || 'whatsapp-commerce';
+  expectedPlugin = expectedPlugin?.toLowerCase().trim();
+  const tokenPlugin = token.startsWith('qbt_fr_whatsapp_') ? 'whatsapp-commerce'
+    : token.startsWith('qbt_fr_telegram_') ? 'telegram-commerce' : undefined;
+  if (tokenPlugin && expectedPlugin && tokenPlugin !== expectedPlugin) return null;
+  expectedPlugin = expectedPlugin || tokenPlugin;
 
   // 1. Check Supabase
   try {
@@ -502,7 +516,7 @@ export async function verifyFramerSessionToken(
     }
     const { data, error } = await query.maybeSingle();
     if (!error && data) {
-      if (data.plugin_slug === 'whatsapp-commerce' && (data.status !== 'active' || data.metadata?.email_verified !== true)) return null;
+      if (isCommercePlugin(data.plugin_slug) && (data.status !== 'active' || data.metadata?.email_verified !== true)) return null;
       return ensureEarlyBirdAttributes(data as FramerUserRecord);
     }
   } catch (_err) {
@@ -520,10 +534,10 @@ export async function verifyFramerSessionToken(
   });
 
   if (match) {
-    if (match.plugin_slug === 'whatsapp-commerce' && (match.status !== 'active' || match.metadata?.email_verified !== true)) return null;
+    if (isCommercePlugin(match.plugin_slug) && (match.status !== 'active' || match.metadata?.email_verified !== true)) return null;
     return ensureEarlyBirdAttributes(match);
   }
-  if (expectedPlugin === 'whatsapp-commerce') return null;
+  if (isCommercePlugin(expectedPlugin)) return null;
 
   // 3. Check Supabase framer_pairing_sessions (in case token was generated/issued during pairing)
   try {
@@ -532,7 +546,7 @@ export async function verifyFramerSessionToken(
       pQuery = pQuery.eq('plugin_slug', expectedPlugin.toLowerCase().trim());
     }
     const { data: pSession, error: pErr } = await pQuery.maybeSingle();
-    if (!pErr && pSession && pSession.user_data) {
+    if (!pErr && pSession && pSession.user_data && !isCommercePlugin(pSession.plugin_slug)) {
       const uData = pSession.user_data as Partial<FramerUserRecord>;
       if (uData.email) {
         try {
@@ -571,7 +585,7 @@ export async function verifyFramerSessionToken(
     if (expectedPlugin && p.plugin_slug !== expectedPlugin.toLowerCase().trim()) return false;
     return true;
   });
-  if (pMatch && pMatch.user_data) {
+  if (pMatch && pMatch.user_data && !isCommercePlugin(pMatch.plugin_slug)) {
     const uData = pMatch.user_data as Partial<FramerUserRecord>;
     return ensureEarlyBirdAttributes({
       id: uData.id || pMatch.id,
@@ -748,14 +762,15 @@ export async function initiatePairingSession(params?: {
 }> {
   const pluginSlug = (params?.pluginSlug || 'frame-drop').toLowerCase().trim();
   const pluginMeta = getPluginMetadata(pluginSlug);
-  const pluginName = pluginSlug === 'whatsapp-commerce' ? pluginMeta.name : params?.pluginName || pluginMeta.name;
+  const pluginName = isCommercePlugin(pluginSlug) ? pluginMeta.name : params?.pluginName || pluginMeta.name;
 
   // Clamp TTL between 60s and 3600s, default 600s (RFC 8628 timing contracts)
   const requestedTtl = params?.ttlSeconds ?? PAIRING_TTL_SECONDS;
   const ttlSeconds = Math.max(60, Math.min(requestedTtl, 3600));
 
   const deviceCode = crypto.randomBytes(32).toString('hex'); // 256-bit entropy = 64 hex chars
-  const userCode = generateUserCode(pluginSlug === 'whatsapp-commerce' ? 'WC' : 'FD');
+  // Telegram's existing plugin also uses WC-; the stored plugin slug isolates sessions.
+  const userCode = generateUserCode(isCommercePlugin(pluginSlug) ? 'WC' : 'FD');
   const nowMs = params?.customNow ?? Date.now();
   const nowIso = new Date(nowMs).toISOString();
   const expiresAt = new Date(nowMs + ttlSeconds * 1000).toISOString();
@@ -779,8 +794,8 @@ export async function initiatePairingSession(params?: {
     updated_at: nowIso,
   };
 
-  // Cache in-memory and write to local JSON store
-  syncPairingSessionLocally(sessionRecord);
+  // Never publish a production Commerce pairing before persistence succeeds.
+  if (!requiresCommercePersistence(pluginSlug)) syncPairingSessionLocally(sessionRecord);
 
   // Sync to Supabase using exact database schema columns
   try {
@@ -803,11 +818,11 @@ export async function initiatePairingSession(params?: {
     };
     const { error: sbErr } = await supabase.from('framer_pairing_sessions').insert(supabasePayload);
     if (sbErr) {
-      if (pluginSlug === 'whatsapp-commerce' && process.env.NODE_ENV === 'production') throw new Error('Pairing database unavailable.');
+      if (isCommercePlugin(pluginSlug) && process.env.NODE_ENV === 'production') throw new Error('Pairing database unavailable.');
       console.warn('Supabase framer_pairing_sessions insert error:', sbErr);
     }
   } catch (sbEx) {
-    if (pluginSlug === 'whatsapp-commerce' && process.env.NODE_ENV === 'production') throw new Error('Pairing database unavailable.');
+    if (isCommercePlugin(pluginSlug) && process.env.NODE_ENV === 'production') throw new Error('Pairing database unavailable.');
     console.warn('Supabase framer_pairing_sessions insert exception:', sbEx);
   }
 
@@ -871,6 +886,7 @@ export async function confirmPairingSession(
 
   // Find session: check Supabase first (distributed source of truth across serverless instances)
   let session: FramerPairingSessionRecord | null = null;
+  let persisted = false;
   try {
     const { data, error } = await supabase
       .from('framer_pairing_sessions')
@@ -879,6 +895,7 @@ export async function confirmPairingSession(
       .maybeSingle();
     if (!error && data) {
       session = data as FramerPairingSessionRecord;
+      persisted = true;
     }
   } catch {
     // ignore
@@ -896,15 +913,33 @@ export async function confirmPairingSession(
     return { success: false, status: 404, error: 'Invalid pairing code' };
   }
 
+  if (!persisted && requiresCommercePersistence(session.plugin_slug)) {
+    return { success: false, status: 503, error: 'Pairing database unavailable.' };
+  }
+
+  // Work on a copy so failed persistence cannot confirm the cached session.
+  session = { ...session };
+
   // Plugin identity is part of the authorization, not just a display label.
-  if (session.plugin_slug === 'whatsapp-commerce' || user?.plugin_slug === 'whatsapp-commerce') {
+  if (isCommercePlugin(session.plugin_slug) || isCommercePlugin(user?.plugin_slug)) {
     if (!user || user.plugin_slug !== session.plugin_slug || user.status !== 'active' || !user.auth_token) {
       return { success: false, status: 403, error: 'Sign in to the matching plugin account before connecting.' };
     }
   }
 
+  if (isCommercePlugin(session.plugin_slug)) {
+    const verified = user?.auth_token ? await verifyFramerSessionToken(user.auth_token, session.plugin_slug) : null;
+    if (!verified || verified.id !== user?.id) {
+      return { success: false, status: 403, error: 'Sign in to the matching plugin account before connecting.' };
+    }
+    user = verified;
+    if (session.status === 'confirmed' && (session.user_data?.id !== user.id || session.auth_token !== user.auth_token)) {
+      return { success: false, status: 409, error: 'Pairing already authorized by another session.' };
+    }
+  }
+
   const expiresTime = new Date(session.expires_at).getTime();
-  if (customNow > expiresTime) {
+  if (!Number.isFinite(expiresTime) || customNow >= expiresTime) {
     session.status = 'expired';
     session.updated_at = new Date(customNow).toISOString();
     syncPairingSessionLocally(session);
@@ -919,6 +954,8 @@ export async function confirmPairingSession(
     // Repeated confirmation idempotency
     return { success: true, message: 'Plugin paired successfully' };
   }
+
+  if (session.status !== 'pending') return { success: false, status: 410, error: 'Pairing session is not pending.' };
 
   // Transition to confirmed
   const authToken = user?.auth_token || generateFramerAuthToken(session.plugin_slug);
@@ -938,11 +975,11 @@ export async function confirmPairingSession(
     : null;
   session.updated_at = new Date(customNow).toISOString();
 
-  // Persist locally
-  syncPairingSessionLocally(session);
+  // Local fallback is development-only for Commerce.
+  if (!requiresCommercePersistence(session.plugin_slug)) syncPairingSessionLocally(session);
 
   try {
-    const { error: sbUpdateErr } = await supabase
+    const { data: confirmed, error: sbUpdateErr } = await supabase
       .from('framer_pairing_sessions')
       .update({
         status: 'confirmed',
@@ -950,15 +987,24 @@ export async function confirmPairingSession(
         user_data: session.user_data,
         updated_at: session.updated_at,
       })
-      .eq('user_code', normalizedCode);
+      .eq('user_code', normalizedCode)
+      .eq('plugin_slug', session.plugin_slug)
+      .eq('status', 'pending')
+      .select('id')
+      .maybeSingle();
+    if (requiresCommercePersistence(session.plugin_slug) && (sbUpdateErr || !confirmed)) {
+      return { success: false, status: 503, error: 'Could not persist pairing confirmation. Try again.' };
+    }
     if (sbUpdateErr) {
       console.warn('Supabase pairing confirm error:', sbUpdateErr);
     }
   } catch (sbErr) {
+    if (requiresCommercePersistence(session.plugin_slug)) return { success: false, status: 503, error: 'Pairing database unavailable.' };
     console.warn('Supabase pairing confirm exception:', sbErr);
   }
 
-  if (user?.id || user?.email) {
+  // Commerce reuses a live account token; never restore a stale token after rotation.
+  if (!isCommercePlugin(session.plugin_slug) && (user?.id || user?.email)) {
     try {
       let uQuery = supabase.from('framer_users').update({
         auth_token: session.auth_token,
@@ -1004,6 +1050,7 @@ export async function resolvePairingSession(
 
   // Look up session from Supabase first (distributed source of truth across serverless instances)
   let session: FramerPairingSessionRecord | null = null;
+  let persisted = false;
   try {
     const { data, error } = await supabase
       .from('framer_pairing_sessions')
@@ -1012,6 +1059,7 @@ export async function resolvePairingSession(
       .maybeSingle();
     if (!error && data) {
       session = data as FramerPairingSessionRecord;
+      persisted = true;
       syncPairingSessionLocally(session);
     }
   } catch {
@@ -1028,6 +1076,34 @@ export async function resolvePairingSession(
 
   if (!session) {
     return { success: false, status: 404, error: 'Invalid device code' };
+  }
+
+  if (!persisted && requiresCommercePersistence(session.plugin_slug)) {
+    return { success: false, status: 503, error: 'Pairing database unavailable.' };
+  }
+
+  if (requiresCommercePersistence(session.plugin_slug)) {
+    const expires = new Date(session.expires_at).getTime();
+    if (!Number.isFinite(expires) || customNow >= expires) return { success: false, status: 410, error: 'Session expired' };
+    const lastPoll = session.last_poll_at ? new Date(session.last_poll_at).getTime() : 0;
+    if (minIntervalMs > 0 && customNow - lastPoll < minIntervalMs) return { success: false, status: 429, error: 'slow_down', retry_in: 3 };
+    if (session.status === 'pending') return { success: true, status: 'authorization_pending', retry_in: 3 };
+    if (!['confirmed', 'consumed'].includes(session.status)) return { success: false, status: 410, error: 'Invalid session state' };
+    if (session.status === 'consumed' && customNow - new Date(session.updated_at).getTime() >= 120000) return { success: false, status: 410, error: 'Session token already consumed (replay prevented)' };
+    const account = session.auth_token ? await verifyFramerSessionToken(session.auth_token, session.plugin_slug) : null;
+    if (!account || account.id !== session.user_data?.id) return { success: false, status: 401, error: 'Plugin session is no longer active.' };
+    if (session.status === 'confirmed') {
+      try {
+        const { data, error } = await supabase.from('framer_pairing_sessions')
+          .update({ status: 'consumed', poll_count: (session.poll_count || 0) + 1, last_poll_at: new Date(customNow).toISOString(), updated_at: new Date(customNow).toISOString() })
+          .eq('id', session.id).eq('plugin_slug', session.plugin_slug).eq('status', 'confirmed').eq('auth_token', account.auth_token)
+          .select('id').maybeSingle();
+        if (error || !data) return { success: false, status: 503, error: 'Could not persist pairing resolution. Try again.' };
+      } catch {
+        return { success: false, status: 503, error: 'Pairing database unavailable.' };
+      }
+    }
+    return { success: true, status: 'success', auth_token: account.auth_token, user: { id: account.id, email: account.email, name: account.name, company_name: account.company_name, website_url: account.website_url, plan: account.plan, status: account.status, is_early_bird: false } };
   }
 
   // Rate limiting check
@@ -1120,6 +1196,15 @@ export async function getPairingSession(
   const cleanCode = code.trim();
   const upperCode = cleanCode.toUpperCase();
 
+  if (process.env.NODE_ENV === 'production') {
+    if (!/^(?:[a-f0-9]{64}|[A-Z]{2}-[A-Z2-9]{4})$/i.test(cleanCode)) return null;
+    try {
+      const { data, error } = await supabase.from('framer_pairing_sessions').select('*')
+        .or(`device_code.eq.${cleanCode},user_code.eq.${upperCode}`).maybeSingle();
+      return !error && data ? data as FramerPairingSessionRecord : null;
+    } catch { return null; }
+  }
+
   const memMatch =
     inMemoryPairingSessions.get(cleanCode) ||
     inMemoryPairingSessions.get(upperCode);
@@ -1191,15 +1276,17 @@ export async function sendAuthOtpCode(
 
   // 2. Persist in Supabase metadata (for existing or pending registrations)
   try {
-    const { data: userRecord } = await supabase
+    const { data: userRecord, error: lookupError } = await supabase
       .from('framer_users')
       .select('id, metadata')
       .eq('email', normalizedEmail)
       .eq('plugin_slug', plugin.slug)
       .maybeSingle();
 
+    if (lookupError && requiresCommercePersistence(plugin.slug)) throw lookupError;
+
     if (userRecord) {
-      await supabase
+      const { data: saved, error: writeError } = await supabase
         .from('framer_users')
         .update({
           metadata: {
@@ -1209,10 +1296,11 @@ export async function sendAuthOtpCode(
             otp_attempts: 0,
           },
         })
-        .eq('id', userRecord.id);
+        .eq('id', userRecord.id).eq('plugin_slug', plugin.slug).select('id').maybeSingle();
+      if (requiresCommercePersistence(plugin.slug) && (writeError || !saved)) throw new Error('Code could not be persisted.');
     } else {
       const now = new Date().toISOString();
-      await supabase
+      const { data: saved, error: writeError } = await supabase
         .from('framer_users')
         .insert({
           email: normalizedEmail,
@@ -1232,9 +1320,14 @@ export async function sendAuthOtpCode(
           created_at: now,
           updated_at: now,
           last_login_at: now,
-        });
+        }).select('id').single();
+      if (requiresCommercePersistence(plugin.slug) && (writeError || !saved)) throw new Error('Code could not be persisted.');
     }
   } catch (sbErr) {
+    if (requiresCommercePersistence(plugin.slug)) {
+      otpStore.delete(`${plugin.slug}:${normalizedEmail}`);
+      return { success: false, message: 'Account database unavailable. Please try again.' };
+    }
     console.warn('[OTP Store] Supabase sync notice:', sbErr);
   }
 
@@ -1453,16 +1546,18 @@ export async function requestAuthPasswordReset(
   // Persist in Supabase metadata if user exists
   let userName: string | undefined;
   try {
-    const { data: userRecord } = await supabase
+    const { data: userRecord, error: lookupError } = await supabase
       .from('framer_users')
       .select('id, name, metadata')
       .eq('email', normalizedEmail)
       .eq('plugin_slug', plugin.slug)
       .maybeSingle();
 
+    if (lookupError && requiresCommercePersistence(plugin.slug)) throw lookupError;
+
     if (userRecord) {
       userName = userRecord.name;
-      await supabase
+      const { data: saved, error: writeError } = await supabase
         .from('framer_users')
         .update({
           metadata: {
@@ -1472,9 +1567,14 @@ export async function requestAuthPasswordReset(
             reset_attempts: 0,
           },
         })
-        .eq('id', userRecord.id);
+        .eq('id', userRecord.id).eq('plugin_slug', plugin.slug).select('id').maybeSingle();
+      if (requiresCommercePersistence(plugin.slug) && (writeError || !saved)) throw new Error('Code could not be persisted.');
     }
   } catch (sbErr) {
+    if (requiresCommercePersistence(plugin.slug)) {
+      resetStore.delete(`${plugin.slug}:${normalizedEmail}`);
+      return { success: false, message: 'Account database unavailable. Please try again.' };
+    }
     console.warn('[Reset Store] Supabase sync notice:', sbErr);
   }
 
@@ -1575,7 +1675,7 @@ export async function resetAuthUserPassword(
   delete cleanMetadata.reset_code;
   delete cleanMetadata.reset_expires_at;
   const { error: resetError } = await supabase.from('framer_users').update({ metadata: cleanMetadata }).eq('id', account.id).eq('plugin_slug', plugin.slug);
-  if (resetError && plugin.slug === 'whatsapp-commerce') return { success: false, message: 'Could not reset password. Try again.' };
+  if (resetError && isCommercePlugin(plugin.slug)) return { success: false, message: 'Could not reset password. Try again.' };
   syncUserLocally({ ...account, metadata: cleanMetadata });
 
   const result = await createOrUpdateFramerUser({
@@ -1595,13 +1695,13 @@ export async function resetAuthUserPassword(
   };
 }
 
-/** Revoke the current WhatsApp Commerce account token. Pairing snapshots cannot restore it. */
+/** Revoke the current Commerce account token. Pairing snapshots cannot restore it. */
 export async function revokeCommerceSession(token: string): Promise<void> {
   if (!token) return;
-  const user = await verifyFramerSessionToken(token, 'whatsapp-commerce');
-  if (!user || user.plugin_slug !== 'whatsapp-commerce') return;
-  const replacement = generateFramerAuthToken('whatsapp-commerce');
-  const { error } = await supabase.from('framer_users').update({ auth_token: replacement }).eq('id', user.id).eq('auth_token', token).eq('plugin_slug', 'whatsapp-commerce');
+  const user = await verifyFramerSessionToken(token);
+  if (!user || !isCommercePlugin(user.plugin_slug)) return;
+  const replacement = generateFramerAuthToken(user.plugin_slug);
+  const { error } = await supabase.from('framer_users').update({ auth_token: replacement }).eq('id', user.id).eq('auth_token', token).eq('plugin_slug', user.plugin_slug);
   if (error) throw new Error('Could not sign out. Try again.');
   syncUserLocally({ ...user, auth_token: replacement });
 }

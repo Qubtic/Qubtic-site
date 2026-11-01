@@ -1,119 +1,164 @@
-import nodemailer from 'nodemailer';
-import fs from 'fs';
-import path from 'path';
-import {
-  FRAMEDROP_ICON_BASE64,
-  QUBEAUTH_ICON_BASE64,
-} from './logoAssets';
-import { getPluginMetadata } from './plugins-registry';
+import nodemailer from "nodemailer";
+import fs from "fs";
+import path from "path";
+import { FRAMEDROP_ICON_BASE64, QUBEAUTH_ICON_BASE64 } from "./logoAssets";
+import { getPluginMetadata } from "./plugins-registry";
 
-const WHATSAPP_COMMERCE_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="#f6deaf"/><path d="M8 10h16v13H8zM12 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#141822" stroke-width="2" stroke-linejoin="round"/><path d="m13 16 2 2 4-4" fill="none" stroke="#141822" stroke-width="2" stroke-linecap="round"/></svg>';
+const WHATSAPP_COMMERCE_ICON =
+	'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="#f6deaf"/><path d="M8 10h16v13H8zM12 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#141822" stroke-width="2" stroke-linejoin="round"/><path d="m13 16 2 2 4-4" fill="none" stroke="#141822" stroke-width="2" stroke-linecap="round"/></svg>';
 
-export const LOGO_CID = 'logo@qubtic.tech';
+export const LOGO_CID = "logo@qubtic.tech";
 
 /**
  * Strips data URI header and returns raw Buffer for inline CID attachments
  */
 function getIconBuffer(base64Data: string): Buffer {
-  const clean = base64Data.replace(/^data:image\/\w+;base64,/, '');
-  return Buffer.from(clean, 'base64');
+	const clean = base64Data.replace(/^data:image\/\w+;base64,/, "");
+	return Buffer.from(clean, "base64");
 }
 
 /**
  * Returns dynamic attachment array for the specified plugin
  */
-export function getPluginEmailAttachments(pluginSlug: string = 'frame-drop') {
-  if (pluginSlug === 'whatsapp-commerce') {
-    try {
-      const logoPath = path.join(process.cwd(), 'public', 'images', 'brand', 'whatsapp-commerce-logo.png');
-      if (fs.existsSync(logoPath)) {
-        return [{ filename: 'whatsapp-commerce-logo.png', content: fs.readFileSync(logoPath), cid: LOGO_CID, contentType: 'image/png', contentDisposition: 'inline' as const }];
-      }
-    } catch {}
-    return [{ filename: 'whatsapp-commerce.svg', content: Buffer.from(WHATSAPP_COMMERCE_ICON), cid: LOGO_CID, contentType: 'image/svg+xml', contentDisposition: 'inline' as const }];
-  }
-  const isQubeAuth = pluginSlug === 'qube-auth';
-  const iconBase64 = isQubeAuth ? QUBEAUTH_ICON_BASE64 : FRAMEDROP_ICON_BASE64;
-  const filename = isQubeAuth ? 'qube-auth-logo.png' : 'framedrop-logo.png';
+export function getPluginEmailAttachments(pluginSlug: string = "frame-drop") {
+	if (pluginSlug === "whatsapp-commerce") {
+		try {
+			const logoPath = path.join(
+				process.cwd(),
+				"public",
+				"images",
+				"brand",
+				"whatsapp-commerce-logo.png",
+			);
+			if (fs.existsSync(logoPath)) {
+				return [
+					{
+						filename: "whatsapp-commerce-logo.png",
+						content: fs.readFileSync(logoPath),
+						cid: LOGO_CID,
+						contentType: "image/png",
+						contentDisposition: "inline" as const,
+					},
+				];
+			}
+		} catch {}
+		return [
+			{
+				filename: "whatsapp-commerce.svg",
+				content: Buffer.from(WHATSAPP_COMMERCE_ICON),
+				cid: LOGO_CID,
+				contentType: "image/svg+xml",
+				contentDisposition: "inline" as const,
+			},
+		];
+	}
+	if (pluginSlug === "telegram-commerce") {
+		const logoPath = path.join(
+			process.cwd(),
+			"public",
+			"images",
+			"brand",
+			"telegram-commerce-icon.svg",
+		);
+		return [
+			{
+				filename: "telegram-commerce-icon.svg",
+				content: fs.readFileSync(logoPath),
+				cid: LOGO_CID,
+				contentType: "image/svg+xml",
+				contentDisposition: "inline" as const,
+			},
+		];
+	}
+	const isQubeAuth = pluginSlug === "qube-auth";
+	const iconBase64 = isQubeAuth ? QUBEAUTH_ICON_BASE64 : FRAMEDROP_ICON_BASE64;
+	const filename = isQubeAuth ? "qube-auth-logo.png" : "framedrop-logo.png";
 
-  return [
-    {
-      filename,
-      content: getIconBuffer(iconBase64),
-      cid: LOGO_CID,
-      contentType: 'image/png',
-      contentDisposition: 'inline' as const,
-    },
-  ];
+	return [
+		{
+			filename,
+			content: getIconBuffer(iconBase64),
+			cid: LOGO_CID,
+			contentType: "image/png",
+			contentDisposition: "inline" as const,
+		},
+	];
 }
 
 /**
  * Configures and returns Nodemailer transporter using Mailgun SMTP
  */
 export function getMailTransporter() {
-  const host = process.env.SMTP_HOST || 'smtp.mailgun.org';
-  const port = parseInt(process.env.SMTP_PORT || '587', 10);
-  const secure = process.env.SMTP_SECURE === 'true' || port === 465;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  if (!user || !pass) throw new Error('SMTP credentials are not configured.');
+	const host = process.env.SMTP_HOST || "smtp.mailgun.org";
+	const port = parseInt(process.env.SMTP_PORT || "587", 10);
+	const secure = process.env.SMTP_SECURE === "true" || port === 465;
+	const user = process.env.SMTP_USER;
+	const pass = process.env.SMTP_PASS;
+	if (!user || !pass) throw new Error("SMTP credentials are not configured.");
 
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: {
-      user,
-      pass,
-    },
-    tls: {
-      rejectUnauthorized: true,
-    },
-  });
+	return nodemailer.createTransport({
+		host,
+		port,
+		secure,
+		auth: {
+			user,
+			pass,
+		},
+		tls: {
+			rejectUnauthorized: true,
+		},
+	});
 }
 
 /**
  * Verifies live SMTP connectivity
  */
-export async function verifySmtpConnection(): Promise<{ success: boolean; message: string }> {
-  try {
-    const transporter = getMailTransporter();
-    await transporter.verify();
-    return {
-      success: true,
-      message: `SMTP connected successfully to ${process.env.SMTP_HOST || 'smtp.mailgun.org'}:${process.env.SMTP_PORT || '587'}`,
-    };
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Unknown SMTP verification error';
-    return { success: false, message: msg };
-  }
+export async function verifySmtpConnection(): Promise<{
+	success: boolean;
+	message: string;
+}> {
+	try {
+		const transporter = getMailTransporter();
+		await transporter.verify();
+		return {
+			success: true,
+			message: `SMTP connected successfully to ${process.env.SMTP_HOST || "smtp.mailgun.org"}:${process.env.SMTP_PORT || "587"}`,
+		};
+	} catch (err: unknown) {
+		const msg =
+			err instanceof Error ? err.message : "Unknown SMTP verification error";
+		return { success: false, message: msg };
+	}
 }
 
 /**
  * Returns sender display name and email
  */
-export function getSender(pluginSlug: string = 'frame-drop'): string {
-  const plugin = getPluginMetadata(pluginSlug);
-  const fromEmail = process.env.SMTP_FROM_EMAIL || 'hello@qubtic.tech';
-  return `"${plugin.name} by Qubtic" <${fromEmail}>`;
+export function getSender(pluginSlug: string = "frame-drop"): string {
+	const plugin = getPluginMetadata(pluginSlug);
+	const fromEmail = process.env.SMTP_FROM_EMAIL || "hello@qubtic.tech";
+	return `"${plugin.name} by Qubtic" <${fromEmail}>`;
 }
 
 // -----------------------------------------------------------------------------
 // 1. Account Verification / OTP Email Template
 // -----------------------------------------------------------------------------
 export function generateVerificationEmailHtml(
-  code: string,
-  recipientName?: string,
-  pluginSlug: string = 'frame-drop',
-  logoSrc: string = `cid:${LOGO_CID}`
+	code: string,
+	recipientName?: string,
+	pluginSlug: string = "frame-drop",
+	logoSrc: string = `cid:${LOGO_CID}`,
 ): string {
-  const plugin = getPluginMetadata(pluginSlug);
-  const greeting = recipientName && recipientName.trim() ? `Hi ${recipientName.trim()},` : 'Hello,';
-  const brandBarColor = '#164E33';
-  const badgeColor = '#86EFAC';
-  const accentBorder = plugin.slug === 'qube-auth' ? '#164E33' : '#164E33';
+	const plugin = getPluginMetadata(pluginSlug);
+	const greeting =
+		recipientName && recipientName.trim()
+			? `Hi ${recipientName.trim()},`
+			: "Hello,";
+	const brandBarColor = "#164E33";
+	const badgeColor = "#86EFAC";
+	const accentBorder = plugin.slug === "qube-auth" ? "#164E33" : "#164E33";
 
-  return `
+	return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -127,7 +172,7 @@ export function generateVerificationEmailHtml(
       <td align="center">
         <!-- Main Container (520px) -->
         <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px; background-color: #FFFFFF; border: 1px solid #D1DDD6; border-radius: 18px; overflow: hidden; box-shadow: 0 16px 36px -10px rgba(22, 78, 51, 0.15);">
-          
+
           <!-- BRAND TOP BAR (#164E33) -->
           <tr>
             <td style="background-color: ${brandBarColor}; padding: 18px 28px;">
@@ -228,15 +273,18 @@ export function generateVerificationEmailHtml(
 // 2. Password Reset Email Template
 // -----------------------------------------------------------------------------
 export function generatePasswordResetEmailHtml(
-  code: string,
-  recipientName?: string,
-  pluginSlug: string = 'frame-drop',
-  logoSrc: string = `cid:${LOGO_CID}`
+	code: string,
+	recipientName?: string,
+	pluginSlug: string = "frame-drop",
+	logoSrc: string = `cid:${LOGO_CID}`,
 ): string {
-  const plugin = getPluginMetadata(pluginSlug);
-  const greeting = recipientName && recipientName.trim() ? `Hi ${recipientName.trim()},` : 'Hello,';
+	const plugin = getPluginMetadata(pluginSlug);
+	const greeting =
+		recipientName && recipientName.trim()
+			? `Hi ${recipientName.trim()},`
+			: "Hello,";
 
-  return `
+	return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -249,7 +297,7 @@ export function generatePasswordResetEmailHtml(
     <tr>
       <td align="center">
         <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px; background-color: #FFFFFF; border: 1px solid #D1DDD6; border-radius: 18px; overflow: hidden; box-shadow: 0 16px 36px -10px rgba(22, 78, 51, 0.15);">
-          
+
           <!-- BRAND TOP BAR (#164E33) -->
           <tr>
             <td style="background-color: #164E33; padding: 18px 28px;">
@@ -351,60 +399,76 @@ export function generatePasswordResetEmailHtml(
 // Executive modular card design based on reference layout (Nishar Multani / Basis card layout)
 // -----------------------------------------------------------------------------
 export function generateNewUserTeamNotificationEmailHtml(
-  user: {
-    id?: string;
-    email: string;
-    name?: string | null;
-    company_name?: string | null;
-    website_url?: string | null;
-    plugin_name?: string | null;
-    plugin_slug?: string | null;
-    plan?: string | null;
-    role?: string | null;
-    created_at?: string | Date;
-    createdAt?: string | Date;
-  },
-  meta?: {
-    origin?: string;
-    framerUserId?: string;
-    framerSiteUrl?: string;
-    authMode?: string;
-    pairingCode?: string;
-  },
-  pluginSlug: string = 'frame-drop',
-  logoSrc: string = `cid:${LOGO_CID}`
+	user: {
+		id?: string;
+		email: string;
+		name?: string | null;
+		company_name?: string | null;
+		website_url?: string | null;
+		plugin_name?: string | null;
+		plugin_slug?: string | null;
+		plan?: string | null;
+		role?: string | null;
+		created_at?: string | Date;
+		createdAt?: string | Date;
+	},
+	meta?: {
+		origin?: string;
+		framerUserId?: string;
+		framerSiteUrl?: string;
+		authMode?: string;
+		pairingCode?: string;
+	},
+	pluginSlug: string = "frame-drop",
+	logoSrc: string = `cid:${LOGO_CID}`,
 ): string {
-  const plugin = getPluginMetadata(user.plugin_slug || pluginSlug);
-  const dateRaw = user.created_at || user.createdAt;
-  const now = dateRaw ? new Date(dateRaw) : new Date();
+	const plugin = getPluginMetadata(user.plugin_slug || pluginSlug);
+	const dateRaw = user.created_at || user.createdAt;
+	const now = dateRaw ? new Date(dateRaw) : new Date();
 
-  const dateOptions: Intl.DateTimeFormatOptions = {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  };
-  const formattedDate = now.toLocaleDateString('en-US', dateOptions);
-  const formattedTime = now.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    timeZoneName: 'short',
-  });
+	const dateOptions: Intl.DateTimeFormatOptions = {
+		weekday: "long",
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+	};
+	const formattedDate = now.toLocaleDateString("en-US", dateOptions);
+	const formattedTime = now.toLocaleTimeString("en-US", {
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
+		timeZoneName: "short",
+	});
 
-  const userName = user.name && user.name.trim() !== '' ? user.name.trim() : 'Not specified';
-  const userEmail = user.email;
-  const userId = user.id || 'Auto-assigned';
-  const shortId = userId.length > 8 ? userId.substring(0, 8).toUpperCase() : userId.toUpperCase();
-  const userRole = (user.role || 'user').toUpperCase();
-  const planName = (user.plan || 'pro').toUpperCase();
-  const companyName = user.company_name && user.company_name.trim() !== '' ? user.company_name.trim() : 'Not specified';
-  const websiteUrl = user.website_url && user.website_url.trim() !== '' ? user.website_url.trim() : 'Not specified';
-  const framerUserId = meta?.framerUserId && meta.framerUserId.trim() !== '' ? meta.framerUserId.trim() : 'usr_framer_studio';
-  const framerSiteUrl = meta?.framerSiteUrl || meta?.origin || `https://framer.com/projects/${plugin.name}-Studio`;
-  const authMode = meta?.authMode || 'Passwordless Web Auth';
+	const userName =
+		user.name && user.name.trim() !== "" ? user.name.trim() : "Not specified";
+	const userEmail = user.email;
+	const userId = user.id || "Auto-assigned";
+	const shortId =
+		userId.length > 8
+			? userId.substring(0, 8).toUpperCase()
+			: userId.toUpperCase();
+	const userRole = (user.role || "user").toUpperCase();
+	const planName = (user.plan || "pro").toUpperCase();
+	const companyName =
+		user.company_name && user.company_name.trim() !== ""
+			? user.company_name.trim()
+			: "Not specified";
+	const websiteUrl =
+		user.website_url && user.website_url.trim() !== ""
+			? user.website_url.trim()
+			: "Not specified";
+	const framerUserId =
+		meta?.framerUserId && meta.framerUserId.trim() !== ""
+			? meta.framerUserId.trim()
+			: "usr_framer_studio";
+	const framerSiteUrl =
+		meta?.framerSiteUrl ||
+		meta?.origin ||
+		`https://framer.com/projects/${plugin.name}-Studio`;
+	const authMode = meta?.authMode || "Passwordless Web Auth";
 
-  return `
+	return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -418,7 +482,7 @@ export function generateNewUserTeamNotificationEmailHtml(
       <td align="center">
         <!-- 540px Executive Modular Card Container -->
         <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 540px; background-color: #FFFFFF; border: 1px solid #D1DDD6; border-radius: 18px; overflow: hidden; box-shadow: 0 18px 40px -12px rgba(22, 78, 51, 0.18);">
-          
+
           <!-- 1. TOP BRAND HEADER BAR (#164E33) -->
           <tr>
             <td style="background-color: #164E33; padding: 18px 24px; border-bottom: 2px solid #0E3622;">
@@ -456,7 +520,7 @@ export function generateNewUserTeamNotificationEmailHtml(
           <!-- 2. HERO STATUS CARD -->
           <tr>
             <td style="padding: 28px 24px 24px 24px; background: linear-gradient(180deg, #EAF7F0 0%, #F5FBF7 100%); border-bottom: 1px solid #D5E5DC; text-align: center;">
-              
+
               <!-- Circular Status Badge Icon -->
               <div style="width: 48px; height: 48px; margin: 0 auto 12px auto; background-color: #FFFFFF; border: 2px solid #164E33; border-radius: 50%; text-align: center; line-height: 48px; box-shadow: 0 6px 14px rgba(22, 78, 51, 0.12);">
                 <span style="font-size: 22px; color: #164E33; line-height: 48px; display: inline-block;">✓</span>
@@ -466,7 +530,7 @@ export function generateNewUserTeamNotificationEmailHtml(
               <h1 style="margin: 0 0 6px 0; font-size: 21px; font-weight: 800; color: #0F291C; letter-spacing: -0.3px;">
                 New Member Provisioned
               </h1>
-              
+
               <!-- Subtitle -->
               <p style="margin: 0 0 18px 0; font-size: 13.5px; line-height: 20px; color: #475569; max-width: 420px; margin-left: auto; margin-right: auto;">
                 A new user has successfully verified their identity via <strong>${authMode}</strong> and joined the <strong>${plugin.name}</strong> platform.
@@ -502,7 +566,7 @@ export function generateNewUserTeamNotificationEmailHtml(
                 <div style="font-size: 10.5px; font-weight: 800; color: #164E33; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid #E2E8F0; padding-bottom: 8px;">
                   MEMBER PROFILE & IDENTITY
                 </div>
-                
+
                 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
                   <tr>
                     <td style="padding: 6px 0; font-size: 12px; color: #64748B; font-weight: 500; width: 130px;">Full Name</td>
@@ -587,7 +651,7 @@ export function generateNewUserTeamNotificationEmailHtml(
           <!-- 4. BOTTOM FOOTER BAR (#164E33) -->
           <tr>
             <td style="background-color: #164E33; padding: 22px 24px; text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-              
+
               <!-- Quick Links -->
               <div style="margin-bottom: 10px;">
                 <a href="https://qubtic.tech" style="color: #E2E8F0; text-decoration: none; font-size: 11px; font-weight: 700; margin: 0 8px; letter-spacing: 0.5px;" target="_blank">PORTAL</a>
@@ -622,17 +686,17 @@ export function generateNewUserTeamNotificationEmailHtml(
 // 4. Team Member Invitation Email Template
 // -----------------------------------------------------------------------------
 export function generateTeamInviteEmailHtml(
-  inviteeEmail: string,
-  inviterName: string = 'Team Administrator',
-  teamName: string = 'Workspace',
-  pluginSlug: string = 'frame-drop',
-  inviteLink: string = 'https://qubtic.tech/auth',
-  role: string = 'Editor',
-  logoSrc: string = `cid:${LOGO_CID}`
+	inviteeEmail: string,
+	inviterName: string = "Team Administrator",
+	teamName: string = "Workspace",
+	pluginSlug: string = "frame-drop",
+	inviteLink: string = "https://qubtic.tech/auth",
+	role: string = "Editor",
+	logoSrc: string = `cid:${LOGO_CID}`,
 ): string {
-  const plugin = getPluginMetadata(pluginSlug);
+	const plugin = getPluginMetadata(pluginSlug);
 
-  return `
+	return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -645,7 +709,7 @@ export function generateTeamInviteEmailHtml(
     <tr>
       <td align="center">
         <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px; background-color: #FFFFFF; border: 1px solid #D1DDD6; border-radius: 18px; overflow: hidden; box-shadow: 0 16px 36px -10px rgba(22, 78, 51, 0.15);">
-          
+
           <!-- TOP BAR -->
           <tr>
             <td style="background-color: #164E33; padding: 18px 28px;">
@@ -732,126 +796,138 @@ export function generateTeamInviteEmailHtml(
  * Sends a 6-digit verification / OTP email with inline brand logo
  */
 export async function sendVerificationEmail(
-  to: string,
-  code: string,
-  name?: string,
-  pluginSlug: string = 'frame-drop'
+	to: string,
+	code: string,
+	name?: string,
+	pluginSlug: string = "frame-drop",
 ): Promise<{ messageId: string }> {
-  const plugin = getPluginMetadata(pluginSlug);
-  const transporter = getMailTransporter();
-  const html = generateVerificationEmailHtml(code, name, plugin.slug);
-  const attachments = getPluginEmailAttachments(plugin.slug);
-  const from = getSender(plugin.slug);
+	const plugin = getPluginMetadata(pluginSlug);
+	const transporter = getMailTransporter();
+	const html = generateVerificationEmailHtml(code, name, plugin.slug);
+	const attachments = getPluginEmailAttachments(plugin.slug);
+	const from = getSender(plugin.slug);
 
-  const info = await transporter.sendMail({
-    from,
-    to,
-    subject: `Your ${plugin.name} Verification Code: ${code} (Qubtic)`,
-    text: `Your ${plugin.name} (by Qubtic) verification code is ${code}. It expires in 10 minutes.`,
-    html,
-    attachments,
-  });
+	const info = await transporter.sendMail({
+		from,
+		to,
+		subject: `Your ${plugin.name} Verification Code: ${code} (Qubtic)`,
+		text: `Your ${plugin.name} (by Qubtic) verification code is ${code}. It expires in 10 minutes.`,
+		html,
+		attachments,
+	});
 
-  return { messageId: info.messageId };
+	return { messageId: info.messageId };
 }
 
 /**
  * Sends a 6-digit password reset email with inline brand logo
  */
 export async function sendPasswordResetEmail(
-  to: string,
-  code: string,
-  name?: string,
-  pluginSlug: string = 'frame-drop'
+	to: string,
+	code: string,
+	name?: string,
+	pluginSlug: string = "frame-drop",
 ): Promise<{ messageId: string }> {
-  const plugin = getPluginMetadata(pluginSlug);
-  const transporter = getMailTransporter();
-  const html = generatePasswordResetEmailHtml(code, name, plugin.slug);
-  const attachments = getPluginEmailAttachments(plugin.slug);
-  const from = getSender(plugin.slug);
+	const plugin = getPluginMetadata(pluginSlug);
+	const transporter = getMailTransporter();
+	const html = generatePasswordResetEmailHtml(code, name, plugin.slug);
+	const attachments = getPluginEmailAttachments(plugin.slug);
+	const from = getSender(plugin.slug);
 
-  const info = await transporter.sendMail({
-    from,
-    to,
-    subject: `Your ${plugin.name} Password Reset Code: ${code} (Qubtic)`,
-    text: `Your ${plugin.name} (by Qubtic) password reset code is ${code}. It expires in 15 minutes.`,
-    html,
-    attachments,
-  });
+	const info = await transporter.sendMail({
+		from,
+		to,
+		subject: `Your ${plugin.name} Password Reset Code: ${code} (Qubtic)`,
+		text: `Your ${plugin.name} (by Qubtic) password reset code is ${code}. It expires in 15 minutes.`,
+		html,
+		attachments,
+	});
 
-  return { messageId: info.messageId };
+	return { messageId: info.messageId };
 }
 
 /**
  * Dispatches automated new user team notification to Qubtic team
  */
 export async function sendNewUserTeamNotification(
-  user: {
-    id?: string;
-    email: string;
-    name?: string | null;
-    company_name?: string | null;
-    website_url?: string | null;
-    plugin_name?: string | null;
-    plugin_slug?: string | null;
-    plan?: string | null;
-    role?: string | null;
-    created_at?: string | Date;
-    createdAt?: string | Date;
-  },
-  meta?: {
-    origin?: string;
-    framerUserId?: string;
-    framerSiteUrl?: string;
-    authMode?: string;
-    pairingCode?: string;
-  },
-  pluginSlug: string = 'frame-drop'
+	user: {
+		id?: string;
+		email: string;
+		name?: string | null;
+		company_name?: string | null;
+		website_url?: string | null;
+		plugin_name?: string | null;
+		plugin_slug?: string | null;
+		plan?: string | null;
+		role?: string | null;
+		created_at?: string | Date;
+		createdAt?: string | Date;
+	},
+	meta?: {
+		origin?: string;
+		framerUserId?: string;
+		framerSiteUrl?: string;
+		authMode?: string;
+		pairingCode?: string;
+	},
+	pluginSlug: string = "frame-drop",
 ): Promise<{ messageId: string }> {
-  const plugin = getPluginMetadata(user.plugin_slug || pluginSlug);
-  const transporter = getMailTransporter();
-  const html = generateNewUserTeamNotificationEmailHtml(user, meta, plugin.slug);
-  const attachments = getPluginEmailAttachments(plugin.slug);
-  const from = getSender(plugin.slug);
-  const targetEmail = process.env.TEAM_NOTIFICATION_EMAIL || 'hello@qubtic.tech';
+	const plugin = getPluginMetadata(user.plugin_slug || pluginSlug);
+	const transporter = getMailTransporter();
+	const html = generateNewUserTeamNotificationEmailHtml(
+		user,
+		meta,
+		plugin.slug,
+	);
+	const attachments = getPluginEmailAttachments(plugin.slug);
+	const from = getSender(plugin.slug);
+	const targetEmail =
+		process.env.TEAM_NOTIFICATION_EMAIL || "hello@qubtic.tech";
 
-  const info = await transporter.sendMail({
-    from,
-    to: targetEmail,
-    subject: `🚀 New Member: ${user.name || user.email} via ${plugin.name} | Qubtic Team Alert`,
-    text: `New member registered on ${plugin.name} (Qubtic)!\nEmail: ${user.email}\nName: ${user.name || 'N/A'}\nPlugin: ${plugin.name} (${plugin.slug})\nID: ${user.id || 'N/A'}\nCreated: ${user.created_at || user.createdAt || new Date().toISOString()}\nTeam alert sent to: ${targetEmail}`,
-    html,
-    attachments,
-  });
+	const info = await transporter.sendMail({
+		from,
+		to: targetEmail,
+		subject: `🚀 New Member: ${user.name || user.email} via ${plugin.name} | Qubtic Team Alert`,
+		text: `New member registered on ${plugin.name} (Qubtic)!\nEmail: ${user.email}\nName: ${user.name || "N/A"}\nPlugin: ${plugin.name} (${plugin.slug})\nID: ${user.id || "N/A"}\nCreated: ${user.created_at || user.createdAt || new Date().toISOString()}\nTeam alert sent to: ${targetEmail}`,
+		html,
+		attachments,
+	});
 
-  return { messageId: info.messageId };
+	return { messageId: info.messageId };
 }
 
 /**
  * Sends a team member invitation email
  */
 export async function sendTeamInviteEmail(
-  to: string,
-  inviterName: string = 'Team Administrator',
-  teamName: string = 'Workspace',
-  pluginSlug: string = 'frame-drop',
-  inviteLink: string = 'https://qubtic.tech/auth',
-  role: string = 'Editor'
+	to: string,
+	inviterName: string = "Team Administrator",
+	teamName: string = "Workspace",
+	pluginSlug: string = "frame-drop",
+	inviteLink: string = "https://qubtic.tech/auth",
+	role: string = "Editor",
 ): Promise<{ messageId: string }> {
-  const plugin = getPluginMetadata(pluginSlug);
-  const transporter = getMailTransporter();
-  const html = generateTeamInviteEmailHtml(to, inviterName, teamName, plugin.slug, inviteLink, role);
-  const attachments = getPluginEmailAttachments(plugin.slug);
-  const from = getSender(plugin.slug);
+	const plugin = getPluginMetadata(pluginSlug);
+	const transporter = getMailTransporter();
+	const html = generateTeamInviteEmailHtml(
+		to,
+		inviterName,
+		teamName,
+		plugin.slug,
+		inviteLink,
+		role,
+	);
+	const attachments = getPluginEmailAttachments(plugin.slug);
+	const from = getSender(plugin.slug);
 
-  const info = await transporter.sendMail({
-    from,
-    to,
-    subject: `You've been invited to join ${teamName} on ${plugin.name}`,
-    text: `${inviterName} has invited you to join ${teamName} on ${plugin.name} as ${role}. Accept your invitation here: ${inviteLink}`,
-    html,
-    attachments,
-  });
+	const info = await transporter.sendMail({
+		from,
+		to,
+		subject: `You've been invited to join ${teamName} on ${plugin.name}`,
+		text: `${inviterName} has invited you to join ${teamName} on ${plugin.name} as ${role}. Accept your invitation here: ${inviteLink}`,
+		html,
+		attachments,
+	});
 
-  return { messageId: info.messageId };
+	return { messageId: info.messageId };
 }
