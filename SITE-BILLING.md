@@ -1,6 +1,6 @@
-# WhatsApp Commerce: one site per purchase
+# Commerce plugins: one site per purchase
 
-WhatsApp Commerce Pro is scoped to `(billing customer, plugin, Framer project ID)`.
+WhatsApp Commerce and Telegram Commerce Pro are scoped to `(billing customer, plugin, Framer project ID)`.
 Monthly, yearly, and lifetime purchases each unlock only the site used to start checkout.
 Other Qubtic plugins retain their existing billing policy.
 
@@ -16,9 +16,10 @@ site even when the short-lived entitlement verification has expired.
 1. Back up the database. Apply `supabase/billing.sql`, then
    `supabase/billing_discounts.sql` if not already installed.
 2. Apply `supabase/billing_sites.sql`. This is repeatable and service-role-only.
-3. Deploy Qubtic's site-aware API/webhook code and rebuild/reinstall WhatsApp Commerce.
+3. Apply `supabase/billing_telegram_sites.sql` after the older billing migrations to support both commerce plugins. Do not reapply `billing_sites.sql` afterward. See `TELEGRAM_BILLING.md` for catalog configuration and checkout behavior.
+4. Deploy Qubtic's site-aware API/webhook code and rebuild/reinstall commerce plugins as needed.
    Older plugin builds do not send site IDs and will remain Free.
-4. Refresh billing and run an account-linked sandbox purchase on Site A. Confirm
+5. Refresh billing and run an account-linked sandbox purchase on Site A. Confirm
    purchase history and Pro there, then open Site B with the same account and confirm
    it remains Free. Test renewals, full refunds, expiry, and a missed webhook followed
    by Refresh billing. No real payment has been tested by local/mock verification.

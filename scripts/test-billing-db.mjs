@@ -82,38 +82,273 @@ test('discount migration stores provider subtotal, discount and charged amount i
 });
 
 
-test('site migration is repeatable, denies other sites, and atomically revokes refunded access',async()=>{
- const db=await setup();try{
- for(const file of ['billing_discounts.sql','billing_sites.sql','billing_sites.sql'])await db.exec(await readFile(new URL('../supabase/'+file,import.meta.url),'utf8'));
- const user=randomUUID(),customer=randomUUID(),product=randomUUID();
- await db.query("insert into framer_users(id,email,plugin_slug,auth_token,metadata)values($1,'site@example.test','whatsapp-commerce','site-token',$2)",[user,JSON.stringify({email_verified:true})]);
- await db.query("insert into billing_customers(id,email,environment)values($1,'site@example.test','sandbox')",[customer]);
- await db.query("insert into billing_memberships values($1,'sandbox',$2,'whatsapp-commerce')",[user,customer]);
- await db.query("insert into billing_catalog values('whatsapp-commerce','lifetime','sandbox',$1,$2,true)",[product,randomUUID()]);
- await db.query("insert into billing_checkouts(user_id,customer_id,environment,plugin_slug,cadence,product_id,request_key,site_id,polar_checkout_id) values($1,$2,'sandbox','whatsapp-commerce','lifetime',$3,$4,'site-a','checkout-a')",[user,customer,product,randomUUID()]);
- await assert.rejects(()=>db.exec("update billing_checkouts set site_id='site-b'"));
- const order={id:'order',plugin_slug:'whatsapp-commerce',cadence:'lifetime',product_id:product,status:'paid',amount:100,refunded_amount:0,currency:'usd',created_at:new Date().toISOString(),checkout_id:'checkout-a',site_id:'site-a'};
- const grant={plugin_slug:'whatsapp-commerce',site_id:'site-a'};
- const time=Date.now();
- const apply=(offset,grants,orders)=>db.query('select billing_apply_site_snapshot($1,$2,$3,$4,$5,$6,$7) as applied',[customer,new Date(time+offset).toISOString(),'polar',JSON.stringify([{plugin_slug:'whatsapp-commerce'}]),JSON.stringify(orders),'[]',JSON.stringify(grants)]);
- assert.equal((await apply(0,[grant],[order])).rows[0].applied,true);
- assert.equal((await db.query('select billing_site_has_purchase($1,$2) as paid',[customer,'site-a'])).rows[0].paid,true);
- await assert.rejects(()=>db.query("insert into billing_checkouts(user_id,customer_id,environment,plugin_slug,cadence,product_id,request_key,site_id)values($1,$2,'sandbox','whatsapp-commerce','lifetime',$3,$4,'site-a')",[user,customer,product,randomUUID()]));
- assert.equal((await db.query('select billing_site_has_purchase($1,$2) as paid',[customer,'site-b'])).rows[0].paid,false);
- assert.equal((await db.query("select is_pro from plugin_entitlements where plugin_slug='whatsapp-commerce'")).rows.length,0);
- const access=async(site,env='sandbox')=>(await db.query("select billing_site_access($1,'whatsapp-commerce',$2,$3) as pro",[user,env,site])).rows[0].pro;
- assert.equal(await access('site-a'),true);
- await db.exec("update billing_site_entitlements set verified_until=now()-interval '1 minute'");
- assert.equal(await access('site-a'),false);
- assert.equal((await db.query('select billing_site_has_purchase($1,$2) as paid',[customer,'site-a'])).rows[0].paid,true);
- await apply(500,[grant],[order]);
- assert.equal(await access('site-a'),true);assert.equal(await access('site-b'),false);assert.equal(await access(null),false);assert.equal(await access('site-a','production'),false);
- await apply(1000,[],[{...order,status:'refunded',refunded_amount:100}]);
- assert.equal((await db.query('select billing_site_has_purchase($1,$2) as paid',[customer,'site-a'])).rows[0].paid,false);
- assert.equal(await access('site-a'),false);
- assert.equal((await apply(0,[grant],[order])).rows[0].applied,false);assert.equal(await access('site-a'),false);
- await assert.rejects(()=>apply(2000,[{...grant,site_id:'site-b'}],[order]));
- assert.equal(await access('site-b'),false);
- assert.equal((await db.query("select has_function_privilege('anon','billing_site_access(uuid,text,text,text)','EXECUTE') as allowed")).rows[0].allowed,false);
- }finally{await db.close();}
+test("commerce SQL isolates plugins sharing a customer and site, preserves upgrades and RPC permissions", async () => {
+	const db = await setup();
+	try {
+		for (const file of [
+			"billing_discounts.sql",
+			"billing_sites.sql",
+			"billing_telegram_sites.sql",
+		])
+			await db.exec(
+				await readFile(new URL("../supabase/" + file, import.meta.url), "utf8"),
+			);
+		const customer = randomUUID(),
+			user = randomUUID(),
+			product = randomUUID();
+		await db.query(
+			"insert into billing_customers(id,email,environment)values($1,'both@example.test','sandbox')",
+			[customer],
+		);
+		await db.query(
+			"insert into framer_users(id,email,plugin_slug,auth_token,metadata)values($1,'both@example.test','telegram-commerce','both-token','{\"email_verified\":true}')",
+			[user],
+		);
+		await db.query(
+			"insert into billing_memberships values($1,'sandbox',$2,'telegram-commerce')",
+			[user, customer],
+		);
+		const checkout = (plugin, site, cadence = "monthly") =>
+			db.query(
+				"insert into billing_checkouts(user_id,customer_id,environment,plugin_slug,cadence,product_id,request_key,site_id)values($1,$2,'sandbox',$3,$4,$5,$6,$7)",
+				[user, customer, plugin, cadence, product, randomUUID(), site],
+			);
+		await checkout("whatsapp-commerce", "site-a");
+		await checkout("telegram-commerce", "site-a");
+		await assert.rejects(() => checkout("telegram-commerce", "site-a"));
+		await db.exec("update billing_checkouts set status='succeeded'");
+		await db.query(
+			"insert into billing_orders(environment,polar_order_id,customer_id,plugin_slug,cadence,product_id,status,amount,subtotal_amount,currency,purchased_at,site_id)values('sandbox','wa-order',$1,'whatsapp-commerce','lifetime',$2,'paid',100,100,'usd',now(),'site-a')",
+			[customer, product],
+		);
+		const purchase = async (plugin) =>
+			(
+				await db.query("select billing_site_has_purchase($1,$2,$3) as paid", [
+					customer,
+					"site-a",
+					plugin,
+				])
+			).rows[0].paid;
+		assert.equal(await purchase("whatsapp-commerce"), true);
+		assert.equal(await purchase("telegram-commerce"), false);
+		assert.equal(
+			(
+				await db.query(
+					"select billing_site_has_purchase($1,'site-a') as paid",
+					[customer],
+				)
+			).rows[0].paid,
+			true,
+		);
+		await checkout("telegram-commerce", "site-a");
+		await assert.rejects(() => checkout("whatsapp-commerce", "site-a"));
+		await db.exec("update billing_checkouts set status='succeeded'");
+		await db.query(
+			"insert into billing_site_entitlements(customer_id,plugin_slug,site_id,is_pro,verified_until)values($1,'whatsapp-commerce','site-a',true,now()+interval '1 hour')",
+			[customer],
+		);
+		assert.equal(
+			(
+				await db.query(
+					"select billing_site_access($1,'telegram-commerce','sandbox','site-a') as pro",
+					[user],
+				)
+			).rows[0].pro,
+			false,
+		);
+		await db.query(
+			"insert into billing_subscriptions values('sandbox','tg-sub',$1,'telegram-commerce','monthly','active',now()+interval '1 hour',false,'site-a')",
+			[customer],
+		);
+		assert.equal(await purchase("telegram-commerce"), true);
+		await assert.rejects(() =>
+			checkout("telegram-commerce", "site-a", "monthly"),
+		);
+		await checkout("telegram-commerce", "site-a", "yearly");
+		await db.exec(
+			"update billing_checkouts set status='succeeded';update billing_subscriptions set cadence='yearly'",
+		);
+		await assert.rejects(() =>
+			checkout("telegram-commerce", "site-a", "yearly"),
+		);
+		await checkout("telegram-commerce", "site-a", "lifetime");
+		for (const role of ["anon", "authenticated"]) {
+			const { rows } = await db.query(
+				`select has_function_privilege('${role}','billing_site_has_purchase(uuid,text,text)','EXECUTE') as rpc,has_table_privilege('${role}','telegram_commerce_plugin_payments','SELECT') as payments`,
+			);
+			assert.deepEqual(rows[0], { rpc: false, payments: false });
+		}
+	} finally {
+		await db.close();
+	}
 });
+
+for (const plugin of ["whatsapp-commerce", "telegram-commerce"])
+	test(`${plugin} site migration is repeatable, isolated, and atomically revokes refunded access`, async () => {
+		const db = await setup();
+		try {
+			for (const file of [
+				"billing_discounts.sql",
+				"billing_sites.sql",
+				"billing_sites.sql",
+				"billing_telegram_sites.sql",
+				"billing_telegram_sites.sql",
+			])
+				await db.exec(
+					await readFile(
+						new URL("../supabase/" + file, import.meta.url),
+						"utf8",
+					),
+				);
+			const user = randomUUID(),
+				customer = randomUUID(),
+				product = randomUUID();
+			await db.query(
+				"insert into framer_users(id,email,plugin_slug,auth_token,metadata)values($1,'site@example.test',$3,'site-token',$2)",
+				[user, JSON.stringify({ email_verified: true }), plugin],
+			);
+			await db.query(
+				"insert into billing_customers(id,email,environment)values($1,'site@example.test','sandbox')",
+				[customer],
+			);
+			await db.query(
+				"insert into billing_memberships values($1,'sandbox',$2,$3)",
+				[user, customer, plugin],
+			);
+			await db.query(
+				"insert into billing_catalog values($3,'lifetime','sandbox',$1,$2,true)",
+				[product, randomUUID(), plugin],
+			);
+			await db.query(
+				"insert into billing_checkouts(user_id,customer_id,environment,plugin_slug,cadence,product_id,request_key,site_id,polar_checkout_id) values($1,$2,'sandbox',$5,'lifetime',$3,$4,'site-a','checkout-a')",
+				[user, customer, product, randomUUID(), plugin],
+			);
+			await assert.rejects(() =>
+				db.exec("update billing_checkouts set site_id='site-b'"),
+			);
+			const order = {
+				id: "order",
+				plugin_slug: plugin,
+				cadence: "lifetime",
+				product_id: product,
+				status: "paid",
+				amount: 100,
+				refunded_amount: 0,
+				currency: "usd",
+				created_at: new Date().toISOString(),
+				checkout_id: "checkout-a",
+				site_id: "site-a",
+			};
+			const grant = { plugin_slug: plugin, site_id: "site-a" };
+			const time = Date.now();
+			const apply = (offset, grants, orders) =>
+				db.query(
+					"select billing_apply_site_snapshot($1,$2,$3,$4,$5,$6,$7) as applied",
+					[
+						customer,
+						new Date(time + offset).toISOString(),
+						"polar",
+						JSON.stringify([{ plugin_slug: plugin }]),
+						JSON.stringify(orders),
+						"[]",
+						JSON.stringify(grants),
+					],
+				);
+			assert.equal((await apply(0, [grant], [order])).rows[0].applied, true);
+			assert.equal(
+				(
+					await db.query("select billing_site_has_purchase($1,$2,$3) as paid", [
+						customer,
+						"site-a",
+						plugin,
+					])
+				).rows[0].paid,
+				true,
+			);
+			await assert.rejects(() =>
+				db.query(
+					"insert into billing_checkouts(user_id,customer_id,environment,plugin_slug,cadence,product_id,request_key,site_id)values($1,$2,'sandbox',$5,'lifetime',$3,$4,'site-a')",
+					[user, customer, product, randomUUID(), plugin],
+				),
+			);
+			assert.equal(
+				(
+					await db.query("select billing_site_has_purchase($1,$2,$3) as paid", [
+						customer,
+						"site-b",
+						plugin,
+					])
+				).rows[0].paid,
+				false,
+			);
+			assert.equal(
+				(
+					await db.query(
+						"select is_pro from plugin_entitlements where plugin_slug='whatsapp-commerce'",
+					)
+				).rows.length,
+				0,
+			);
+			const access = async (site, env = "sandbox") =>
+				(
+					await db.query("select billing_site_access($1,$4,$2,$3) as pro", [
+						user,
+						env,
+						site,
+						plugin,
+					])
+				).rows[0].pro;
+			assert.equal(await access("site-a"), true);
+			await db.exec(
+				"update billing_site_entitlements set verified_until=now()-interval '1 minute'",
+			);
+			assert.equal(await access("site-a"), false);
+			assert.equal(
+				(
+					await db.query("select billing_site_has_purchase($1,$2,$3) as paid", [
+						customer,
+						"site-a",
+						plugin,
+					])
+				).rows[0].paid,
+				true,
+			);
+			await apply(500, [grant], [order]);
+			assert.equal(await access("site-a"), true);
+			assert.equal(await access("site-b"), false);
+			assert.equal(await access(null), false);
+			assert.equal(await access("site-a", "production"), false);
+			await apply(
+				1000,
+				[],
+				[{ ...order, status: "refunded", refunded_amount: 100 }],
+			);
+			assert.equal(
+				(
+					await db.query("select billing_site_has_purchase($1,$2,$3) as paid", [
+						customer,
+						"site-a",
+						plugin,
+					])
+				).rows[0].paid,
+				false,
+			);
+			assert.equal(await access("site-a"), false);
+			assert.equal((await apply(0, [grant], [order])).rows[0].applied, false);
+			assert.equal(await access("site-a"), false);
+			await assert.rejects(() =>
+				apply(2000, [{ ...grant, site_id: "site-b" }], [order]),
+			);
+			assert.equal(await access("site-b"), false);
+			assert.equal(
+				(
+					await db.query(
+						"select has_function_privilege('anon','billing_site_access(uuid,text,text,text)','EXECUTE') as allowed",
+					)
+				).rows[0].allowed,
+				false,
+			);
+		} finally {
+			await db.close();
+		}
+	});

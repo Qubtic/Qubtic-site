@@ -58,10 +58,11 @@ export function safePolarUrl(value:string) {
  if(url.protocol!=='https:' || !['polar.sh','buy.polar.sh','sandbox.polar.sh','sandbox-api.polar.sh','api.polar.sh','sandbox.buy.polar.sh'].includes(url.hostname) || url.username || url.password) throw new BillingError('Invalid checkout destination.');
  return url.href;
 }
+const siteBillingPlugins = ['whatsapp-commerce','telegram-commerce'];
 export async function paidAccess(userId:string,plugin:string,site?:string|null) {
  // Access is a current server record, never a browser plan or a legacy auth flag.
  if(!process.env.POLAR_ENVIRONMENT) return false;
- if(plugin==='whatsapp-commerce') {
+ if(siteBillingPlugins.includes(plugin)) {
   if(!siteId(site))return false;
   const {data,error}=await database().rpc('billing_site_access',{p_user:userId,p_plugin:plugin,p_environment:environment(),p_site:site});check(error);
   return data===true;
@@ -113,10 +114,12 @@ export function normalizeSiteState(state:models.CustomerState,entries:Catalog[],
  };
  const snapshot=normalizeState(state,entries,orders,subscriptions);
  const siteGrants=[];
- const sites=[...new Set(checkouts.filter(c=>c.plugin_slug==='whatsapp-commerce'&&siteId(c.site_id)).map(c=>c.site_id!))];
- for(const site of sites){
-  const scoped=normalizeState(state,entries.filter(r=>r.plugin_slug==='whatsapp-commerce'),orders.filter(o=>orderSite(o)===site),subscriptions.filter(s=>subscriptionSites.get(s.id)?.site_id===site));
-  siteGrants.push(...scoped.grants.map(grant=>({...grant,site_id:site})));
+ for(const plugin of siteBillingPlugins){
+  const sites=[...new Set(checkouts.filter(c=>c.plugin_slug===plugin&&siteId(c.site_id)).map(c=>c.site_id!))];
+  for(const site of sites){
+   const scoped=normalizeState(state,entries.filter(r=>r.plugin_slug===plugin),orders.filter(o=>orderSite(o)===site),subscriptions.filter(s=>{const binding=subscriptionSites.get(s.id);return binding?.plugin_slug===plugin&&binding.site_id===site;}));
+   siteGrants.push(...scoped.grants.map(grant=>({...grant,site_id:site})));
+  }
  }
  return {...snapshot,siteGrants,orders:snapshot.orders.map(o=>({...o,site_id:orderSite(orders.find(raw=>raw.id===o.id)!)})),subscriptions:snapshot.subscriptions.map(s=>({...s,site_id:subscriptionSites.get(s.id)?.site_id||null}))};
 }
@@ -146,12 +149,13 @@ export async function synchronize(customerId:string) {
  for await(const sub of sdk.subscriptions.iterList({customer_id:state.id,organization_id:process.env.POLAR_ORGANIZATION_ID,limit:100})) subscriptions.push(sub);
  const {data:checkouts,error:checkoutError}=await db.from('billing_checkouts').select('site_id,polar_checkout_id,plugin_slug').eq('customer_id',customer.id).eq('environment',environment());check(checkoutError);
  const snapshot=normalizeSiteState(state,entries,orders,subscriptions,checkouts||[]);
- const {error:applyError}=await db.rpc('billing_apply_site_snapshot',{p_customer:customer.id,p_started:started,p_polar_id:state.id,p_grants:snapshot.grants,p_orders:snapshot.orders,p_subscriptions:snapshot.subscriptions,p_site_grants:snapshot.siteGrants}); check(applyError);
+ const {data:applied,error:applyError}=await db.rpc('billing_apply_site_snapshot',{p_customer:customer.id,p_started:started,p_polar_id:state.id,p_grants:snapshot.grants,p_orders:snapshot.orders,p_subscriptions:snapshot.subscriptions,p_site_grants:snapshot.siteGrants}); check(applyError);
+ if(applied===false)return;
  for(const sub of snapshot.subscriptions){
-  if(sub.cadence==='monthly' && sub.status==='active'){
+  if(sub.cadence==='monthly' && sub.status==='active' && (!siteBillingPlugins.includes(sub.plugin_slug)||sub.site_id)){
    const subSite=sub.site_id;
-   const upgraded=snapshot.orders.some(o=>o.cadence==='lifetime'&&['paid','partially_refunded'].includes(o.status)&&o.amount>o.refunded_amount&&(o.site_id===subSite))
-     || snapshot.subscriptions.some(s=>s.id!==sub.id&&s.cadence==='yearly'&&s.status==='active'&&Date.parse(s.current_period_end)>Date.now()&&(s.site_id===subSite));
+   const upgraded=snapshot.orders.some(o=>o.plugin_slug===sub.plugin_slug&&o.cadence==='lifetime'&&['paid','partially_refunded'].includes(o.status)&&o.amount>o.refunded_amount&&(o.site_id===subSite))
+     || snapshot.subscriptions.some(s=>s.plugin_slug===sub.plugin_slug&&s.id!==sub.id&&s.cadence==='yearly'&&s.status==='active'&&Date.parse(s.current_period_end)>Date.now()&&(s.site_id===subSite));
    if(upgraded){
     try{await sdk.subscriptions.revoke(sub.id);}catch{/* Obsolete subscription revoked */}
    }
