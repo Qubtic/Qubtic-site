@@ -12,6 +12,9 @@ export const REQUIRED_SCOPES = [
 	"customers:read",
 	"orders:read",
 	"subscriptions:read",
+	"subscriptions:write",
+	"refunds:read",
+	"refunds:write",
 	"checkouts:write",
 	"customer_sessions:write",
 ];

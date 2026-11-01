@@ -169,8 +169,31 @@ async function handle(request: Request, { params }: Context) {
 				? subscriptionQuery.eq("site_id", site)
 				: subscriptionQuery.eq("customer_id", customerId));
 			check(e);
+			const { data: upgradeRefunds, error: refundError } = await db
+				.from("billing_upgrade_refunds")
+				.select("id,phase,renewal_status,reconciliation_required,payload")
+				.eq("customer_id", customerId)
+				.eq("environment", env)
+				.eq("payload->>plugin_slug", user.plugin);
+			check(refundError);
 			return reply({
 				plugin: user.plugin,
+				upgrade_refunds: (upgradeRefunds || [])
+					.filter((job) => !site || job.payload?.site_id === site)
+					.map((job) => ({
+						id: job.id,
+						status:
+							job.reconciliation_required ||
+							job.phase === "manual_review" ||
+							job.renewal_status === "manual_review"
+								? "manual_review"
+								: job.phase === "done" &&
+									  job.renewal_status === "renewal_stopped"
+									? "completed"
+									: "pending",
+						amount: job.payload?.amount,
+						currency: job.payload?.currency,
+					})),
 				is_pro: await paidAccess(user.id, user.plugin, site),
 				orders: (orders || []).map((o) => ({
 					polar_order_id: o.polar_order_id,
@@ -451,7 +474,12 @@ async function handle(request: Request, { params }: Context) {
 				if (
 					existing.environment !== env ||
 					existing.product_id !== targetRow.product_id ||
-					(existing.site_id || null) !== site
+					(existing.site_id || null) !== site ||
+					(isUpgrade &&
+						upgradeTo === "lifetime" &&
+						(existing.upgrade_policy_version !== 1 ||
+							existing.previous_subscription_id !==
+								activeSub?.polar_subscription_id))
 				)
 					throw new BillingError("Checkout request does not match.", 409);
 				if (
@@ -466,6 +494,68 @@ async function handle(request: Request, { params }: Context) {
 				);
 			}
 			const sdk = polar();
+			let refundBinding:
+				| {
+						previous_subscription_id: string;
+						upgrade_policy_version: number;
+						upgrade_to: string;
+						upgrade_period_start: string;
+						upgrade_period_end: string;
+				  }
+				| undefined;
+			if (isUpgrade && upgradeTo === "lifetime" && activeSub) {
+				if (activeSub.customer_id !== customerId) {
+					throw new BillingError(
+						"Only the subscription payer can upgrade this site to Lifetime.",
+						403,
+					);
+				}
+				const [{ data: customer, error: customerError }, subscription] =
+					await Promise.all([
+						db
+							.from("billing_customers")
+							.select("polar_customer_id")
+							.eq("id", customerId)
+							.eq("environment", env)
+							.single(),
+						sdk.subscriptions.get(activeSub.polar_subscription_id),
+					]);
+				check(customerError);
+				const start = Date.parse(subscription.current_period_start);
+				const end = Date.parse(subscription.current_period_end || "");
+				const original = (await catalog(true)).find(
+					(item) =>
+						item.product_id === subscription.product_id &&
+						item.plugin_slug === user.plugin &&
+						item.cadence === activeSub.cadence,
+				);
+				if (
+					!customer?.polar_customer_id ||
+					subscription.customer_id !== customer.polar_customer_id ||
+					subscription.customer.organization_id !==
+						process.env.POLAR_ORGANIZATION_ID ||
+					subscription.id !== activeSub.polar_subscription_id ||
+					subscription.status !== "active" ||
+					!original ||
+					!Number.isFinite(start) ||
+					!Number.isFinite(end) ||
+					start > Date.now() ||
+					end <= Date.now() ||
+					end <= start
+				) {
+					throw new BillingError(
+						"Refresh billing before upgrading this subscription to Lifetime.",
+						409,
+					);
+				}
+				refundBinding = {
+					previous_subscription_id: subscription.id,
+					upgrade_policy_version: 1,
+					upgrade_to: "lifetime",
+					upgrade_period_start: new Date(start).toISOString(),
+					upgrade_period_end: new Date(end).toISOString(),
+				};
+			}
 			await Promise.all(
 				selectable.map(async (selected) => {
 					const product = await sdk.products.get(selected!.product_id);
@@ -655,7 +745,16 @@ async function handle(request: Request, { params }: Context) {
 				const discountMatches =
 					!discountId ||
 					("discount_id" in previous && previous.discount_id === discountId);
-				if (available && discountMatches) {
+				const refundPolicyMatches =
+					!refundBinding ||
+					(openCheckout.upgrade_policy_version === 1 &&
+						openCheckout.previous_subscription_id ===
+							refundBinding.previous_subscription_id &&
+						Date.parse(openCheckout.upgrade_period_start) ===
+							Date.parse(refundBinding.upgrade_period_start) &&
+						Date.parse(openCheckout.upgrade_period_end) ===
+							Date.parse(refundBinding.upgrade_period_end));
+				if (available && discountMatches && refundPolicyMatches) {
 					// Rebind the polling fallback to this launch tab when reusing an open checkout.
 					const { data: rebound, error: rebindError } = await db
 						.from("billing_checkouts")
@@ -704,6 +803,7 @@ async function handle(request: Request, { params }: Context) {
 				site_id: site,
 				status: "creating",
 				expires_at: tempExpiresAt,
+				...(refundBinding || {}),
 			});
 			check(insertError);
 			// The account ID comes exclusively from verified database identity. No bearer tokens in URLs.

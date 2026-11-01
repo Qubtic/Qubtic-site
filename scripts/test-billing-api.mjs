@@ -145,6 +145,24 @@ function harness(plugin = "whatsapp-commerce") {
 			},
 		},
 		subscriptions: {
+			get: async (id) => {
+				const record = tables.billing_subscriptions.find(
+					(s) => s.polar_subscription_id === id,
+				);
+				return {
+					id,
+					customer_id: "polar1",
+					customer: { organization_id: "org1" },
+					product_id:
+						record?.cadence === "yearly" ? yearlyProduct : monthlyProduct,
+					status: record?.status || "active",
+					current_period_start: new Date(
+						Date.now() - 5 * 86400000,
+					).toISOString(),
+					current_period_end: record?.current_period_end,
+					cancel_at_period_end: false,
+				};
+			},
 			iterList: async function* () {
 				for (const sub of state.active_subscriptions) yield sub;
 			},
@@ -345,6 +363,12 @@ function harness(plugin = "whatsapp-commerce") {
 			catalogMatches: billingConfiguration.catalogMatches,
 		},
 		"server-only": {},
+		"./upgrade-refunds": {
+			processUpgradeRefunds: async (context) => {
+				calls.push({ method: "upgrade-refunds", context });
+				return { completed: [], manualReview: [], skipped: [] };
+			},
+		},
 		"@supabase/supabase-js": { createClient: () => db },
 		"@polar-sh/sdk/2026-10": { ...realSdk, createPolar: () => sdk },
 	});
@@ -1055,7 +1079,7 @@ test("monthly subscriber upgrading to yearly gets automatically calculated prora
 	assert.equal(checkoutCall.discount_id, h.discountId);
 });
 
-test("monthly subscriber upgrading to lifetime opens full-price checkout with NO discount", async () => {
+test("monthly Lifetime upgrade charges full price and saves the server refund binding for unused-time reimbursement", async () => {
 	const h = harness();
 	const end = new Date(Date.now() + 25 * 86400000).toISOString();
 	h.tables.billing_subscriptions.push({
@@ -1107,6 +1131,14 @@ test("monthly subscriber upgrading to lifetime opens full-price checkout with NO
 	);
 	assert.ok(checkoutCall);
 	assert.deepEqual(checkoutCall.products, [h.product]);
+	const saved = h.tables.billing_checkouts[0];
+	assert.equal(saved.previous_subscription_id, "sub_month2");
+	assert.equal(saved.upgrade_policy_version, 1);
+	assert.equal(saved.upgrade_to, "lifetime");
+	assert.ok(
+		Date.parse(saved.upgrade_period_start) <
+			Date.parse(saved.upgrade_period_end),
+	);
 	assert.equal(
 		checkoutCall.discount_id,
 		undefined,
@@ -1167,6 +1199,73 @@ test("lifetime subscriber attempting any checkout is rejected", async () => {
 		request_id: randomUUID(),
 	});
 	assert.equal(lifeRes.status, 409);
+});
+
+test("all apps bind monthly and yearly Lifetime upgrades on the server and reject another payer", async () => {
+	for (const plugin of [
+		"telegram-commerce",
+		"whatsapp-commerce",
+		"frame-drop",
+		"qube-auth",
+	]) {
+		for (const cadence of ["monthly", "yearly"]) {
+			const h = harness(plugin);
+			h.tables.billing_subscriptions.push({
+				polar_subscription_id: "previous",
+				customer_id: h.customer,
+				environment: "sandbox",
+				plugin_slug: plugin,
+				site_id: "site-a",
+				cadence,
+				status: "active",
+				current_period_end: new Date(Date.now() + 86400000).toISOString(),
+			});
+			const response = await h.request("checkout", {
+				cadence: "lifetime",
+				request_id: randomUUID(),
+				previous_subscription_id: "attacker",
+				upgrade_policy_version: 999,
+			});
+			assert.equal(response.status, 200, plugin + "/" + cadence);
+			assert.equal(
+				h.tables.billing_checkouts[0].previous_subscription_id,
+				"previous",
+			);
+			assert.equal(h.tables.billing_checkouts[0].upgrade_policy_version, 1);
+			assert.equal(h.tables.billing_checkouts[0].upgrade_to, "lifetime");
+			assert.deepEqual(h.calls.find((c) => c.external_customer_id).products, [
+				h.product,
+			]);
+			assert.equal(
+				h.calls.some((c) => c.method === "discounts.create"),
+				false,
+			);
+		}
+	}
+	const h = harness("telegram-commerce");
+	h.tables.billing_subscriptions.push({
+		polar_subscription_id: "not-yours",
+		customer_id: "other-payer",
+		environment: "sandbox",
+		plugin_slug: "telegram-commerce",
+		site_id: "site-a",
+		cadence: "yearly",
+		status: "active",
+		current_period_end: new Date(Date.now() + 86400000).toISOString(),
+	});
+	assert.equal(
+		(
+			await h.request("checkout", {
+				cadence: "lifetime",
+				request_id: randomUUID(),
+			})
+		).status,
+		403,
+	);
+	assert.equal(
+		h.calls.some((c) => c.external_customer_id),
+		false,
+	);
 });
 
 test("Telegram replaces an old yearly-first checkout with monthly, yearly, lifetime ordering", async () => {

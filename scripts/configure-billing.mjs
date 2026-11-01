@@ -173,6 +173,18 @@ if (args.has("--organization")) {
 							"Telegram site billing schema is unavailable. Apply supabase/billing_telegram_sites.sql before deploying Telegram billing.",
 						);
 				}
+				const { error: refundSchemaError } = await db
+					.from("billing_upgrade_refunds")
+					.select("id")
+					.limit(0);
+				if (refundSchemaError)
+					throw new Error(
+						"Upgrade refund schema is unavailable. Apply supabase/billing_upgrade_refunds.sql before deploying the refund worker.",
+					);
+				await polar.refunds.list({
+					organization_id: process.env.POLAR_ORGANIZATION_ID,
+					limit: 1,
+				});
 				if (args.has("--apply")) {
 					const { data, error: applyError } = await db.rpc(
 						"billing_configure_catalog",
@@ -190,7 +202,7 @@ if (args.has("--organization")) {
 						"Database catalog differs from ENV. Run npm run billing:configure after reviewing your settings.",
 					);
 				console.log(
-					"Remote checks passed: resource read permissions, organization, products, benefits, prices, and database catalog. Checkout/customer-session write permissions require the sandbox acceptance test. No checkout or payment was created.",
+					"Remote checks passed: resource read permissions, organization, products, benefits, prices, and database catalog. Checkout, refund, subscription-update, and customer-session write permissions require the sandbox acceptance test. No checkout or payment was created.",
 				);
 				console.log(
 					"Webhook delivery and cron execution still require the sandbox acceptance test in POLAR_DASHBOARD_GUIDE.md.",
