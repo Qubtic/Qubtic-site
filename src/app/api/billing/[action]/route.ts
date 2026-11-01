@@ -426,7 +426,11 @@ async function handle(request: Request, { params }: Context) {
 			}
 
 			const rows = entries.filter((item) => item.plugin_slug === user.plugin);
-			const selectable = ["yearly", "monthly", "lifetime"].map((cadence) =>
+			const checkoutOrder =
+				user.plugin === "telegram-commerce"
+					? ["monthly", "yearly", "lifetime"]
+					: ["yearly", "monthly", "lifetime"];
+			const selectable = checkoutOrder.map((cadence) =>
 				rows.find((item) => item.cadence === cadence),
 			);
 			if (selectable.some((item) => !item))
@@ -642,11 +646,12 @@ async function handle(request: Request, { params }: Context) {
 						"Your previous checkout changed status. Refresh billing before starting another.",
 						409,
 					);
+				const previousProducts = previous.products.map((item) => item.id);
 				const available =
-					previous.products
-						.map((item) => item.id)
-						.sort()
-						.join(",") === targetProducts.slice().sort().join(",");
+					user.plugin === "telegram-commerce"
+						? previousProducts.join(",") === targetProducts.join(",")
+						: previousProducts.sort().join(",") ===
+							targetProducts.slice().sort().join(",");
 				const discountMatches =
 					!discountId ||
 					("discount_id" in previous && previous.discount_id === discountId);
@@ -687,21 +692,19 @@ async function handle(request: Request, { params }: Context) {
 			}
 			const id = randomUUID();
 			const tempExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-			const { error: insertError } = await db
-				.from("billing_checkouts")
-				.insert({
-					id,
-					user_id: user.id,
-					customer_id: customerId,
-					environment: env,
-					plugin_slug: user.plugin,
-					cadence: targetRow.cadence,
-					product_id: targetRow.product_id,
-					request_key: body.request_id,
-					site_id: site,
-					status: "creating",
-					expires_at: tempExpiresAt,
-				});
+			const { error: insertError } = await db.from("billing_checkouts").insert({
+				id,
+				user_id: user.id,
+				customer_id: customerId,
+				environment: env,
+				plugin_slug: user.plugin,
+				cadence: targetRow.cadence,
+				product_id: targetRow.product_id,
+				request_key: body.request_id,
+				site_id: site,
+				status: "creating",
+				expires_at: tempExpiresAt,
+			});
 			check(insertError);
 			// The account ID comes exclusively from verified database identity. No bearer tokens in URLs.
 			const checkout = await sdk.checkouts.create({

@@ -1169,6 +1169,41 @@ test("lifetime subscriber attempting any checkout is rejected", async () => {
 	assert.equal(lifeRes.status, 409);
 });
 
+test("Telegram replaces an old yearly-first checkout with monthly, yearly, lifetime ordering", async () => {
+	const h = harness("telegram-commerce");
+	h.setCheckoutProducts(
+		[h.yearlyProduct, h.monthlyProduct, h.product].map((id) => ({ id })),
+	);
+	h.tables.billing_checkouts.push({
+		id: randomUUID(),
+		user_id: "user",
+		customer_id: h.customer,
+		site_id: "site-a",
+		environment: "sandbox",
+		plugin_slug: "telegram-commerce",
+		product_id: h.yearlyProduct,
+		request_key: randomUUID(),
+		status: "open",
+		polar_checkout_id: "old",
+		checkout_url: "https://sandbox.polar.sh/checkout/old",
+		expires_at: "2099-01-01T00:00:00Z",
+	});
+	const conflict = await h.request("checkout", { request_id: randomUUID() });
+	assert.equal(conflict.status, 409);
+	assert.equal(conflict.data.can_replace, true);
+	const replacement = await h.request("checkout", {
+		request_id: randomUUID(),
+		replace_previous: true,
+	});
+	assert.equal(replacement.status, 200);
+	assert.deepEqual(h.calls.find((c) => c.external_customer_id).products, [
+		h.monthlyProduct,
+		h.yearlyProduct,
+		h.product,
+	]);
+	assert.equal(h.tables.billing_checkouts[0].status, "superseded");
+});
+
 test("Telegram catalog enables all three plans and checkout is bound to the signed-in plugin and Framer site", async () => {
 	const h = harness("telegram-commerce");
 	const listing = await h.request("catalog");
@@ -1199,8 +1234,8 @@ test("Telegram catalog enables all three plans and checkout is bound to the sign
 	assert.equal(created.metadata.site_id, "site-a");
 	assert.ok(created.success_url.includes("plugin=telegram-commerce"));
 	assert.deepEqual(created.products, [
-		h.yearlyProduct,
 		h.monthlyProduct,
+		h.yearlyProduct,
 		h.product,
 	]);
 	const guard = h.calls.find((c) => c.name === "billing_site_has_purchase");
