@@ -23,7 +23,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const merchantEmail = (settings?.merchantEmail || process.env.CONTACT_RECEIVER_EMAIL || 'hello@qubtic.tech').trim();
+    const rawMerchant = (settings?.merchantEmail || '').trim();
+    const primaryMerchant = rawMerchant || process.env.CONTACT_RECEIVER_EMAIL || 'hello@qubtic.tech';
+    const merchantRecipients: string[] = [primaryMerchant];
+    if (primaryMerchant.includes('@qubtic.tech') || primaryMerchant === 'hello@qubtic.tech') {
+      if (process.env.CONTACT_RECEIVER_EMAIL && !merchantRecipients.includes(process.env.CONTACT_RECEIVER_EMAIL)) {
+        merchantRecipients.push(process.env.CONTACT_RECEIVER_EMAIL);
+      }
+      if (process.env.CONTACT_FORWARD_EMAIL && !merchantRecipients.includes(process.env.CONTACT_FORWARD_EMAIL)) {
+        merchantRecipients.push(process.env.CONTACT_FORWARD_EMAIL);
+      }
+    }
+    const merchantEmail = primaryMerchant;
     const businessName = settings?.business || 'Store';
     const currency = settings?.currency || lines[0]?.currency || 'USD';
     const orderId = `ORD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -95,8 +106,13 @@ export async function POST(request: Request) {
       },
     });
 
-    const fromSenderName = settings?.fromName || businessName;
-    const fromSenderEmail = settings?.fromEmail || user || 'orders@qubtic.tech';
+    let fromSenderEmail = 'hello@qubtic.tech';
+    if (!host.includes('mailgun') && settings?.fromEmail && !settings.fromEmail.includes('@gmail.com') && !settings.fromEmail.includes('@yahoo.com')) {
+      fromSenderEmail = settings.fromEmail;
+    } else if (user && user.includes('@') && !user.includes('@gmail.com')) {
+      fromSenderEmail = user;
+    }
+    const fromSenderName = settings?.fromName || businessName || 'Store Orders';
     const formattedFrom = `"${fromSenderName}" <${fromSenderEmail}>`;
 
     const formattedTotal = typeof total === 'number' ? `$${total.toFixed(2)} ${currency}` : `${currency} ${total || ''}`;
@@ -126,7 +142,7 @@ export async function POST(request: Request) {
     // 1. Merchant Order Email
     const merchantMailOptions = {
       from: formattedFrom,
-      to: merchantEmail,
+      to: merchantRecipients.join(', '),
       replyTo: customer.email ? `"${customer.name || 'Customer'}" <${customer.email}>` : undefined,
       subject: `[New Order #${orderId}] ${businessName} - ${formattedTotal}`,
       html: `

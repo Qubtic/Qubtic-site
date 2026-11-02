@@ -16,7 +16,18 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { settings, isSampleOrder } = body;
 
-    const merchantEmail = (settings?.merchantEmail || process.env.CONTACT_RECEIVER_EMAIL || 'hello@qubtic.tech').trim();
+    const rawMerchant = (settings?.merchantEmail || '').trim();
+    const primaryMerchant = rawMerchant || process.env.CONTACT_RECEIVER_EMAIL || 'hello@qubtic.tech';
+    const testRecipients: string[] = [primaryMerchant];
+    if (primaryMerchant.includes('@qubtic.tech') || primaryMerchant === 'hello@qubtic.tech') {
+      if (process.env.CONTACT_RECEIVER_EMAIL && !testRecipients.includes(process.env.CONTACT_RECEIVER_EMAIL)) {
+        testRecipients.push(process.env.CONTACT_RECEIVER_EMAIL);
+      }
+      if (process.env.CONTACT_FORWARD_EMAIL && !testRecipients.includes(process.env.CONTACT_FORWARD_EMAIL)) {
+        testRecipients.push(process.env.CONTACT_FORWARD_EMAIL);
+      }
+    }
+    const merchantEmail = primaryMerchant;
     const host = settings?.smtpHost || process.env.SMTP_HOST || 'smtp.mailgun.org';
     const port = Number(settings?.smtpPort) || parseInt(process.env.SMTP_PORT || '587', 10);
     const secure = settings?.smtpSecure ?? (process.env.SMTP_SECURE === 'true' || port === 465);
@@ -39,7 +50,12 @@ export async function POST(request: Request) {
     const storeName = settings?.business || 'Email Commerce';
     const currency = settings?.currency || 'USD';
     const fromSenderName = settings?.fromName || storeName;
-    const fromSenderEmail = settings?.fromEmail || user || 'orders@qubtic.tech';
+    let fromSenderEmail = 'hello@qubtic.tech';
+    if (!host.includes('mailgun') && settings?.fromEmail && !settings.fromEmail.includes('@gmail.com') && !settings.fromEmail.includes('@yahoo.com')) {
+      fromSenderEmail = settings.fromEmail;
+    } else if (user && user.includes('@') && !user.includes('@gmail.com')) {
+      fromSenderEmail = user;
+    }
     const formattedFrom = `"${fromSenderName}" <${fromSenderEmail}>`;
 
     const sampleOrderNum = Math.floor(100000 + Math.random() * 900000);
@@ -160,7 +176,7 @@ export async function POST(request: Request) {
 
     await transporter.sendMail({
       from: formattedFrom,
-      to: merchantEmail,
+      to: testRecipients.join(', '),
       subject,
       html,
     });
