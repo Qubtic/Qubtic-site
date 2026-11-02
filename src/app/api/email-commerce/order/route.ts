@@ -80,8 +80,10 @@ export async function POST(request: Request) {
     const host = settings?.smtpHost || process.env.SMTP_HOST || 'smtp.mailgun.org';
     const port = Number(settings?.smtpPort) || parseInt(process.env.SMTP_PORT || '587', 10);
     const secure = settings?.smtpSecure ?? (process.env.SMTP_SECURE === 'true' || port === 465);
-    const user = settings?.smtpUser || process.env.SMTP_USER || '';
-    const pass = settings?.smtpPass || process.env.SMTP_PASS || '';
+    const rawUser = settings?.smtpUser || process.env.SMTP_USER || '';
+    const user = rawUser.trim().replace(/^["']|["']$/g, '');
+    const rawPass = settings?.smtpPass || process.env.SMTP_PASS || '';
+    const pass = rawPass.trim().replace(/^["']|["']$/g, '');
 
     const transporter = nodemailer.createTransport({
       host,
