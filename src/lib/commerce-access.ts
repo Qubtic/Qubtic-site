@@ -1,6 +1,12 @@
 import "server-only";
 import { supabase } from "./supabase";
-import { paidAccess } from "./billing/core";
+import {
+	database,
+	environment,
+	identity,
+	paidAccess,
+	synchronize,
+} from "./billing/core";
 import {
 	initiatePairingSession,
 	resolvePairingSession,
@@ -92,11 +98,44 @@ export async function commerceRequest(
 				user.metadata?.email_verified !== true
 			)
 				return reply({ error: `Sign in to ${productName} first.` }, 401);
-			const isPro = await paidAccess(
-				user.id,
-				product,
-				request.headers.get("x-framer-site-id"),
-			);
+			const site = request.headers.get("x-framer-site-id");
+			let isPro = await paidAccess(user.id, product, site);
+
+			// Self-healing: if paidAccess is false for a site, check if this customer has a purchase
+			// whose short verification lease expired, and auto-synchronize in the background.
+			if (!isPro && site && process.env.POLAR_ENVIRONMENT) {
+				try {
+					const customerId = await identity(user.id);
+					const db = database();
+					const env = environment();
+					const { data: orders } = await db
+						.from("billing_orders")
+						.select("id")
+						.eq("environment", env)
+						.eq("customer_id", customerId)
+						.eq("plugin_slug", product)
+						.eq("site_id", site)
+						.eq("cadence", "lifetime")
+						.in("status", ["paid", "partially_refunded"])
+						.limit(1);
+					const { data: subs } = await db
+						.from("billing_subscriptions")
+						.select("id")
+						.eq("environment", env)
+						.eq("customer_id", customerId)
+						.eq("plugin_slug", product)
+						.eq("site_id", site)
+						.eq("status", "active")
+						.gt("current_period_end", new Date().toISOString())
+						.limit(1);
+					if ((orders && orders.length > 0) || (subs && subs.length > 0)) {
+						await synchronize(customerId);
+						isPro = await paidAccess(user.id, product, site);
+					}
+				} catch {
+					// Fallback gracefully without breaking access check
+				}
+			}
 
 			let avatarUrl =
 				(typeof user.metadata?.avatar_url === "string" &&

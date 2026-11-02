@@ -176,6 +176,28 @@ async function handle(request: Request, { params }: Context) {
 				.eq("environment", env)
 				.eq("payload->>plugin_slug", user.plugin);
 			check(refundError);
+			let isPro = await paidAccess(user.id, user.plugin, site);
+			if (!isPro && siteScoped && site) {
+				const hasLife = (orders || []).some(
+					(o) =>
+						o.cadence === "lifetime" &&
+						["paid", "partially_refunded"].includes(o.status) &&
+						o.amount > o.refunded_amount,
+				);
+				const hasActiveSub = (subscriptions || []).some(
+					(s) =>
+						s.status === "active" &&
+						Date.parse(s.current_period_end) > Date.now(),
+				);
+				if (hasLife || hasActiveSub) {
+					try {
+						await synchronize(customerId);
+						isPro = await paidAccess(user.id, user.plugin, site);
+					} catch {
+						// Graceful fallback
+					}
+				}
+			}
 			return reply({
 				plugin: user.plugin,
 				upgrade_refunds: (upgradeRefunds || [])
@@ -194,7 +216,7 @@ async function handle(request: Request, { params }: Context) {
 						amount: job.payload?.amount,
 						currency: job.payload?.currency,
 					})),
-				is_pro: await paidAccess(user.id, user.plugin, site),
+				is_pro: isPro,
 				orders: (orders || []).map((o) => ({
 					polar_order_id: o.polar_order_id,
 					cadence: o.cadence,
