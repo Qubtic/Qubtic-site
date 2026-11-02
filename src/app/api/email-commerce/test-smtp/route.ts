@@ -16,32 +16,44 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { settings, isSampleOrder } = body;
 
-    const rawMerchant = (settings?.merchantEmail || '').trim();
-    const primaryMerchant = rawMerchant || process.env.CONTACT_RECEIVER_EMAIL || 'hello@qubtic.tech';
-    const testRecipients: string[] = [primaryMerchant];
-    if (primaryMerchant.includes('@qubtic.tech') || primaryMerchant === 'hello@qubtic.tech') {
-      if (process.env.CONTACT_RECEIVER_EMAIL && !testRecipients.includes(process.env.CONTACT_RECEIVER_EMAIL)) {
-        testRecipients.push(process.env.CONTACT_RECEIVER_EMAIL);
-      }
-      if (process.env.CONTACT_FORWARD_EMAIL && !testRecipients.includes(process.env.CONTACT_FORWARD_EMAIL)) {
-        testRecipients.push(process.env.CONTACT_FORWARD_EMAIL);
-      }
+    const merchantEmail = (settings?.merchantEmail || '').trim();
+    if (!merchantEmail) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'MERCHANT_EMAIL_REQUIRED',
+          message: 'Merchant Order Recipient Email is required to send test email.',
+        },
+        { status: 400, headers: corsHeaders }
+      );
     }
-    const merchantEmail = primaryMerchant;
-    const host = settings?.smtpHost || process.env.SMTP_HOST || 'smtp.mailgun.org';
-    const port = Number(settings?.smtpPort) || parseInt(process.env.SMTP_PORT || '587', 10);
-    const secure = settings?.smtpSecure ?? (process.env.SMTP_SECURE === 'true' || port === 465);
 
-    const rawUser = settings?.smtpUser || process.env.SMTP_USER || '';
-    const user = rawUser.trim().replace(/^["']|["']$/g, '');
-    const rawPass = settings?.smtpPass || process.env.SMTP_PASS || '';
-    const pass = rawPass.trim().replace(/^["']|["']$/g, '');
+    const host = (settings?.smtpHost || '').trim();
+    const port = Number(settings?.smtpPort) || 587;
+    const secure = settings?.smtpSecure ?? (port === 465);
+    const rawUser = (settings?.smtpUser || '').trim().replace(/^["']|["']$/g, '');
+    const user = rawUser;
+    const rawPass = (settings?.smtpPass || '').trim().replace(/^["']|["']$/g, '');
+    const pass = rawPass;
+
+    if (!host || !user || !pass) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'SMTP_CONFIG_REQUIRED',
+          message: 'SMTP credentials required: Please enter your SMTP host, username, and password.',
+        },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    const testRecipients: string[] = [merchantEmail];
 
     const transporter = nodemailer.createTransport({
       host,
       port,
       secure,
-      auth: user && pass ? { user, pass } : undefined,
+      auth: { user, pass },
       tls: {
         rejectUnauthorized: false,
       },
@@ -50,11 +62,13 @@ export async function POST(request: Request) {
     const storeName = settings?.business || 'Email Commerce';
     const currency = settings?.currency || 'USD';
     const fromSenderName = settings?.fromName || storeName;
-    let fromSenderEmail = 'hello@qubtic.tech';
-    if (!host.includes('mailgun') && settings?.fromEmail && !settings.fromEmail.includes('@gmail.com') && !settings.fromEmail.includes('@yahoo.com')) {
-      fromSenderEmail = settings.fromEmail;
-    } else if (user && user.includes('@') && !user.includes('@gmail.com')) {
+    let fromSenderEmail = '';
+    if (settings?.fromEmail && settings.fromEmail.includes('@')) {
+      fromSenderEmail = settings.fromEmail.trim();
+    } else if (user && user.includes('@')) {
       fromSenderEmail = user;
+    } else {
+      fromSenderEmail = merchantEmail;
     }
     const formattedFrom = `"${fromSenderName}" <${fromSenderEmail}>`;
 

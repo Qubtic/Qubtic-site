@@ -23,18 +23,38 @@ export async function POST(request: Request) {
       );
     }
 
-    const rawMerchant = (settings?.merchantEmail || '').trim();
-    const primaryMerchant = rawMerchant || process.env.CONTACT_RECEIVER_EMAIL || 'hello@qubtic.tech';
-    const merchantRecipients: string[] = [primaryMerchant];
-    if (primaryMerchant.includes('@qubtic.tech') || primaryMerchant === 'hello@qubtic.tech') {
-      if (process.env.CONTACT_RECEIVER_EMAIL && !merchantRecipients.includes(process.env.CONTACT_RECEIVER_EMAIL)) {
-        merchantRecipients.push(process.env.CONTACT_RECEIVER_EMAIL);
-      }
-      if (process.env.CONTACT_FORWARD_EMAIL && !merchantRecipients.includes(process.env.CONTACT_FORWARD_EMAIL)) {
-        merchantRecipients.push(process.env.CONTACT_FORWARD_EMAIL);
-      }
+    const merchantEmail = (settings?.merchantEmail || '').trim();
+    if (!merchantEmail) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'SMTP_NOT_CONFIGURED',
+          message: 'Store email dispatch is not configured: merchant recipient email is missing. Please contact the website owner directly.',
+        },
+        { status: 400, headers: corsHeaders }
+      );
     }
-    const merchantEmail = primaryMerchant;
+
+    const host = (settings?.smtpHost || '').trim();
+    const port = Number(settings?.smtpPort) || 587;
+    const secure = settings?.smtpSecure ?? (port === 465);
+    const rawUser = (settings?.smtpUser || '').trim().replace(/^["']|["']$/g, '');
+    const user = rawUser;
+    const rawPass = (settings?.smtpPass || '').trim().replace(/^["']|["']$/g, '');
+    const pass = rawPass;
+
+    if (!host || !user || !pass) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'SMTP_NOT_CONFIGURED',
+          message: 'Store email dispatch is not configured: outgoing SMTP connection is missing. Please contact the website owner directly.',
+        },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    const merchantRecipients: string[] = [merchantEmail];
     const businessName = settings?.business || 'Store';
     const currency = settings?.currency || lines[0]?.currency || 'USD';
     const orderId = `ORD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -87,30 +107,23 @@ export async function POST(request: Request) {
       `;
     }
 
-    // Configure SMTP transport using provided settings or environment defaults
-    const host = settings?.smtpHost || process.env.SMTP_HOST || 'smtp.mailgun.org';
-    const port = Number(settings?.smtpPort) || parseInt(process.env.SMTP_PORT || '587', 10);
-    const secure = settings?.smtpSecure ?? (process.env.SMTP_SECURE === 'true' || port === 465);
-    const rawUser = settings?.smtpUser || process.env.SMTP_USER || '';
-    const user = rawUser.trim().replace(/^["']|["']$/g, '');
-    const rawPass = settings?.smtpPass || process.env.SMTP_PASS || '';
-    const pass = rawPass.trim().replace(/^["']|["']$/g, '');
-
     const transporter = nodemailer.createTransport({
       host,
       port,
       secure,
-      auth: user && pass ? { user, pass } : undefined,
+      auth: { user, pass },
       tls: {
         rejectUnauthorized: false,
       },
     });
 
-    let fromSenderEmail = 'hello@qubtic.tech';
-    if (!host.includes('mailgun') && settings?.fromEmail && !settings.fromEmail.includes('@gmail.com') && !settings.fromEmail.includes('@yahoo.com')) {
-      fromSenderEmail = settings.fromEmail;
-    } else if (user && user.includes('@') && !user.includes('@gmail.com')) {
+    let fromSenderEmail = '';
+    if (settings?.fromEmail && settings.fromEmail.includes('@')) {
+      fromSenderEmail = settings.fromEmail.trim();
+    } else if (user && user.includes('@')) {
       fromSenderEmail = user;
+    } else {
+      fromSenderEmail = merchantEmail;
     }
     const fromSenderName = settings?.fromName || businessName || 'Store Orders';
     const formattedFrom = `"${fromSenderName}" <${fromSenderEmail}>`;
