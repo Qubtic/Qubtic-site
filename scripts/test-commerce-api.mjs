@@ -136,7 +136,7 @@ function harness() {
 }
 for (const product of ["whatsapp-commerce", "telegram-commerce"]) {
 	const productName =
-		product === "telegram-commerce" ? "Telegram Commerce" : "WhatsApp Commerce";
+		product === "telegram-commerce" ? "Telegram Commerce" : "Email Commerce";
 	async function signup(h, email = "owner@example.test") {
 		await h.auth.sendAuthOtpCode(email, product);
 		const code = h.messages.at(-1)[1];
@@ -158,7 +158,7 @@ for (const product of ["whatsapp-commerce", "telegram-commerce"]) {
 		assert.equal(response.status, 200);
 		return response.json();
 	}
-	test("shared signup creates verified Free WhatsApp Commerce account even when the browser requests Pro", async () => {
+	test("shared signup creates verified Free Email Commerce account even when the browser requests Pro", async () => {
 		const h = harness();
 		const result = await signup(h);
 		assert.equal(result.user.plugin_slug, product);

@@ -24,8 +24,8 @@ export function BillingReturnClient() {
 
 				const params = new URLSearchParams(window.location.search);
 				const plugin = params.get("plugin");
-				if (plugin === "whatsapp-commerce") {
-					setPluginName("WhatsApp Commerce");
+				if (plugin === "whatsapp-commerce" || plugin === "email-commerce") {
+					setPluginName("Email Commerce");
 				} else if (plugin === "telegram-commerce") {
 					setPluginName("Telegram Commerce");
 				} else if (plugin === "frame-drop") {

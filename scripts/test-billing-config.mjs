@@ -175,3 +175,21 @@ test("single sanitized template is complete; example validation loads no real en
 	assert.match(child.stdout, /No credentials loaded/);
 	assert.ok(!child.stdout.includes("test-only"));
 });
+
+
+test("Email Commerce uses current keys while preserving existing paid-site identities and legacy configuration", () => {
+ const legacy = example();
+ const renamed = { ...legacy };
+ for (const key of Object.keys(legacy)) {
+  if (key.startsWith("POLAR_WHATSAPP_COMMERCE_")) {
+   renamed[key.replace("WHATSAPP_COMMERCE", "EMAIL_COMMERCE")] = renamed[key];
+   delete renamed[key];
+  }
+ }
+ assert.deepEqual(configuredCatalog(renamed), configuredCatalog(legacy));
+ assert.ok(configuredCatalog(renamed).every(row => row.plugin_slug === "whatsapp-commerce"));
+ assert.deepEqual(configuredCatalog({ ...legacy, ...renamed }), configuredCatalog(legacy));
+ const partial = { ...legacy, POLAR_EMAIL_COMMERCE_MONTHLY_PRODUCT_ID: legacy.POLAR_WHATSAPP_COMMERCE_MONTHLY_PRODUCT_ID };
+ assert.throws(() => configuredCatalog(partial), /POLAR_EMAIL_COMMERCE_YEARLY_PRODUCT_ID/);
+ assert.throws(() => configuredCatalog({ ...legacy, ...renamed, POLAR_EMAIL_COMMERCE_MONTHLY_PRODUCT_ID: randomUUID() }), /Conflicting Email Commerce/);
+});

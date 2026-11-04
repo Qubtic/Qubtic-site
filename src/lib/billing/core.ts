@@ -139,10 +139,10 @@ export async function catalog(all = false) {
 	let desired: Catalog[];
 	try {
 		desired = configuredCatalog(billingConfig());
-	} catch {
-		throw new BillingError(
-			"Central Polar product configuration is incomplete or invalid.",
-		);
+	} catch (error) {
+        // Configuration validation errors contain field names and rules, never credentials.
+        const detail = error instanceof Error ? error.message.replaceAll("POLAR_", `POLAR_${environment().toUpperCase()}_`) : "Check the server billing variables.";
+        throw new BillingError(`Central Polar product configuration is incomplete or invalid (${environment()}). ${detail}`);
 	}
 	if (!desired.length && !all) return [];
 	const query = database()
@@ -154,7 +154,7 @@ export async function catalog(all = false) {
 	const entries = (data || []) as Catalog[];
 	if (!catalogMatches(entries, desired))
 		throw new BillingError(
-			"Billing catalog differs from central ENV. Run npm run billing:configure on Qubtic.",
+			`Billing catalog differs from central ENV (${environment()}). Run node scripts/configure-billing.mjs --environment ${environment()} --apply on Qubtic.`,
 		);
 	// One reserved Pro benefit per plugin; a benefit may never unlock another plugin.
 	const benefits = new Map<string, string>();

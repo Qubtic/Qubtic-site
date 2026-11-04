@@ -18,11 +18,11 @@ export interface FramerPluginMetadata {
 export const REGISTERED_PLUGINS: Record<string, FramerPluginMetadata> = {
 	"whatsapp-commerce": {
 		slug: "whatsapp-commerce",
-		name: "WhatsApp Commerce",
-		shortName: "WhatsApp Commerce",
-		tagline: "Your Framer storefront, connected to WhatsApp",
+		name: "Email Commerce",
+		shortName: "Email Commerce",
+		tagline: "Your Framer storefront, connected to email",
 		description:
-			"Manage products, customize storefront components, and prepare WhatsApp orders from Framer.",
+			"Manage products, customize storefront components, and receive orders by email from Framer.",
 		version: "v0.2.0",
 		logo: "/images/brand/whatsapp-commerce-logo.png",
 		accentColor: "#F6DEAF",
@@ -34,7 +34,7 @@ export const REGISTERED_PLUGINS: Record<string, FramerPluginMetadata> = {
 			"Framer CMS catalog integration",
 			"Storefront components",
 			"Excel and CSV import / export",
-			"WhatsApp order handoff",
+			"Email order delivery",
 		],
 		scopes: [
 			{
@@ -45,7 +45,7 @@ export const REGISTERED_PLUGINS: Record<string, FramerPluginMetadata> = {
 			{
 				id: "session",
 				label: "Plugin connection",
-				description: "Connect your WhatsApp Commerce plugin session",
+				description: "Connect your Email Commerce plugin session",
 			},
 			{
 				id: "subscription",
@@ -244,6 +244,8 @@ export function getPluginMetadata(
 	rawSlug?: string | null,
 ): FramerPluginMetadata {
 	let slug = (rawSlug || "qube-auth").toLowerCase().trim();
+
+	if (slug === "email-commerce") slug = "whatsapp-commerce";
 
 	// Normalize aliases so /auth/framedrop, /auth/frame-drop, /auth/keyvault, and /auth/plugin load full metadata cleanly
 	if (slug === "framedrop" || slug === "plugin" || slug === "framedrop-auth") {

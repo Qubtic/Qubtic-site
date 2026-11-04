@@ -200,7 +200,7 @@ export async function createOrUpdateFramerUser(params: {
   metadata?: Record<string, unknown>;
 }): Promise<{ user: FramerUserRecord; isNew: boolean; token: string }> {
   const normalizedEmail = params.email.toLowerCase().trim();
-  const pluginSlug = params.pluginSlug.toLowerCase().trim();
+  const pluginSlug = getPluginMetadata(params.pluginSlug).slug;
   const plugin = getPluginMetadata(pluginSlug);
   const commerce = isCommercePlugin(plugin.slug);
   const now = new Date().toISOString();
@@ -502,7 +502,7 @@ export async function verifyFramerSessionToken(
   expectedPlugin?: string
 ): Promise<FramerUserRecord | null> {
   if (!token) return null;
-  expectedPlugin = expectedPlugin?.toLowerCase().trim();
+  expectedPlugin = expectedPlugin ? getPluginMetadata(expectedPlugin).slug : undefined;
   const tokenPlugin = token.startsWith('qbt_fr_whatsapp_') ? 'whatsapp-commerce'
     : token.startsWith('qbt_fr_telegram_') ? 'telegram-commerce' : undefined;
   if (tokenPlugin && expectedPlugin && tokenPlugin !== expectedPlugin) return null;
@@ -760,7 +760,7 @@ export async function initiatePairingSession(params?: {
   expires_in: number;
   interval: number;
 }> {
-  const pluginSlug = (params?.pluginSlug || 'frame-drop').toLowerCase().trim();
+  const pluginSlug = getPluginMetadata(params?.pluginSlug || 'frame-drop').slug;
   const pluginMeta = getPluginMetadata(pluginSlug);
   const pluginName = isCommercePlugin(pluginSlug) ? pluginMeta.name : params?.pluginName || pluginMeta.name;
 

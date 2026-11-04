@@ -113,7 +113,7 @@ for (const product of products) {
     const pair = await h.auth.initiatePairingSession({ pluginSlug: product, pluginName: 'Forged name' });
     assert.match(pair.user_code, /^WC-[A-Z2-9]{4}$/);
     assert.equal(new URL(pair.verification_uri).pathname, `/auth/${product}`);
-    assert.equal(h.tables.framer_pairing_sessions[0].plugin_name, product === 'telegram-commerce' ? 'Telegram Commerce' : 'WhatsApp Commerce');
+    assert.equal(h.tables.framer_pairing_sessions[0].plugin_name, product === 'telegram-commerce' ? 'Telegram Commerce' : 'Email Commerce');
     const user = await h.auth.verifyFramerSessionToken(account.token, product);
     const other = await h.auth.createOrUpdateFramerUser({ email, pluginSlug: products.find(p => p !== product) });
     assert.equal((await h.auth.confirmPairingSession(pair.user_code, null)).status, 403);
@@ -198,4 +198,18 @@ test('existing shared schema and code RPC support Telegram without a new migrati
     assert.equal(await verify('telegram-commerce', '234567', 'reset'), false);
     for (const role of ['anon', 'authenticated']) assert.equal((await db.query(`select has_table_privilege('${role}','framer_users','SELECT') as allowed`)).rows[0].allowed, false);
   } finally { await db.close(); }
+});
+
+
+test('Email Commerce alias reuses the existing account and pairing identity', async () => {
+ const h = harness();
+ const result = await signup(h, 'whatsapp-commerce');
+ const before = h.tables.framer_users.length;
+ const verified = await h.auth.verifyFramerSessionToken(result.token, 'email-commerce');
+ assert.equal(verified.plugin_slug, 'whatsapp-commerce');
+ const pair = await h.auth.initiatePairingSession({ pluginSlug: 'email-commerce' });
+ assert.equal(h.tables.framer_pairing_sessions.at(-1).plugin_slug, 'whatsapp-commerce');
+ assert.equal(h.tables.framer_pairing_sessions.at(-1).plugin_name, 'Email Commerce');
+ assert.equal(new URL(pair.verification_uri).pathname, '/auth/whatsapp-commerce');
+ assert.equal(h.tables.framer_users.length, before);
 });

@@ -41,7 +41,7 @@ async function handleCommerceRequest(
 	product: CommerceProduct = "whatsapp-commerce",
 ) {
 	const productName =
-		product === "telegram-commerce" ? "Telegram Commerce" : "WhatsApp Commerce";
+		product === "telegram-commerce" ? "Telegram Commerce" : "Email Commerce";
 	if (request.method === "OPTIONS")
 		return new Response(null, { status: 204, headers });
 	try {

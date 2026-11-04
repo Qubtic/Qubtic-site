@@ -89,3 +89,25 @@ Access, billing, and user-display caches are namespaced by environment. Pairing 
 6. Verify that the same account/site remains Free in production until it has its own production purchase, and existing production purchases remain active while sandbox purchases/refunds/cancellations are tested.
 
 Local automated tests use mocked Polar calls and an embedded PostgreSQL test database. They do not prove live Vercel configuration, Supabase deployment, webhook delivery, or a real purchase. Polar requires independent sandbox tokens and organizations: https://polar.sh/docs/integrate/sandbox
+
+
+## Email Commerce rename and Telegram production repair
+
+The product display name is Email Commerce. Configure it using `POLAR_SANDBOX_EMAIL_COMMERCE_*` or `POLAR_PRODUCTION_EMAIL_COMMERCE_*`. The four suffixes are `MONTHLY_PRODUCT_ID`, `YEARLY_PRODUCT_ID`, `LIFETIME_PRODUCT_ID`, and `PRO_BENEFIT_ID`.
+
+Old `*_WHATSAPP_COMMERCE_*` groups are supported during migration. Do not leave conflicting old/new values or split one plugin's four settings between the two names. A complete new group takes precedence; missing fields in a new group are errors. Names refer to the same product, so legacy and current names cannot create two separate catalogs.
+
+The stored plugin slug `whatsapp-commerce`, existing tokens, site entitlements, and API URLs remain stable intentionally. `/auth/email-commerce` resolves to the same account identity; it does not create a second license. Do not bulk-rename Supabase account, checkout, order, or entitlement rows. No new SQL migration is required for this branding/configuration correction.
+
+The remote check on 2026-11-04 identified an empty production catalog despite valid Telegram production products. The three Telegram production catalog rows were synchronized using the existing service-role RPC. The sandbox catalog was also aligned to the configured Email Commerce plans; unconfigured Telegram sandbox rows were disabled and retained for history. Production remains Telegram-only. No checkout, charge, subscription, or entitlement was created.
+
+### Manual Vercel steps
+
+1. In the existing Qubtic project's Environment Variables, scope both `POLAR_PRODUCTION_*` and `POLAR_SANDBOX_*` sets to the **Production Vercel deployment** if that server serves both modes. A Polar sandbox set is not the same as Vercel's Preview scope.
+2. For Telegram live billing, set `POLAR_PRODUCTION_ACCESS_TOKEN`, `POLAR_PRODUCTION_ORGANIZATION_ID`, `POLAR_PRODUCTION_WEBHOOK_SECRET`, and all four `POLAR_PRODUCTION_TELEGRAM_COMMERCE_*` settings. Use the exact verified production values from your local config; never copy sandbox credentials into these keys.
+3. For Email Commerce development, set sandbox credentials plus the four `POLAR_SANDBOX_EMAIL_COMMERCE_*` settings. Leave complete product groups empty for plugins disabled in that environment.
+4. Deploy this code after saving the variables. `POLAR_ENVIRONMENT` is only a legacy credential classification and does not switch live clients to sandbox.
+5. Build the live Telegram plugin with normal `npm run build` and package that build. Ensure no general `.env`, `.env.local`, hosting build variable, or `.env.production` sets `VITE_QUBTIC_BILLING_ENVIRONMENT=sandbox`. Use sandbox builds only for development copies.
+6. Register the production and sandbox webhook destinations shown above. In the plugin select Refresh billing. Catalog validation proves product readability/configuration, while real checkout permission and webhook delivery still require a separate acceptance check.
+
+The local Vercel CLI session returned an invalid-token error. Authenticate with `vercel login` before using deployment/log commands. No connected Vercel or Supabase MCP tools were exposed in this session; their installed skills were used with the existing CLI and server-side Supabase client. Do not paste provider tokens or service-role keys into chat.

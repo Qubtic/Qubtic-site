@@ -1,7 +1,7 @@
 /** Central server configuration shared by the Next backend and setup CLI. No credentials are returned to plugins. */
 export const CADENCES = ["monthly", "yearly", "lifetime"];
 export const PLUGINS = [
-	{ slug: "whatsapp-commerce", prefix: "POLAR_WHATSAPP_COMMERCE" },
+	{ slug: "whatsapp-commerce", prefix: "POLAR_EMAIL_COMMERCE", aliases: ["POLAR_WHATSAPP_COMMERCE"] },
 	{ slug: "telegram-commerce", prefix: "POLAR_TELEGRAM_COMMERCE" },
 	{ slug: "frame-drop", prefix: "POLAR_FRAME_DROP" },
 	{ slug: "qube-auth", prefix: "POLAR_QUBE_AUTH" },
@@ -48,12 +48,18 @@ export function configuredCatalog(env) {
 		throw new Error("Set POLAR_ENVIRONMENT to sandbox or production.");
 	const rows = [];
 	for (const plugin of PLUGINS) {
-		const keys = [
-			...CADENCES.map(
-				(cadence) => `${plugin.prefix}_${cadence.toUpperCase()}_PRODUCT_ID`,
-			),
-			`${plugin.prefix}_PRO_BENEFIT_ID`,
-		];
+        // Branding changed; the stored plugin slug remains stable for existing paid sites.
+        const suffixes = [...CADENCES.map(cadence => `${cadence.toUpperCase()}_PRODUCT_ID`), "PRO_BENEFIT_ID"];
+        const prefixes = [plugin.prefix, ...(plugin.aliases || [])];
+        const active = prefixes.filter(prefix => suffixes.some(suffix => env[`${prefix}_${suffix}`]?.trim()));
+        for (const suffix of suffixes) {
+            const values = active.map(prefix => env[`${prefix}_${suffix}`]?.trim().toLowerCase()).filter(Boolean);
+            if (new Set(values).size > 1)
+                throw new Error(`Conflicting Email Commerce configuration: use ${plugin.prefix}_${suffix} consistently; remove the conflicting legacy alias.`);
+        }
+        // Do not stitch an incomplete new group together with legacy keys.
+        const prefix = active[0] || plugin.prefix;
+        const keys = suffixes.map(suffix => `${prefix}_${suffix}`);
 		if (!keys.some((key) => env[key]?.trim())) continue;
 		const missing = keys.filter((key) => !env[key]?.trim());
 		if (missing.length)
@@ -66,8 +72,8 @@ export function configuredCatalog(env) {
 				cadence,
 				environment,
 				product_id:
-					env[`${plugin.prefix}_${cadence.toUpperCase()}_PRODUCT_ID`].trim(),
-				benefit_id: env[`${plugin.prefix}_PRO_BENEFIT_ID`].trim(),
+					env[`${prefix}_${cadence.toUpperCase()}_PRODUCT_ID`].trim(),
+				benefit_id: env[`${prefix}_PRO_BENEFIT_ID`].trim(),
 				enabled: true,
 			});
 	}
