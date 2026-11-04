@@ -1,3 +1,5 @@
+import { sendTeamEvent } from '../email-service';
+import { loadManagedBilling } from '../plugin-control';
 import { configuredCatalog, catalogMatches, resolveBillingConfig, parseBillingEnvironment, type BillingEnvironment } from "./config.mjs";
 import { processUpgradeRefunds } from "./upgrade-refunds";
 import "server-only";
@@ -57,7 +59,8 @@ export async function billingRequest(request: Request, callback: () => Promise<R
         let selected: BillingEnvironment;
         try { selected = parseBillingEnvironment(query ?? header); }
         catch { throw new BillingError("Invalid billing environment.", 400); }
-        return await withBillingEnvironment(selected, callback);
+        const config = await loadManagedBilling(selected);
+        return await billingContext.run(config, callback);
     } catch (error) {
         return Response.json({ error: error instanceof BillingError ? error.message : "Billing service is unavailable." },
             { status: error instanceof BillingError ? error.status : 503, headers: billingHeaders });
@@ -104,6 +107,12 @@ export async function actor(request: Request) {
 			"Your account session is invalid or unverified.",
 			401,
 		);
+    if(environment()==='sandbox' && billingConfig().managed==='true') {
+      const plugins=JSON.parse(billingConfig().MANAGED_PLUGINS||'[]');
+      const plugin=plugins.find((p:{slug:string})=>p.slug===data.plugin_slug);
+      const allowed=(plugin?.testEmails||'').split(',').map((email:string)=>email.trim().toLowerCase());
+      if(!plugin?.enabled || !allowed.includes(data.email.toLowerCase()))throw new BillingError('Sandbox billing is restricted to approved developer accounts.',403);
+    }
 	return {
 		id: data.id as string,
 		email: data.email as string,
@@ -138,13 +147,13 @@ export async function identity(userId: string) {
 export async function catalog(all = false) {
 	let desired: Catalog[];
 	try {
-		desired = configuredCatalog(billingConfig());
+		desired = billingConfig().managed === "true" ? [] : configuredCatalog(billingConfig());
 	} catch (error) {
         // Configuration validation errors contain field names and rules, never credentials.
         const detail = error instanceof Error ? error.message.replaceAll("POLAR_", `POLAR_${environment().toUpperCase()}_`) : "Check the server billing variables.";
         throw new BillingError(`Central Polar product configuration is incomplete or invalid (${environment()}). ${detail}`);
 	}
-	if (!desired.length && !all) return [];
+	if (!desired.length && !all && billingConfig().managed !== "true") return [];
 	const query = database()
 		.from("billing_catalog")
 		.select("*")
@@ -152,7 +161,7 @@ export async function catalog(all = false) {
 	const { data, error } = await (all ? query : query.eq("enabled", true));
 	check(error);
 	const entries = (data || []) as Catalog[];
-	if (!catalogMatches(entries, desired))
+	if (billingConfig().managed !== "true" && !catalogMatches(entries, desired))
 		throw new BillingError(
 			`Billing catalog differs from central ENV (${environment()}). Run node scripts/configure-billing.mjs --environment ${environment()} --apply on Qubtic.`,
 		);
@@ -593,6 +602,11 @@ export async function webhook(request: Request) {
 		);
 	check(error);
 	await processEvent(eventId);
+    if(event.type==='order.paid') {
+      const data=JSON.parse(raw).data;
+      const {data:binding}=await db.from('billing_checkouts').select('plugin_slug').eq('environment',env).eq('polar_checkout_id',data.checkout_id).maybeSingle();
+      if(binding && data.customer?.email)await sendTeamEvent('purchase',binding.plugin_slug,data.customer.email,env+':'+eventId);
+    }
 }
 export async function processEvent(eventId: string) {
 	const db = database();

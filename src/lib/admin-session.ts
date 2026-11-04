@@ -3,8 +3,8 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 export interface AdminSession { id: string; name: string; email: string; role: string; expiresAt: number }
 const lifetime = 7 * 24 * 60 * 60 * 1000;
 function key() {
-  const value = process.env.ADMIN_SESSION_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!value) throw new Error('Admin session signing is not configured.');
+  const value = process.env.ADMIN_SESSION_SECRET;
+  if (!value || value.length < 32) throw new Error('Admin session signing is not configured.');
   return value;
 }
 export function createAdminSession(user: Omit<AdminSession, 'expiresAt'>): string {

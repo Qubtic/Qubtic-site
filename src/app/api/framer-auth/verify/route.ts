@@ -1,4 +1,4 @@
-import { billingRequest, paidAccess } from '@/lib/billing/core';
+import { actor, environment, billingRequest, paidAccess } from '@/lib/billing/core';
 import { NextResponse } from 'next/server';
 import { verifyFramerSessionToken } from '@/lib/framer-auth';
 
@@ -50,6 +50,7 @@ async function handleGET(request: Request) {
       );
     }
 
+    if (environment() === "sandbox") await actor(request);
     const isPro = await paidAccess(user.id, user.plugin_slug, request.headers.get("x-framer-site-id"));
 
     return NextResponse.json(
@@ -114,6 +115,7 @@ async function handlePOST(request: Request) {
       );
     }
 
+    if (environment() === "sandbox") await actor(request);
     const isPro = await paidAccess(user.id, user.plugin_slug, request.headers.get("x-framer-site-id"));
 
     return NextResponse.json(

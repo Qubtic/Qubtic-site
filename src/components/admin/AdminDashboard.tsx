@@ -1,5 +1,6 @@
 'use client';
 
+import PluginDashboard from './PluginDashboard';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
@@ -47,7 +48,7 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'services' | 'pricing' | 'blog' | 'inquiries' | 'media' | 'settings' | 'framer_users'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'services' | 'pricing' | 'blog' | 'inquiries' | 'media' | 'settings' | 'framer_users' | 'plugins'>('overview');
 
   // Data States
   const [projects, setProjects] = useState<ProjectItem[]>([]);
@@ -420,6 +421,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   };
 
   const navTabs = [
+    { id: 'plugins', label: 'Plugins & payments', icon: ShieldAlert },
     { id: 'overview', label: 'Overview & Stats', icon: LayoutDashboard },
     { id: 'framer_users', label: 'Framer Users', icon: Users, count: framerUsers.length },
     { id: 'projects', label: 'Projects Manager', icon: Briefcase, count: projects.length },
@@ -633,6 +635,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         {/* WORKSPACE BODY */}
         <div className="p-6 lg:p-8 space-y-8 flex-1">
           {/* 1. OVERVIEW TAB */}
+          {activeTab === 'plugins' && <PluginDashboard />}
           {activeTab === 'overview' && (
             <div className="space-y-8">
               {/* Stat Metric Cards Grid */}

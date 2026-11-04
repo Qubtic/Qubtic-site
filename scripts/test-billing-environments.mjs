@@ -25,6 +25,8 @@ function harness() {
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-only';
   const calls = [];
   const core = load('src/lib/billing/core.ts', {
+    '../email-service': { sendTeamEvent: async () => {} },
+        '../plugin-control': { loadManagedBilling: async selected => config.resolveBillingConfig(process.env, selected) },
     './config.mjs': config,
     './upgrade-refunds': {},
     'server-only': {},

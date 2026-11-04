@@ -131,7 +131,12 @@ async function handle(request: Request, { params }: Context) {
 		}
 		const user = await actor(request);
 		await limit(`api:${user.id}`);
-		if (action === "catalog" && request.method === "GET") {
+		if(action === "manifest" && request.method === "GET") {
+            const plugins=JSON.parse(billingConfig().MANAGED_PLUGINS||'[]');
+            const plugin=plugins.find((p:{slug:string})=>p.slug===user.plugin);
+            return reply({plugin:user.plugin,name:plugin?.name||user.plugin,logo:plugin?.logo||null,brandColor:plugin?.brandColor||null,manifest:JSON.parse(plugin?.manifest||'{}')});
+        }
+        if (action === "catalog" && request.method === "GET") {
 			const rows = (await catalog()).filter(
 				(row) => row.plugin_slug === user.plugin,
 			);

@@ -50,3 +50,8 @@ next-env.d.ts
 
 !.env.production.example
 !.env.sandbox.example
+
+!.env.bootstrap.example
+
+/supabase/.temp/
+/test-results/

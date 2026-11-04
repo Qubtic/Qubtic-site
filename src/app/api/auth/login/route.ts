@@ -1,9 +1,15 @@
+import { createHash } from 'node:crypto';
+import { supabase } from '@/lib/supabase';
 import { NextResponse } from 'next/server';
 import { verifyAdminUserDb } from '@/lib/store';
 import { createAdminSession } from '@/lib/admin-session';
 
 export async function POST(request: Request) {
   try {
+    if(request.headers.get('origin')!==new URL(request.url).origin)return NextResponse.json({error:'Invalid request origin.'},{status:403});
+    const bucket=createHash('sha256').update('admin-login:'+ (request.headers.get('x-forwarded-for')||'unknown')).digest('hex');
+    const {data:allowed,error:rateError}=await supabase.rpc('billing_throttle',{p_bucket:bucket,p_limit:10,p_seconds:900} as never);
+    if(rateError||!allowed)return NextResponse.json({error:'Please try again later.'},{status:429});
     const { username, password } = await request.json();
 
     if (!username || !password) {

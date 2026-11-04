@@ -105,7 +105,9 @@ function harness() {
 			},
 		},
 		"server-only": {},
-		"./config.mjs": {
+		'../email-service': { sendTeamEvent: async () => {} },
+        "../plugin-control": { loadManagedBilling: async selected => billingConfiguration.resolveBillingConfig(process.env, selected) },
+        "./config.mjs": {
             ...billingConfiguration,
 			configuredCatalog: () => entries,
 			catalogMatches: () => true,

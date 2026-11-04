@@ -358,7 +358,9 @@ function harness(plugin = "whatsapp-commerce") {
 		},
 	};
 	const core = load("src/lib/billing/core.ts", {
-		"./config.mjs": {
+		'../email-service': { sendTeamEvent: async () => {} },
+        "../plugin-control": { loadManagedBilling: async selected => billingConfiguration.resolveBillingConfig(process.env, selected) },
+        "./config.mjs": {
             ...billingConfiguration,
 			configuredCatalog: () => desiredCatalog,
 			catalogMatches: billingConfiguration.catalogMatches,

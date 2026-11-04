@@ -1,3 +1,4 @@
+import { hashPassword, verifyPassword } from './passwords';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
@@ -766,80 +767,20 @@ export async function getAdminUsersDb(): Promise<AdminUserItem[]> {
   }
 }
 
-export async function verifyAdminUserDb(identifier: string, password: string): Promise<{ id: string; name: string; email: string; role: string } | null> {
-  const cleanId = identifier.toLowerCase().trim();
-  const passHash = crypto.createHash('sha256').update(password).digest('hex');
-
-  try {
-    // 1. Check in Supabase admin_users table
-    const { data, error } = await supabase
-      .from('admin_users')
-      .select('*')
-      .or(`email.ilike.${cleanId},name.ilike.${cleanId}`)
-      .limit(1);
-
-    if (!error && data && data.length > 0) {
-      const user = data[0];
-      // Compare password hash or plain match
-      if (user.password_hash === passHash || user.password_hash === password || password === 's#Z3@GhyLBa9aeD') {
-        // Update last login
-        await supabase
-          .from('admin_users')
-          .update({ last_login_at: new Date().toISOString() })
-          .eq('id', user.id);
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role || 'admin',
-        };
-      }
-    }
-  } catch (err) {
-    console.error('Supabase admin verify error:', err);
-  }
-
-  // 2. Fallback check for admin 1 (rafi) & admin 2 (sunvi)
-  if (
-    (cleanId === 'rafikabir05.rk@gmail.com' || cleanId === 'rafi') &&
-    (password === 's#Z3@GhyLBa9aeD' || passHash === crypto.createHash('sha256').update('s#Z3@GhyLBa9aeD').digest('hex'))
-  ) {
-    return {
-      id: 'admin_1',
-      name: 'rafi',
-      email: 'rafikabir05.rk@gmail.com',
-      role: 'admin',
-    };
-  }
-
-  if (
-    (cleanId === 'mainulsunvi@gmail.com' || cleanId === 'sunvi') &&
-    (password === 's#Z3@GhyLBa9aeD' || passHash === crypto.createHash('sha256').update('s#Z3@GhyLBa9aeD').digest('hex'))
-  ) {
-    return {
-      id: 'admin_2',
-      name: 'sunvi',
-      email: 'mainulsunvi@gmail.com',
-      role: 'admin',
-    };
-  }
-
-  // 3. Fallback check for default settings password
-  const settings = getSettingsStore();
-  if (
-    (cleanId === 'admin@qubtic.tech' || cleanId === 'admin@qubtic.com' || cleanId === 'admin') &&
-    (password === settings.adminPasswordHash || password === 'admin123' || password === 's#Z3@GhyLBa9aeD')
-  ) {
-    return {
-      id: 'admin_default',
-      name: 'Admin',
-      email: 'admin@qubtic.tech',
-      role: 'admin',
-    };
-  }
-
-  return null;
+export async function verifyAdminUserDb(identifier: string, password: string): Promise<{id:string;name:string;email:string;role:string}|null> {
+ if(typeof identifier!=='string'||typeof password!=='string'||password.length>128||password.length<8)return null;
+ const cleanId=identifier.toLowerCase().trim();
+ // Database-backed accounts only. Legacy fallback passwords must not authorize credential administration.
+ if(!/^[a-z0-9@._+ -]{1,254}$/i.test(cleanId))return null;
+ const column=cleanId.includes('@')?'email':'name';
+ const {data:user,error}=await supabase.from('admin_users').select('*').eq(column,cleanId).maybeSingle();
+ if(error||!user||typeof user.password_hash!=='string'||!verifyPassword(password,user.password_hash))return null;
+ if(!user.password_hash.startsWith('scrypt:')) {
+ const {error:upgradeError}=await supabase.from('admin_users').update({password_hash:hashPassword(password)}).eq('id',user.id);
+ if(upgradeError)return null;
+ }
+ await supabase.from('admin_users').update({last_login_at:new Date().toISOString()}).eq('id',user.id);
+ return {id:user.id,name:user.name,email:user.email,role:user.role||'admin'};
 }
 
 // ==========================================

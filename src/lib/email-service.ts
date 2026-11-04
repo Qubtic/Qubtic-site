@@ -1,3 +1,4 @@
+import { loadManagedMail } from './plugin-control';
 import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
@@ -88,12 +89,13 @@ export function getPluginEmailAttachments(pluginSlug: string = "frame-drop") {
 /**
  * Configures and returns Nodemailer transporter using Mailgun SMTP
  */
-export function getMailTransporter() {
-	const host = process.env.SMTP_HOST || "smtp.mailgun.org";
-	const port = parseInt(process.env.SMTP_PORT || "587", 10);
-	const secure = process.env.SMTP_SECURE === "true" || port === 465;
-	const user = process.env.SMTP_USER;
-	const pass = process.env.SMTP_PASS;
+export async function getMailTransporter() {
+	const config = await loadManagedMail();
+	const host = config.host;
+	const port = Number(config.port);
+	const secure = config.secure === true || port === 465;
+	const user = config.user;
+	const pass = config.password;
 	if (!user || !pass) throw new Error("SMTP credentials are not configured.");
 
 	return nodemailer.createTransport({
@@ -118,11 +120,11 @@ export async function verifySmtpConnection(): Promise<{
 	message: string;
 }> {
 	try {
-		const transporter = getMailTransporter();
+		const transporter = await getMailTransporter();
 		await transporter.verify();
 		return {
 			success: true,
-			message: `SMTP connected successfully to ${process.env.SMTP_HOST || "smtp.mailgun.org"}:${process.env.SMTP_PORT || "587"}`,
+			message: "SMTP connection verified.",
 		};
 	} catch (err: unknown) {
 		const msg =
@@ -134,9 +136,9 @@ export async function verifySmtpConnection(): Promise<{
 /**
  * Returns sender display name and email
  */
-export function getSender(pluginSlug: string = "frame-drop"): string {
+export async function getSender(pluginSlug: string = "frame-drop"): Promise<string> {
 	const plugin = getPluginMetadata(pluginSlug);
-	const fromEmail = process.env.SMTP_FROM_EMAIL || "hello@qubtic.tech";
+	const fromEmail = (await loadManagedMail()).from;
 	return `"${plugin.name} by Qubtic" <${fromEmail}>`;
 }
 
@@ -802,12 +804,12 @@ export async function sendVerificationEmail(
 	pluginSlug: string = "frame-drop",
 ): Promise<{ messageId: string }> {
 	const plugin = getPluginMetadata(pluginSlug);
-	const transporter = getMailTransporter();
+	const transporter = await getMailTransporter();
 	const html = generateVerificationEmailHtml(code, name, plugin.slug);
 	const attachments = getPluginEmailAttachments(plugin.slug);
-	const from = getSender(plugin.slug);
+	const from = await getSender(plugin.slug);
 
-	const info = await transporter.sendMail({
+	const info = await trackedMail(transporter, plugin.slug, 'verification', {
 		from,
 		to,
 		subject: `Your ${plugin.name} Verification Code: ${code} (Qubtic)`,
@@ -829,12 +831,12 @@ export async function sendPasswordResetEmail(
 	pluginSlug: string = "frame-drop",
 ): Promise<{ messageId: string }> {
 	const plugin = getPluginMetadata(pluginSlug);
-	const transporter = getMailTransporter();
+	const transporter = await getMailTransporter();
 	const html = generatePasswordResetEmailHtml(code, name, plugin.slug);
 	const attachments = getPluginEmailAttachments(plugin.slug);
-	const from = getSender(plugin.slug);
+	const from = await getSender(plugin.slug);
 
-	const info = await transporter.sendMail({
+	const info = await trackedMail(transporter, plugin.slug, 'password_reset', {
 		from,
 		to,
 		subject: `Your ${plugin.name} Password Reset Code: ${code} (Qubtic)`,
@@ -872,28 +874,11 @@ export async function sendNewUserTeamNotification(
 	},
 	pluginSlug: string = "frame-drop",
 ): Promise<{ messageId: string }> {
-	const plugin = getPluginMetadata(user.plugin_slug || pluginSlug);
-	const transporter = getMailTransporter();
-	const html = generateNewUserTeamNotificationEmailHtml(
-		user,
-		meta,
-		plugin.slug,
-	);
-	const attachments = getPluginEmailAttachments(plugin.slug);
-	const from = getSender(plugin.slug);
-	const targetEmail =
-		process.env.TEAM_NOTIFICATION_EMAIL || "hello@qubtic.tech";
-
-	const info = await transporter.sendMail({
-		from,
-		to: targetEmail,
-		subject: `🚀 New Member: ${user.name || user.email} via ${plugin.name} | Qubtic Team Alert`,
-		text: `New member registered on ${plugin.name} (Qubtic)!\nEmail: ${user.email}\nName: ${user.name || "N/A"}\nPlugin: ${plugin.name} (${plugin.slug})\nID: ${user.id || "N/A"}\nCreated: ${user.created_at || user.createdAt || new Date().toISOString()}\nTeam alert sent to: ${targetEmail}`,
-		html,
-		attachments,
-	});
-
-	return { messageId: info.messageId };
+ const event=meta?.authMode && !meta.authMode.includes('signup')?'signin':'signup';
+ const identity=user.id||user.email;
+ const reference=event==='signup'?String(user.created_at||user.createdAt||identity):new Date().toISOString();
+ await sendTeamEvent(event,user.plugin_slug||pluginSlug,user.email,identity+':'+reference);
+ return {messageId:'queued'};
 }
 
 /**
@@ -908,7 +893,7 @@ export async function sendTeamInviteEmail(
 	role: string = "Editor",
 ): Promise<{ messageId: string }> {
 	const plugin = getPluginMetadata(pluginSlug);
-	const transporter = getMailTransporter();
+	const transporter = await getMailTransporter();
 	const html = generateTeamInviteEmailHtml(
 		to,
 		inviterName,
@@ -918,9 +903,9 @@ export async function sendTeamInviteEmail(
 		role,
 	);
 	const attachments = getPluginEmailAttachments(plugin.slug);
-	const from = getSender(plugin.slug);
+	const from = await getSender(plugin.slug);
 
-	const info = await transporter.sendMail({
+	const info = await trackedMail(transporter, plugin.slug, 'team_invitation', {
 		from,
 		to,
 		subject: `You've been invited to join ${teamName} on ${plugin.name}`,
@@ -930,4 +915,34 @@ export async function sendTeamInviteEmail(
 	});
 
 	return { messageId: info.messageId };
+}
+
+/** Transactional team alerts use plain text and never include credentials or full provider payloads. */
+export async function sendTeamEvent(event: 'signup' | 'signin' | 'purchase', plugin: string, email: string, eventId: string) {
+ const mail=await loadManagedMail();if(!mail[event])return;
+ const {supabase}=await import('./supabase');
+ const {error}=await supabase.from('plugin_team_events').upsert({id:event+':'+eventId,event,plugin,email,recipient:mail.teamEmail},{onConflict:'id',ignoreDuplicates:true});
+ if(error)throw new Error('Unable to queue team alert.');
+}
+export async function flushTeamEvents() {
+ const {supabase}=await import('./supabase');
+ const {data,error}=await supabase.rpc('claim_plugin_team_events');
+ if(error)throw new Error('Team notification queue unavailable.');
+ for(const item of (data||[]) as {id:string;event:string;plugin:string;email:string;recipient?:string;subject?:string;body?:string}[]) {
+  try {
+   const mail=await loadManagedMail();
+   if(item.event==='manual'||mail[item.event]) { const transport=await getMailTransporter();await transport.sendMail({from:await getSender(item.plugin),to:item.event==='manual'?item.email:item.recipient||mail.teamEmail,subject:item.event==='manual'?item.subject:`Qubtic: ${item.event} · ${getPluginMetadata(item.plugin).name}`,text:item.event==='manual'?item.body:`Event: ${item.event}\nPlugin: ${item.plugin}\nAccount: ${item.email}\nReference: ${item.id}`}); }
+   await supabase.from('plugin_team_events').update({delivered_at:new Date().toISOString()}).eq('id',item.id);
+  } catch { /* Lease expires for a bounded retry; credentials and provider payloads stay private. */ }
+ }
+}
+
+async function recordMailDelivery(email:string,plugin:string,event:string,status:string){
+ const {supabase}=await import('./supabase');
+ await supabase.from('plugin_mail_log').insert({email,plugin,event,status});
+}
+
+async function trackedMail(transport: Awaited<ReturnType<typeof getMailTransporter>>,plugin:string,event:string,message:{from:string;to:string;subject:string;text:string;html?:string;attachments?:ReturnType<typeof getPluginEmailAttachments>}) {
+ try { const info=await transport.sendMail(message);await recordMailDelivery(String(message.to||''),plugin,event,'smtp_accepted');return info; }
+ catch(error){await recordMailDelivery(String(message.to||''),plugin,event,'failed');throw error;}
 }

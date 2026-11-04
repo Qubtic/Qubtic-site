@@ -8,7 +8,7 @@
 		"start": "next start",
 		"lint": "eslint",
 		"typecheck": "tsc --noEmit",
-		"test": "node --test scripts/test-commerce-api.mjs scripts/test-commerce-shared-db.mjs tests/shared-commerce-auth.mjs scripts/test-billing-api.mjs scripts/test-billing-db.mjs scripts/test-billing-core.mjs scripts/test-upgrade-refunds.mjs scripts/test-billing-config.mjs scripts/test-billing-launch.mjs scripts/test-billing-environments.mjs",
+		"test": "node --test scripts/test-commerce-api.mjs scripts/test-commerce-shared-db.mjs tests/shared-commerce-auth.mjs scripts/test-billing-api.mjs scripts/test-billing-db.mjs scripts/test-billing-core.mjs scripts/test-upgrade-refunds.mjs scripts/test-billing-config.mjs scripts/test-billing-launch.mjs scripts/test-billing-environments.mjs scripts/test-plugin-control.mjs scripts/test-plugin-operations.mjs",
 		"test:commerce": "node --test scripts/test-commerce-api.mjs scripts/test-commerce-shared-db.mjs tests/shared-commerce-auth.mjs",
 		"test:commerce:legacy": "node --test scripts/test-commerce-access.mjs",
 		"test:billing": "node --test scripts/test-billing-api.mjs scripts/test-billing-db.mjs scripts/test-billing-core.mjs scripts/test-upgrade-refunds.mjs scripts/test-billing-config.mjs scripts/test-billing-launch.mjs scripts/test-billing-environments.mjs",

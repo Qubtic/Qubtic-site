@@ -59,20 +59,14 @@ if (args.has("--organization")) {
 	const keys = new Set(
 		[...example.matchAll(/^([A-Z][A-Z0-9_]*)=/gm)].map((match) => match[1]),
 	);
-    const providerKeys = ["ACCESS_TOKEN", "ORGANIZATION_ID", "WEBHOOK_SECRET",
-        ...PLUGINS.flatMap(plugin => [
-            ...CADENCES.map(c => `${plugin.prefix.slice(6)}_${c.toUpperCase()}_PRODUCT_ID`),
-            `${plugin.prefix.slice(6)}_PRO_BENEFIT_ID`,
-        ])];
-    const required = ["BILLING_CRON_SECRET", "ADMIN_SESSION_SECRET", "NEXT_PUBLIC_SITE_URL", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY",
-        ...["SANDBOX", "PRODUCTION"].flatMap(env => providerKeys.map(key => `POLAR_${env}_${key}`))];
+    const required = ['SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY','ADMIN_SESSION_SECRET','PLUGIN_CONFIG_ENCRYPTION_KEY','NEXT_PUBLIC_SITE_URL'];
 	const missing = required.filter((key) => !keys.has(key));
 	if (missing.length) {
 		console.error("Missing template keys: " + missing.join(", "));
 		process.exitCode = 1;
 	} else
 		console.log(
-			"Central ENV template includes every required billing/auth setting. No credentials loaded and no network requests made.",
+			"Bootstrap ENV template includes every required control-plane setting. No credentials loaded and no network requests made.",
 		);
 } else {
 	const problems = configurationProblems(config);
@@ -188,6 +182,8 @@ if (args.has("--organization")) {
 					limit: 1,
 				});
 				if (args.has("--apply")) {
+                    const {data:managed}=await db.from('plugin_control').select('id').eq('id','polar:'+selected).maybeSingle();
+                    if(managed)throw new Error('This environment is managed by Plugins & payments. Publish through the dashboard.');
 					const { data, error: applyError } = await db.rpc(
 						"billing_configure_catalog",
 						{ p_environment: config.POLAR_ENVIRONMENT, p_rows: rows },

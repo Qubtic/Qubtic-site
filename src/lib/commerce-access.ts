@@ -2,6 +2,7 @@ import "server-only";
 import { supabase } from "./supabase";
 import {
 	database,
+    actor,
     billingConfig,
     billingRequest,
 	environment,
@@ -100,7 +101,8 @@ async function handleCommerceRequest(
 				user.metadata?.email_verified !== true
 			)
 				return reply({ error: `Sign in to ${productName} first.` }, 401);
-			const site = request.headers.get("x-framer-site-id");
+			if (environment() === "sandbox") await actor(request);
+            const site = request.headers.get("x-framer-site-id");
 			let isPro = await paidAccess(user.id, product, site);
 
 			// Self-healing: if paidAccess is false for a site, check if this customer has a purchase

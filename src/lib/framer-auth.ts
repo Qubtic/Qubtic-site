@@ -273,12 +273,13 @@ export async function createOrUpdateFramerUser(params: {
           syncUserLocally(userWithAttrs);
 
           if (wasPending) {
-            sendNewUserTeamNotification(userWithAttrs, params.metadata, pluginSlug).catch((err) => {
+            await sendNewUserTeamNotification(userWithAttrs, params.metadata, pluginSlug).catch((err) => {
               console.warn('[Team Alert] Error sending team notification:', err);
             });
             return { user: userWithAttrs, isNew: true, token };
           }
 
+          await sendNewUserTeamNotification(userWithAttrs, {...params.metadata,authMode:'signin'}, pluginSlug).catch(() => {});
           return { user: userWithAttrs, isNew: false, token };
         } else if (updateErr) {
           console.warn('Supabase framer_users update error:', updateErr);
@@ -328,7 +329,7 @@ export async function createOrUpdateFramerUser(params: {
           syncUserLocally(userWithAttrs);
 
           // Asynchronously notify Qubtic team of new member registration
-          sendNewUserTeamNotification(userWithAttrs, params.metadata, pluginSlug).catch((err) => {
+          await sendNewUserTeamNotification(userWithAttrs, params.metadata, pluginSlug).catch((err) => {
             console.warn('[Team Alert] Error sending team notification:', err);
           });
 
@@ -390,12 +391,13 @@ export async function createOrUpdateFramerUser(params: {
     writeLocalUsers(localList);
 
     if (wasPending) {
-      sendNewUserTeamNotification(existing, params.metadata, pluginSlug).catch((err) => {
+      await sendNewUserTeamNotification(existing, params.metadata, pluginSlug).catch((err) => {
         console.warn('[Team Alert] Error sending team notification:', err);
       });
       return { user: existing, isNew: true, token };
     }
 
+    await sendNewUserTeamNotification(existing, {...params.metadata,authMode:'signin'}, pluginSlug).catch(() => {});
     return { user: existing, isNew: false, token };
   } else {
     const earlyBird = evaluateEarlyBirdStatus();
@@ -433,7 +435,7 @@ export async function createOrUpdateFramerUser(params: {
     writeLocalUsers(localList);
 
     // Asynchronously notify Qubtic team of new member registration
-    sendNewUserTeamNotification(newRecord, params.metadata, pluginSlug).catch((err) => {
+    await sendNewUserTeamNotification(newRecord, params.metadata, pluginSlug).catch((err) => {
       console.warn('[Team Alert] Error sending team notification:', err);
     });
 

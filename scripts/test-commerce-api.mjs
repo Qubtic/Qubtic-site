@@ -108,7 +108,7 @@ function harness() {
 	const api = load("src/lib/commerce-access.ts", {
 		"server-only": {},
 		"./framer-auth": auth,
-		"./billing/core": { paidAccess: async () => false, billingConfig: () => ({}), billingRequest: (_request, callback) => callback() },
+		"./billing/core": { environment: () => "production", actor: async () => ({}), paidAccess: async () => false, billingConfig: () => ({}), billingRequest: (_request, callback) => callback() },
 		"./supabase": { supabase },
 	});
 	const next = {
@@ -340,7 +340,7 @@ for (const product of ["whatsapp-commerce", "telegram-commerce"]) {
 
 	test("admin sessions reject tampering, unsigned legacy cookies, and expired cookies", () => {
 		const previous = process.env.ADMIN_SESSION_SECRET;
-		process.env.ADMIN_SESSION_SECRET = "local-test-signing-secret";
+		process.env.ADMIN_SESSION_SECRET = "local-test-signing-secret-at-least-32-characters";
 		try {
 			const admin = load("src/lib/admin-session.ts", { "server-only": {} });
 			const token = admin.createAdminSession({
