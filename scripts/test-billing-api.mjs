@@ -222,7 +222,7 @@ function harness(plugin = "whatsapp-commerce") {
 				calls.push(body);
 				return {
 					id: "checkout1",
-					url: "https://buy.polar.sh/test",
+					url: "https://sandbox.buy.polar.sh/test",
 					expires_at: "2099-01-01T00:00:00Z",
 				};
 			},
@@ -230,7 +230,7 @@ function harness(plugin = "whatsapp-commerce") {
 		customerSessions: {
 			create: async (body) => {
 				calls.push(body);
-				return { customer_portal_url: "https://polar.sh/portal/test" };
+				return { customer_portal_url: "https://sandbox.polar.sh/portal/test" };
 			},
 		},
 	};
@@ -359,6 +359,7 @@ function harness(plugin = "whatsapp-commerce") {
 	};
 	const core = load("src/lib/billing/core.ts", {
 		"./config.mjs": {
+            ...billingConfiguration,
 			configuredCatalog: () => desiredCatalog,
 			catalogMatches: billingConfiguration.catalogMatches,
 		},
@@ -382,6 +383,7 @@ function harness(plugin = "whatsapp-commerce") {
 				method: body === undefined ? "GET" : "POST",
 				headers: {
 					"X-Framer-Site-Id": site,
+                    "X-Billing-Environment": "sandbox",
 					Authorization: `Bearer ${token}`,
 					...(body === undefined ? {} : { "Content-Type": "application/json" }),
 				},
@@ -391,8 +393,13 @@ function harness(plugin = "whatsapp-commerce") {
 		);
 		return { status: r.status, data: await r.json() };
 	};
+    const sandboxCore = { ...core };
+    for (const [key, value] of Object.entries(core)) {
+        if (typeof value === "function" && !["BillingError", "withBillingEnvironment"].includes(key))
+            sandboxCore[key] = (...args) => core.withBillingEnvironment("sandbox", () => value(...args));
+    }
 	return {
-		core,
+		core: sandboxCore,
 		route,
 		request,
 		tables,

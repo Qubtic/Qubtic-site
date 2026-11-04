@@ -5,6 +5,8 @@ import { createPolar } from "@polar-sh/sdk/2026-10";
 import { readFileSync } from "node:fs";
 import {
 	configuredCatalog,
+    resolveBillingConfig,
+    parseBillingEnvironment,
 	configurationProblems,
 	billingSiteUrl,
 	catalogMatches,
@@ -12,19 +14,28 @@ import {
 	CADENCES,
 } from "../src/lib/billing/config.mjs";
 const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const envIndex = rawArgs.indexOf("--environment");
+let selected;
+try {
+    if (envIndex < 0 && !args.has("--example")) throw new Error("Pass --environment sandbox or --environment production explicitly.");
+    selected = parseBillingEnvironment(envIndex < 0 ? null : rawArgs[envIndex + 1] ?? "");
+} catch (error) { console.error(error.message); process.exit(1); }
+if (!args.has("--example")) loadEnvConfig(process.cwd(), process.env.NODE_ENV !== "production");
+const config = resolveBillingConfig(process.env, selected);
+
 if (args.has("--organization")) {
-	loadEnvConfig(process.cwd(), process.env.NODE_ENV !== "production");
 	if (
-		!process.env.POLAR_ACCESS_TOKEN ||
-		!["sandbox", "production"].includes(process.env.POLAR_ENVIRONMENT)
+		!config.POLAR_ACCESS_TOKEN ||
+		!["sandbox", "production"].includes(config.POLAR_ENVIRONMENT)
 	) {
-		console.error("Set POLAR_ACCESS_TOKEN and POLAR_ENVIRONMENT first.");
+		console.error(`Set POLAR_${selected.toUpperCase()}_ACCESS_TOKEN first.`);
 		process.exitCode = 1;
 	} else {
 		try {
 			const client = createPolar({
-				accessToken: process.env.POLAR_ACCESS_TOKEN,
-				environment: process.env.POLAR_ENVIRONMENT,
+				accessToken: config.POLAR_ACCESS_TOKEN,
+				environment: config.POLAR_ENVIRONMENT,
 				timeout: 20,
 			});
 			const result = await client.organizations.list({ limit: 2 });
@@ -32,7 +43,7 @@ if (args.has("--organization")) {
 				throw new Error(
 					"Expected exactly one accessible organization. Copy your organization UUID from Polar settings.",
 				);
-			console.log(`POLAR_ORGANIZATION_ID=${result.items[0].id}`);
+			console.log(`POLAR_${selected.toUpperCase()}_ORGANIZATION_ID=${result.items[0].id}`);
 		} catch {
 			console.error(
 				"Could not resolve the organization. Check your Organization Access Token and environment.",
@@ -48,21 +59,13 @@ if (args.has("--organization")) {
 	const keys = new Set(
 		[...example.matchAll(/^([A-Z][A-Z0-9_]*)=/gm)].map((match) => match[1]),
 	);
-	const required = [
-		"POLAR_ENVIRONMENT",
-		"POLAR_ACCESS_TOKEN",
-		"POLAR_ORGANIZATION_ID",
-		"POLAR_WEBHOOK_SECRET",
-		"BILLING_CRON_SECRET",
-		"ADMIN_SESSION_SECRET",
-		"NEXT_PUBLIC_SITE_URL",
-		"SUPABASE_URL",
-		"SUPABASE_SERVICE_ROLE_KEY",
-		...PLUGINS.flatMap((plugin) => [
-			...CADENCES.map((c) => `${plugin.prefix}_${c.toUpperCase()}_PRODUCT_ID`),
-			`${plugin.prefix}_PRO_BENEFIT_ID`,
-		]),
-	];
+    const providerKeys = ["ACCESS_TOKEN", "ORGANIZATION_ID", "WEBHOOK_SECRET",
+        ...PLUGINS.flatMap(plugin => [
+            ...CADENCES.map(c => `${plugin.prefix.slice(6)}_${c.toUpperCase()}_PRODUCT_ID`),
+            `${plugin.prefix.slice(6)}_PRO_BENEFIT_ID`,
+        ])];
+    const required = ["BILLING_CRON_SECRET", "ADMIN_SESSION_SECRET", "NEXT_PUBLIC_SITE_URL", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY",
+        ...["SANDBOX", "PRODUCTION"].flatMap(env => providerKeys.map(key => `POLAR_${env}_${key}`))];
 	const missing = required.filter((key) => !keys.has(key));
 	if (missing.length) {
 		console.error("Missing template keys: " + missing.join(", "));
@@ -72,18 +75,17 @@ if (args.has("--organization")) {
 			"Central ENV template includes every required billing/auth setting. No credentials loaded and no network requests made.",
 		);
 } else {
-	loadEnvConfig(process.cwd(), process.env.NODE_ENV !== "production");
-	const problems = configurationProblems(process.env);
+	const problems = configurationProblems(config);
 	if (problems.length) {
-		for (const problem of problems) console.error(problem);
+		for (const problem of problems) console.error(problem.replaceAll("POLAR_", `POLAR_${selected.toUpperCase()}_`));
 		process.exitCode = 1;
 	} else {
-		const rows = configuredCatalog(process.env),
-			origin = billingSiteUrl(process.env);
+		const rows = configuredCatalog(config),
+			origin = billingSiteUrl(config);
 		console.log(
-			`Local configuration valid: ${rows.length} plans; ${process.env.POLAR_ENVIRONMENT}. Values and secrets are hidden.`,
+			`Local configuration valid: ${rows.length} plans; ${config.POLAR_ENVIRONMENT}. Values and secrets are hidden.`,
 		);
-		console.log(`Webhook: ${origin}/api/billing/webhook`);
+		console.log(`Webhook: ${origin}/api/billing/webhook/${selected}`);
 		if (args.has("--remote") || args.has("--apply")) {
 			try {
 				const db = createClient(
@@ -92,8 +94,8 @@ if (args.has("--organization")) {
 					{ auth: { persistSession: false, autoRefreshToken: false } },
 				);
 				const polar = createPolar({
-					accessToken: process.env.POLAR_ACCESS_TOKEN,
-					environment: process.env.POLAR_ENVIRONMENT,
+					accessToken: config.POLAR_ACCESS_TOKEN,
+					environment: config.POLAR_ENVIRONMENT,
 					timeout: 20,
 				});
 				// OATs use resource APIs; OAuth authorize requires an OAuth client and cannot inspect OAT scopes.
@@ -101,7 +103,7 @@ if (args.has("--organization")) {
 				if (
 					organizations.items.length !== 1 ||
 					organizations.pagination.total_count !== 1 ||
-					organizations.items[0].id !== process.env.POLAR_ORGANIZATION_ID
+					organizations.items[0].id !== config.POLAR_ORGANIZATION_ID
 				)
 					throw new Error(
 						"Use an Organization Access Token belonging to POLAR_ORGANIZATION_ID.",
@@ -112,13 +114,13 @@ if (args.has("--organization")) {
 					polar.subscriptions,
 				])
 					await service.list({
-						organization_id: process.env.POLAR_ORGANIZATION_ID,
+						organization_id: config.POLAR_ORGANIZATION_ID,
 						limit: 1,
 					});
 				const org = await polar.organizations.get(
-					process.env.POLAR_ORGANIZATION_ID,
+					config.POLAR_ORGANIZATION_ID,
 				);
-				if (org.id !== process.env.POLAR_ORGANIZATION_ID)
+				if (org.id !== config.POLAR_ORGANIZATION_ID)
 					throw new Error("Organization mismatch.");
 				for (const row of rows) {
 					const product = await polar.products.get(row.product_id);
@@ -158,7 +160,7 @@ if (args.has("--organization")) {
 				const { data: current, error } = await db
 					.from("billing_catalog")
 					.select("*")
-					.eq("environment", process.env.POLAR_ENVIRONMENT);
+					.eq("environment", config.POLAR_ENVIRONMENT);
 				if (error)
 					throw new Error(
 						"Billing schema is unavailable. Apply the billing migrations first.",
@@ -182,13 +184,13 @@ if (args.has("--organization")) {
 						"Upgrade refund schema is unavailable. Apply supabase/billing_upgrade_refunds.sql before deploying the refund worker.",
 					);
 				await polar.refunds.list({
-					organization_id: process.env.POLAR_ORGANIZATION_ID,
+					organization_id: config.POLAR_ORGANIZATION_ID,
 					limit: 1,
 				});
 				if (args.has("--apply")) {
 					const { data, error: applyError } = await db.rpc(
 						"billing_configure_catalog",
-						{ p_environment: process.env.POLAR_ENVIRONMENT, p_rows: rows },
+						{ p_environment: config.POLAR_ENVIRONMENT, p_rows: rows },
 					);
 					if (applyError)
 						throw new Error(

@@ -1,6 +1,8 @@
 import { billingSiteUrl } from "@/lib/billing/config.mjs";
 import {
 	actor,
+    billingConfig,
+    billingRequest,
 	BillingError,
 	billingHeaders,
 	catalog,
@@ -66,7 +68,7 @@ async function handle(request: Request, { params }: Context) {
 				return reply({ pending: true }, 202);
 			throw new BillingError("Checkout is expired or unavailable.", 410);
 		}
-		if (action === "reconcile" && request.method === "POST") {
+		if (action === "reconcile" && ["GET", "POST"].includes(request.method)) {
 			if (!cronAuthorized(request))
 				throw new BillingError("Unauthorized.", 401);
 			// Bounded durable batches; oldest snapshots first. Failed events remain pending.
@@ -379,6 +381,7 @@ async function handle(request: Request, { params }: Context) {
 					.select("*")
 					.eq("user_id", user.id)
 					.eq("request_key", body.request_id)
+                    .eq("environment", env)
 					.maybeSingle(),
 				siteScoped && site
 					? baseSubQuery.eq("site_id", site)
@@ -555,7 +558,7 @@ async function handle(request: Request, { params }: Context) {
 					!customer?.polar_customer_id ||
 					subscription.customer_id !== customer.polar_customer_id ||
 					subscription.customer.organization_id !==
-						process.env.POLAR_ORGANIZATION_ID ||
+						billingConfig().POLAR_ORGANIZATION_ID ||
 					subscription.id !== activeSub.polar_subscription_id ||
 					subscription.status !== "active" ||
 					!original ||
@@ -582,7 +585,7 @@ async function handle(request: Request, { params }: Context) {
 				selectable.map(async (selected) => {
 					const product = await sdk.products.get(selected!.product_id);
 					if (
-						product.organization_id !== process.env.POLAR_ORGANIZATION_ID ||
+						product.organization_id !== billingConfig().POLAR_ORGANIZATION_ID ||
 						product.is_archived ||
 						!product.benefits.some((b) => b.id === row.benefit_id)
 					)
@@ -701,7 +704,7 @@ async function handle(request: Request, { params }: Context) {
 				if (unusedCreditCents > 0) {
 					try {
 						const discount = await sdk.discounts.create({
-							organization_id: process.env.POLAR_ORGANIZATION_ID,
+							organization_id: billingConfig().POLAR_ORGANIZATION_ID,
 							name: `Prorated Monthly Credit ($${(unusedCreditCents / 100).toFixed(2)})`,
 							type: "fixed",
 							amount: unusedCreditCents,
@@ -837,8 +840,8 @@ async function handle(request: Request, { params }: Context) {
 				allow_trial: false,
 				allow_discount_codes: true,
 				...(discountId ? { discount_id: discountId } : {}),
-				success_url: `${billingSiteUrl(process.env)}/billing/return?plugin=${encodeURIComponent(user.plugin)}`,
-				return_url: `${billingSiteUrl(process.env)}/billing/return?plugin=${encodeURIComponent(user.plugin)}`,
+				success_url: `${billingSiteUrl(billingConfig())}/billing/return?plugin=${encodeURIComponent(user.plugin)}`,
+				return_url: `${billingSiteUrl(billingConfig())}/billing/return?plugin=${encodeURIComponent(user.plugin)}`,
 				metadata: {
 					qubtic_checkout_id: id,
 					plugin_slug: user.plugin,
@@ -876,6 +879,8 @@ async function handle(request: Request, { params }: Context) {
 		);
 	}
 }
-export const GET = handle;
-export const POST = handle;
-export const OPTIONS = handle;
+export function GET(request: Request, context: Context) {
+    return billingRequest(request, () => handle(request, context));
+}
+export const POST = GET;
+export const OPTIONS = GET;

@@ -1,10 +1,11 @@
 (() => {
   'use strict';
   const channel = window.location.hash.slice(1);
+  const selected = new URLSearchParams(window.location.search).get('environment') ?? 'production';
   const status = document.getElementById('launch-status');
   const spinner = document.getElementById('launch-spinner');
   const recovery = document.getElementById('launch-recovery');
-  const hosts = new Set(['polar.sh', 'buy.polar.sh', 'sandbox.polar.sh', 'sandbox-api.polar.sh', 'api.polar.sh', 'sandbox.buy.polar.sh']);
+  const hosts = new Set(selected === 'sandbox' ? ['sandbox.polar.sh', 'sandbox-api.polar.sh', 'sandbox.buy.polar.sh'] : ['polar.sh', 'buy.polar.sh', 'api.polar.sh']);
   let stopped = false;
   let controller;
   let timer;
@@ -51,7 +52,7 @@
     if (!opener || event.source !== opener || event.data?.channel !== channel) return;
     if (event.data.type === 'qubtic-billing-checkout' && typeof event.data.url === 'string') navigateTo(event.data.url);
   }
-  if (!/^[0-9a-f-]{36}$/i.test(channel)) {
+  if (!['sandbox', 'production'].includes(selected) || !/^[0-9a-f-]{36}$/i.test(channel)) {
     fail('This checkout link is invalid.');
     return;
   }
@@ -65,7 +66,7 @@
     controller = new AbortController();
     const requestTimer = setTimeout(() => controller.abort(), 5000);
     try {
-      const res = await fetch(`/api/billing/resolve?channel=${encodeURIComponent(channel)}`, { cache: 'no-store', signal: controller.signal });
+      const res = await fetch(`/api/billing/resolve?channel=${encodeURIComponent(channel)}&environment=${selected}`, { cache: 'no-store', signal: controller.signal });
       if (stopped) return;
       if (res.status === 200) {
         const data = await res.json();

@@ -108,7 +108,7 @@ function harness() {
 	const api = load("src/lib/commerce-access.ts", {
 		"server-only": {},
 		"./framer-auth": auth,
-		"./billing/core": { paidAccess: async () => false },
+		"./billing/core": { paidAccess: async () => false, billingConfig: () => ({}), billingRequest: (_request, callback) => callback() },
 		"./supabase": { supabase },
 	});
 	const next = {

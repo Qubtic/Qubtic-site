@@ -159,8 +159,10 @@ test("single sanitized template is complete; example validation loads no real en
 		"CLOUDINARY_API_KEY",
 		"CLOUDINARY_API_SECRET",
 		"CLOUDINARY_URL",
-		"POLAR_ACCESS_TOKEN",
-		"POLAR_WEBHOOK_SECRET",
+		"POLAR_PRODUCTION_ACCESS_TOKEN",
+        "POLAR_SANDBOX_ACCESS_TOKEN",
+        "POLAR_PRODUCTION_WEBHOOK_SECRET",
+        "POLAR_SANDBOX_WEBHOOK_SECRET",
 		"SUPABASE_SERVICE_ROLE_KEY",
 	])
 		assert.match(file, new RegExp("^" + key + "=$", "m"));

@@ -1,3 +1,5 @@
+> **Environment update:** Follow [POLAR_ENVIRONMENTS.md](POLAR_ENVIRONMENTS.md) for simultaneous sandbox/production setup. Global environment-switching instructions below describe the legacy configuration; use explicit `--environment sandbox` or `--environment production` with setup commands.
+
 # Commerce plugins: one site per purchase
 
 WhatsApp Commerce and Telegram Commerce Pro are scoped to `(billing customer, plugin, Framer project ID)`.

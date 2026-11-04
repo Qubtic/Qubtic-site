@@ -7,3 +7,7 @@ export function billingSiteUrl(env: Environment): string;
 export function configuredCatalog(env: Environment): CatalogConfiguration[];
 export function configurationProblems(env: Environment): string[];
 export function catalogMatches(actual: CatalogConfiguration[], desired: CatalogConfiguration[]): boolean;
+
+export type BillingEnvironment = 'sandbox' | 'production';
+export function parseBillingEnvironment(value?: string | null): BillingEnvironment;
+export function resolveBillingConfig(source: Environment, selected?: BillingEnvironment): Readonly<Environment>;

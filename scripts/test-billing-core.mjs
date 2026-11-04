@@ -1,3 +1,4 @@
+import * as billingConfiguration from "../src/lib/billing/config.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -105,6 +106,7 @@ function harness() {
 		},
 		"server-only": {},
 		"./config.mjs": {
+            ...billingConfiguration,
 			configuredCatalog: () => entries,
 			catalogMatches: () => true,
 		},
@@ -128,6 +130,10 @@ function harness() {
 		(name) => (name in deps ? deps[name] : native(name)),
 		core,
 	);
+    for (const [key, value] of Object.entries(core)) {
+        if (typeof value === "function" && !["BillingError", "withBillingEnvironment"].includes(key))
+            core[key] = (...args) => core.withBillingEnvironment("sandbox", () => value(...args));
+    }
 	function purchase(plugin, site, cadence = "lifetime") {
 		const id = `${plugin}-${site}-${cadence}`;
 		const subscription_id = cadence === "lifetime" ? null : id;

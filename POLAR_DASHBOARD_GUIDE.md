@@ -1,3 +1,5 @@
+> **Environment update:** Follow [POLAR_ENVIRONMENTS.md](POLAR_ENVIRONMENTS.md) for simultaneous sandbox/production setup. Global environment-switching instructions below describe the legacy configuration; use explicit `--environment sandbox` or `--environment production` with setup commands.
+
 # Polar dashboard setup — one Qubtic server ENV for every plugin
 
 The only billing configuration template is **`Qubtic/.env.example`**. Copy its settings into the Qubtic website's existing `.env`/`.env.local` or your hosting provider's server Environment Variables. Do not overwrite an existing real environment file. Next.js loads `.env.local` before `.env`; avoid setting the same key differently in both files.

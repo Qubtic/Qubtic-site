@@ -1,3 +1,5 @@
+> **Environment update:** Follow [POLAR_ENVIRONMENTS.md](POLAR_ENVIRONMENTS.md) for simultaneous sandbox/production setup. Global environment-switching instructions below describe the legacy configuration; use explicit `--environment sandbox` or `--environment production` with setup commands.
+
 # Central Polar billing deployment
 
 The implementation supports FrameDrop, WhatsApp Commerce, Qube Auth, and future plugins using verified shared Qubtic accounts. Plugin purchases are separate. This bills the Qubtic plugin license; it does not process a merchant's storefront orders.

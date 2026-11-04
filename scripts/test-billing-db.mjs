@@ -352,3 +352,29 @@ for (const plugin of ["whatsapp-commerce", "telegram-commerce"])
 			await db.close();
 		}
 	});
+
+
+test('environment migration is repeatable; sandbox synchronization cannot overwrite production plan or checkout retry keys', async () => {
+ const db=await setup();
+ try {
+  for (const file of ['billing_discounts.sql','billing_sites.sql','billing_telegram_sites.sql','billing_environments.sql','billing_environments.sql'])
+   await db.exec(await readFile(new URL(`../supabase/${file}`,import.meta.url),'utf8'));
+  const user=randomUUID(), product=randomUUID(), benefit=randomUUID();
+  await db.query("insert into framer_users(id,email,plugin_slug,auth_token,status,metadata) values($1,'env@example.test','qube-auth','env-token','active','{\"email_verified\":true}')",[user]);
+  const customers={};
+  for(const env of ['production','sandbox']) {
+   customers[env]=(await db.query('select billing_identity($1,$2) as id',[user,env])).rows[0].id;
+   await db.query("insert into billing_catalog(environment,plugin_slug,cadence,product_id,benefit_id) values($1,'qube-auth','lifetime',$2,$3)",[env,product,benefit]);
+   await db.query("insert into billing_checkouts(user_id,customer_id,environment,plugin_slug,cadence,product_id,request_key,status) values($1,$2,$3,'qube-auth','lifetime',$4,'b6a1d110-f87b-4a31-b4dd-787946e7e342','creating')",[user,customers[env],env,product]);
+  }
+  let offset=0;
+  const apply=async(env,grants)=>db.query('select billing_apply_snapshot($1,$2,$3,$4,$5,$6)',[customers[env],new Date(Date.now()+ ++offset*1000).toISOString(),env+'-customer',JSON.stringify(grants),'[]','[]']);
+  const plan=async()=>(await db.query('select plan from framer_users where id=$1',[user])).rows[0].plan;
+  await apply('production',[{plugin_slug:'qube-auth'}]); assert.equal(await plan(),'pro');
+  await apply('sandbox',[]); assert.equal(await plan(),'pro');
+  await apply('production',[]); assert.equal(await plan(),'free');
+  await apply('sandbox',[{plugin_slug:'qube-auth'}]); assert.equal(await plan(),'free');
+  assert.equal((await db.query('select count(*)::int as n from billing_checkouts where user_id=$1',[user])).rows[0].n,2);
+  assert.equal((await db.query("select has_function_privilege('anon','billing_apply_snapshot(uuid,timestamptz,text,jsonb,jsonb,jsonb)','EXECUTE') as allowed")).rows[0].allowed,false);
+ } finally { await db.close(); }
+});

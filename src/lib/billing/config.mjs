@@ -178,3 +178,30 @@ export function catalogMatches(actual, desired) {
 			.join("\n");
 	return signature(actual) === signature(desired);
 }
+
+/** Public selectors are routing hints, never authorization or provider credentials. */
+export function parseBillingEnvironment(value) {
+    if (value === null || value === undefined) return "production";
+    if (value !== "sandbox" && value !== "production")
+        throw new Error("Billing environment must be sandbox or production.");
+    return value;
+}
+/** Return a private snapshot; never mutate process.env while serving a request. */
+export function resolveBillingConfig(source, selected = "production") {
+    const environment = parseBillingEnvironment(selected);
+    const prefix = `POLAR_${environment.toUpperCase()}_`;
+    const explicit = Object.keys(source).some(key => key.startsWith(prefix));
+    const legacy = !explicit && source.POLAR_ENVIRONMENT === environment;
+    const result = { ...source, POLAR_ENVIRONMENT: environment };
+    // Remove both namespaces and every legacy provider key before projecting one set.
+    for (const key of Object.keys(result)) if (key.startsWith("POLAR_")) delete result[key];
+    result.POLAR_ENVIRONMENT = environment;
+    if (legacy) {
+        for (const [key, value] of Object.entries(source))
+            if (key.startsWith("POLAR_") && !/^POLAR_(SANDBOX|PRODUCTION)_/.test(key)) result[key] = value;
+    } else {
+        for (const [key, value] of Object.entries(source))
+            if (key.startsWith(prefix)) result[`POLAR_${key.slice(prefix.length)}`] = value;
+    }
+    return Object.freeze(result);
+}

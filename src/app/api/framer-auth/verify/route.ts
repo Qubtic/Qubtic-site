@@ -1,4 +1,4 @@
-import { paidAccess } from '@/lib/billing/core';
+import { billingRequest, paidAccess } from '@/lib/billing/core';
 import { NextResponse } from 'next/server';
 import { verifyFramerSessionToken } from '@/lib/framer-auth';
 
@@ -8,12 +8,12 @@ export async function OPTIONS() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-framer-token, x-plugin-slug',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-framer-token, x-plugin-slug, X-Framer-Site-Id, X-Billing-Environment',
     },
   });
 }
 
-export async function GET(request: Request) {
+async function handleGET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const queryToken = searchParams.get('token');
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const isPro = await paidAccess(user.id, user.plugin_slug);
+    const isPro = await paidAccess(user.id, user.plugin_slug, request.headers.get("x-framer-site-id"));
 
     return NextResponse.json(
       {
@@ -93,7 +93,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   try {
     const body = await request.json();
     const token = body.token || request.headers.get('x-framer-token');
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const isPro = await paidAccess(user.id, user.plugin_slug);
+    const isPro = await paidAccess(user.id, user.plugin_slug, request.headers.get("x-framer-site-id"));
 
     return NextResponse.json(
       {
@@ -138,3 +138,6 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export function GET(request: Request) { return billingRequest(request, () => handleGET(request)); }
+export function POST(request: Request) { return billingRequest(request, () => handlePOST(request)); }

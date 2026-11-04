@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 
 const source = readFileSync(new URL('../public/billing-launch.js', import.meta.url), 'utf8');
-function harness({ code = 202, url = 'https://sandbox.polar.sh/checkout/test', hung = false, hash = '#44d7729b-f5ae-455b-be9d-e09ee5aeec65' } = {}) {
+function harness({ code = 202, url = 'https://sandbox.polar.sh/checkout/test', hung = false, hash = '#44d7729b-f5ae-455b-be9d-e09ee5aeec65', search = '?environment=sandbox' } = {}) {
   const elements = new Map();
   const timers = new Map();
   const listeners = new Map();
@@ -12,12 +12,12 @@ function harness({ code = 202, url = 'https://sandbox.polar.sh/checkout/test', h
   const signals = [];
   let now = 0, next = 0, calls = 0;
   const opener = { postMessage() {} };
-  const window = { opener, location: { hash, replace: url => navigations.push(url) }, addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener: name => listeners.delete(name) };
+  const window = { opener, location: { hash, search, replace: url => navigations.push(url) }, addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener: name => listeners.delete(name) };
   const element = id => {
     if (!elements.has(id)) elements.set(id, { hidden: id !== 'launch-spinner', textContent: '' });
     return elements.get(id);
   };
-  runInNewContext(source, { window, document: { getElementById: element }, URL, AbortController,
+  runInNewContext(source, { window, document: { getElementById: element }, URL, URLSearchParams, AbortController,
     Date: { now: () => now },
     setTimeout: (fn, delay) => { timers.set(++next, { fn, at: now + delay }); return next; },
     clearTimeout: id => timers.delete(id),
@@ -70,7 +70,7 @@ test('expired checkout stops immediately; invalid links make no requests', async
 test('rejects unsafe redirects and messages from unrelated windows', async () => {
   const h = harness();
   const receive = h.listeners.get('message');
-  const data = { channel: h.window.location.hash.slice(1), type: 'qubtic-billing-checkout', url: 'https://buy.polar.sh/test' };
+  const data = { channel: h.window.location.hash.slice(1), type: 'qubtic-billing-checkout', url: 'https://sandbox.buy.polar.sh/test' };
   receive({ source: {}, data }); assert.equal(h.navigations.length, 0);
   receive({ source: h.opener, data: { ...data, url: 'https://buy.polar.sh.evil.test/' } }); assert.equal(h.navigations.length, 0);
   receive({ source: h.opener, data }); assert.equal(h.navigations.length, 1);

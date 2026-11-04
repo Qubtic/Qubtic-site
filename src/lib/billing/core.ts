@@ -1,8 +1,9 @@
-import { configuredCatalog, catalogMatches } from "./config.mjs";
+import { configuredCatalog, catalogMatches, resolveBillingConfig, parseBillingEnvironment, type BillingEnvironment } from "./config.mjs";
 import { processUpgradeRefunds } from "./upgrade-refunds";
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { createPolar, webhooks, type models } from "@polar-sh/sdk/2026-10";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash, timingSafeEqual } from "node:crypto";
 
 export type Cadence = "monthly" | "yearly" | "lifetime";
@@ -26,7 +27,7 @@ export const billingHeaders = {
 	"Access-Control-Allow-Origin": "*",
 	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 	"Access-Control-Allow-Headers":
-		"Content-Type, Authorization, X-Framer-Site-Id",
+		"Content-Type, Authorization, X-Framer-Site-Id, X-Billing-Environment",
 	"Cache-Control": "no-store",
 };
 export function siteId(value: unknown): string | null {
@@ -34,10 +35,33 @@ export function siteId(value: unknown): string | null {
 		? value
 		: null;
 }
-export function environment() {
-	if (!["sandbox", "production"].includes(process.env.POLAR_ENVIRONMENT || ""))
-		throw new BillingError("Billing is not configured yet.");
-	return process.env.POLAR_ENVIRONMENT as "sandbox" | "production";
+// AsyncLocalStorage keeps concurrent Vercel requests and nested refund/webhook work isolated.
+const billingContext = new AsyncLocalStorage<ReturnType<typeof resolveBillingConfig>>();
+export function billingConfig() {
+    return billingContext.getStore() || resolveBillingConfig(process.env, "production");
+}
+export function environment(): BillingEnvironment {
+    return billingConfig().POLAR_ENVIRONMENT as BillingEnvironment;
+}
+export function withBillingEnvironment<T>(selected: BillingEnvironment, callback: () => T): T {
+    return billingContext.run(resolveBillingConfig(process.env, selected), callback);
+}
+export async function billingRequest(request: Request, callback: () => Promise<Response>): Promise<Response> {
+    try {
+        const url = new URL(request.url);
+        const allowQuery = /^\/api\/billing\/(webhook|resolve|reconcile)$/.test(url.pathname);
+        const query = allowQuery ? url.searchParams.get("environment") : null;
+        const header = request.headers.get("x-billing-environment");
+        if (query !== null && header !== null && query !== header)
+            throw new BillingError("Conflicting billing environments.", 400);
+        let selected: BillingEnvironment;
+        try { selected = parseBillingEnvironment(query ?? header); }
+        catch { throw new BillingError("Invalid billing environment.", 400); }
+        return await withBillingEnvironment(selected, callback);
+    } catch (error) {
+        return Response.json({ error: error instanceof BillingError ? error.message : "Billing service is unavailable." },
+            { status: error instanceof BillingError ? error.status : 503, headers: billingHeaders });
+    }
 }
 export function database() {
 	const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -48,10 +72,10 @@ export function database() {
 	});
 }
 export function polar() {
-	if (!process.env.POLAR_ACCESS_TOKEN || !process.env.POLAR_ORGANIZATION_ID)
+	if (!billingConfig().POLAR_ACCESS_TOKEN || !billingConfig().POLAR_ORGANIZATION_ID)
 		throw new BillingError("Billing is not configured yet.");
 	return createPolar({
-		accessToken: process.env.POLAR_ACCESS_TOKEN,
+		accessToken: billingConfig().POLAR_ACCESS_TOKEN!,
 		environment: environment(),
 	});
 }
@@ -114,7 +138,7 @@ export async function identity(userId: string) {
 export async function catalog(all = false) {
 	let desired: Catalog[];
 	try {
-		desired = configuredCatalog(process.env);
+		desired = configuredCatalog(billingConfig());
 	} catch {
 		throw new BillingError(
 			"Central Polar product configuration is incomplete or invalid.",
@@ -152,14 +176,9 @@ export function safePolarUrl(value: string) {
 	const url = new URL(value);
 	if (
 		url.protocol !== "https:" ||
-		![
-			"polar.sh",
-			"buy.polar.sh",
-			"sandbox.polar.sh",
-			"sandbox-api.polar.sh",
-			"api.polar.sh",
-			"sandbox.buy.polar.sh",
-		].includes(url.hostname) ||
+		!(environment() === "sandbox"
+            ? ["sandbox.polar.sh", "sandbox-api.polar.sh", "sandbox.buy.polar.sh"]
+            : ["polar.sh", "api.polar.sh", "buy.polar.sh"]).includes(url.hostname) ||
 		url.username ||
 		url.password
 	)
@@ -173,7 +192,7 @@ export async function paidAccess(
 	site?: string | null,
 ) {
 	// Access is a current server record, never a browser plan or a legacy auth flag.
-	if (!process.env.POLAR_ENVIRONMENT) return false;
+	if (!billingConfig().POLAR_ORGANIZATION_ID) return false;
 	if (siteBillingPlugins.includes(plugin)) {
 		if (!siteId(site)) return false;
 		const { data, error } = await database().rpc("billing_site_access", {
@@ -217,7 +236,7 @@ export function normalizeState(
 	orders: models.Order[],
 	allSubscriptions: SubscriptionSnapshot[] = state.active_subscriptions,
 ) {
-	if (state.organization_id !== process.env.POLAR_ORGANIZATION_ID)
+	if (state.organization_id !== billingConfig().POLAR_ORGANIZATION_ID)
 		throw new BillingError("Customer organization mismatch.");
 	const benefitGrants = state.deleted_at
 		? []
@@ -464,14 +483,14 @@ export async function synchronize(customerId: string) {
 	// A complete snapshot is required; pagination is not silently truncated.
 	for await (const order of sdk.orders.iterList({
 		customer_id: state.id,
-		organization_id: process.env.POLAR_ORGANIZATION_ID,
+		organization_id: billingConfig().POLAR_ORGANIZATION_ID,
 		limit: 100,
 	}))
 		orders.push(order);
 	const subscriptions: models.Subscription[] = [];
 	for await (const sub of sdk.subscriptions.iterList({
 		customer_id: state.id,
-		organization_id: process.env.POLAR_ORGANIZATION_ID,
+		organization_id: billingConfig().POLAR_ORGANIZATION_ID,
 		limit: 100,
 	}))
 		subscriptions.push(sub);
@@ -507,7 +526,7 @@ export async function synchronize(customerId: string) {
 		sdk,
 		customerId: customer.id,
 		environment: environment(),
-		organizationId: process.env.POLAR_ORGANIZATION_ID!,
+		organizationId: billingConfig().POLAR_ORGANIZATION_ID!,
 		state,
 		orders,
 		subscriptions,
@@ -541,7 +560,7 @@ export async function synchronize(customerId: string) {
 	}
 }
 export async function webhook(request: Request) {
-	const secret = process.env.POLAR_WEBHOOK_SECRET;
+	const secret = billingConfig().POLAR_WEBHOOK_SECRET;
 	if (!secret) throw new BillingError("Webhook is not configured.");
 	const raw = await request.text();
 	if (Buffer.byteLength(raw) > 1_000_000)
@@ -640,7 +659,7 @@ export async function processEvent(eventId: string) {
 		}
 	} else if (relevant && polarCustomerId) {
 		const customer = await polar().customers.get(polarCustomerId);
-		if (customer.organization_id !== process.env.POLAR_ORGANIZATION_ID)
+		if (customer.organization_id !== billingConfig().POLAR_ORGANIZATION_ID)
 			throw new BillingError("Webhook organization mismatch.");
 		if (customer.external_id) {
 			const { data: known, error: e } = await db
@@ -674,10 +693,10 @@ export async function processEvent(eventId: string) {
 	check(done);
 }
 export function cronAuthorized(request: Request) {
-	const secret = process.env.BILLING_CRON_SECRET;
+	const secrets = [process.env.BILLING_CRON_SECRET, process.env.CRON_SECRET].filter((value): value is string => Boolean(value));
 	const received = request.headers.get("authorization") || "";
-	if (!secret) return false;
-	const a = Buffer.from(`Bearer ${secret}`),
-		b = Buffer.from(received);
-	return a.length === b.length && timingSafeEqual(a, b);
+	return secrets.some(secret => {
+        const a = Buffer.from(`Bearer ${secret}`), b = Buffer.from(received);
+        return a.length === b.length && timingSafeEqual(a, b);
+    });
 }

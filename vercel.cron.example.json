@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/billing/reconcile/production", "schedule": "*/10 * * * *" },
+    { "path": "/api/billing/reconcile/sandbox", "schedule": "5-59/10 * * * *" }
+  ]
+}

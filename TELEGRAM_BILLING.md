@@ -1,3 +1,5 @@
+> **Environment update:** Follow [POLAR_ENVIRONMENTS.md](POLAR_ENVIRONMENTS.md) for simultaneous sandbox/production setup. Global environment-switching instructions below describe the legacy configuration; use explicit `--environment sandbox` or `--environment production` with setup commands.
+
 # Telegram Commerce billing
 
 Telegram Commerce uses the shared Qubtic Polar integration. Each monthly, yearly, or lifetime purchase applies to one Framer project, independently of WhatsApp Commerce.

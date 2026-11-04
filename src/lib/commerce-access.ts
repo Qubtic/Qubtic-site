@@ -2,6 +2,8 @@ import "server-only";
 import { supabase } from "./supabase";
 import {
 	database,
+    billingConfig,
+    billingRequest,
 	environment,
 	identity,
 	paidAccess,
@@ -20,7 +22,7 @@ const headers = {
 	"Access-Control-Allow-Origin": "*",
 	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 	"Access-Control-Allow-Headers":
-		"Content-Type, Authorization, X-Framer-Site-Id",
+		"Content-Type, Authorization, X-Framer-Site-Id, X-Billing-Environment",
 	"Cache-Control": "no-store",
 };
 function reply(body: unknown, status = 200) {
@@ -33,7 +35,7 @@ function bearer(request: Request) {
 }
 
 /** Compatibility transport for the plugin. Qubtic Auth owns accounts, email verification, and pairing. */
-export async function commerceRequest(
+async function handleCommerceRequest(
 	request: Request,
 	action: string,
 	product: CommerceProduct = "whatsapp-commerce",
@@ -103,7 +105,7 @@ export async function commerceRequest(
 
 			// Self-healing: if paidAccess is false for a site, check if this customer has a purchase
 			// whose short verification lease expired, and auto-synchronize in the background.
-			if (!isPro && site && process.env.POLAR_ENVIRONMENT) {
+			if (!isPro && site && billingConfig().POLAR_ORGANIZATION_ID) {
 				try {
 					const customerId = await identity(user.id);
 					const db = database();
@@ -189,4 +191,8 @@ export async function commerceRequest(
 			503,
 		);
 	}
+}
+
+export function commerceRequest(request: Request, action: string, product: CommerceProduct = "whatsapp-commerce") {
+    return billingRequest(request, () => handleCommerceRequest(request, action, product));
 }
