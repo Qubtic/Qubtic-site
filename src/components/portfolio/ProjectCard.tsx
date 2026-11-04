@@ -58,7 +58,6 @@ export default function ProjectCard({
     >
       <Link
         href={`/portfolio/${slug}`}
-        data-cursor="interactive"
         className="group flex h-full flex-col overflow-hidden rounded-[28px] border border-[#164E33]/15 bg-white shadow-[0_14px_40px_rgba(22,78,51,0.07)] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 hover:border-[#164E33] hover:shadow-[0_24px_60px_rgba(22,78,51,0.18)]"
       >
         <div className="relative aspect-[5/4] overflow-hidden bg-[#E6ECE8]">

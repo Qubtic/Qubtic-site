@@ -633,7 +633,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         </header>
 
         {/* WORKSPACE BODY */}
-        <div className="p-6 lg:p-8 space-y-8 flex-1">
+        <div className="admin-workspace-content">
           {/* 1. OVERVIEW TAB */}
           {activeTab === 'plugins' && <PluginDashboard />}
           {activeTab === 'overview' && (

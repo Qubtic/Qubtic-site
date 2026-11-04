@@ -41,7 +41,7 @@ test('admin API denies unsigned users and cross-origin writes and never returns 
  'next/headers':{cookies:async()=>({get:()=>({value:'cookie'})})},'@/lib/admin-session':{verifyAdminSession:()=>session},'@/lib/supabase':{supabase:{from:()=>query}},'@/lib/plugin-control':{controlRecord:async()=>row,recordSecrets:()=>({accessToken:'never-return-this'})},'@/lib/plugin-secrets.mjs':{encryptSecrets},'@/lib/billing/config.mjs':{},'@polar-sh/sdk/2026-10':{},nodemailer:{}
  });
  assert.equal((await api.GET()).status,401);session={id:'admin',role:'admin'};
- const response=await api.GET();const data=await response.json();assert.equal(data.records[0].secrets,undefined);assert.deepEqual(data.records[0].configuredSecrets,['accessToken']);assert.ok(!JSON.stringify(data).includes('never-return-this'));
+ const response=await api.GET();const data=await response.json();assert.equal(data.records[0].secrets,undefined);assert.deepEqual(data.records[0].configuredSecrets,['accessToken']);assert.equal(new Set(data.plugins.map(p=>p.slug)).size,data.plugins.length);assert.ok(!JSON.stringify(data).includes('never-return-this'));
  assert.equal((await api.POST(new Request('https://site.test/api/admin/plugins',{method:'POST',headers:{origin:'https://attacker.test'},body:'{}'}))).status,400);
  assert.equal(calls.length,0);
 });
@@ -59,4 +59,57 @@ test('sandbox is restricted to approved verified accounts while production is in
  const request=selected=>{const req=new Request('https://example.test/api/billing/status',{headers:{Authorization:'Bearer test','X-Billing-Environment':selected}});return core.billingRequest(req,async()=>Response.json(await core.actor(req)));};
  assert.equal((await request('sandbox')).status,403);assert.equal((await request('production')).status,200);
  allowed='tester@example.test';assert.equal((await request('sandbox')).status,200);user.metadata.email_verified=false;assert.equal((await request('sandbox')).status,401);
+});
+
+
+test('SMTP delivery uses ENV without requiring database configuration or its encryption key', async () => {
+ const keys=['SMTP_HOST','SMTP_PORT','SMTP_SECURE','SMTP_USER','SMTP_PASS','SMTP_FROM_EMAIL'];
+ const original=Object.fromEntries(keys.map(key=>[key,process.env[key]]));let options;
+ try {
+  Object.assign(process.env,{SMTP_HOST:'smtp.example.test',SMTP_PORT:'465',SMTP_USER:'env-user',SMTP_PASS:'env-password',SMTP_FROM_EMAIL:'sender@example.test'});
+  const mail=load('src/lib/email-service.ts',{
+   './plugin-control':{loadManagedMail:async()=>{throw Error('Must not read DB for transport/sender');}},
+   nodemailer:{default:{createTransport:value=>{options=value;return {verify:async()=>{}};}}},
+   './logoAssets':{},'./plugins-registry':{getPluginMetadata:()=>({name:'Telegram Commerce'})}
+  });
+  await mail.getMailTransporter();assert.equal(options.host,'smtp.example.test');assert.equal(options.secure,true);assert.deepEqual(options.auth,{user:'env-user',pass:'env-password'});assert.equal(options.tls.rejectUnauthorized,true);
+  assert.match(await mail.getSender('telegram-commerce'),/sender@example.test/);
+  delete process.env.SMTP_PASS;await assert.rejects(()=>mail.getMailTransporter(),/not configured/);
+ } finally {for(const key of keys){if(original[key]===undefined)delete process.env[key];else process.env[key]=original[key];}}
+});
+
+test('mail API exposes only preferences and rejects database SMTP credential writes', async () => {
+ let published;
+ const row={id:'mail',settings:{teamEmail:'team@example.test',signup:true,signin:false,purchase:true,host:'legacy-host',from:'old@example.test',password:'legacy-password'},secrets:'old-ciphertext',revision:1};
+ const query={select(){return query},order(){return query},eq(){return query},limit:async()=>({data:[]}),maybeSingle:async()=>({data:null}),then(resolve){return Promise.resolve({data:[row]}).then(resolve)}};
+ const api=load('src/app/api/admin/plugins/route.ts',{
+  '@/lib/plugins-registry':{REGISTERED_PLUGINS:{}},'next/headers':{cookies:async()=>({get:()=>({value:'cookie'})})},'@/lib/admin-session':{verifyAdminSession:()=>({id:'admin',role:'admin'})},
+  '@/lib/supabase':{supabase:{from:()=>query,rpc:async(name,args)=>{published=args;return {}}}},
+  '@/lib/plugin-control':{controlRecord:async()=>row,recordSecrets:()=>{throw Error('Mail secrets must not be decrypted')}},'@/lib/plugin-secrets.mjs':{encryptSecrets:()=>{throw Error('No SMTP encryption needed')}},'@/lib/billing/config.mjs':{},'@polar-sh/sdk/2026-10':{}
+ });
+ const data=await (await api.GET()).json();assert.deepEqual(data.records[0].configuredSecrets,[]);assert.deepEqual(data.records[0].settings,{teamEmail:'team@example.test',signup:true,signin:false,purchase:true});assert.ok(!JSON.stringify(data).includes('legacy'));
+ const request=body=>new Request('https://site.test/api/admin/plugins',{method:'POST',headers:{origin:'https://site.test'},body:JSON.stringify(body)});
+ const settings={teamEmail:'new@example.test',signup:false,signin:true,purchase:true};
+ assert.equal((await api.POST(request({id:'mail',revision:1,settings,secrets:{password:'forbidden'}}))).status,400);
+ assert.equal((await api.POST(request({id:'mail',revision:1,settings:{...settings,host:'forbidden'}}))).status,400);
+ assert.equal((await api.POST(request({id:'mail',revision:1,settings,secrets:{}}))).status,200);assert.equal(published.p_secrets,'');assert.deepEqual(published.p_settings,settings);
+});
+
+test('one shared Pro benefit is validated against every plan and expanded into the catalog', async () => {
+ let published;const checked=[];
+ const benefit='319ad5dd-6194-4ba7-9f57-b955a4390dd4',organization='d43e5d7d-6f92-4a84-a9cc-65e8c8efc786';
+ const plans=['monthly','yearly','lifetime'].map((cadence,i)=>({cadence,productId:`d5876f82-cbd2-4189-b25a-e8367ff852e${i}`,benefitId:''}));
+ const query={select(){return query},eq(){return query},limit:async()=>({}),maybeSingle:async()=>({data:null})};
+ const api=load('src/app/api/admin/plugins/route.ts',{
+  '@/lib/plugins-registry':{REGISTERED_PLUGINS:{'telegram-commerce':{name:'Telegram Commerce'}}},'next/headers':{cookies:async()=>({get:()=>({value:'cookie'})})},'@/lib/admin-session':{verifyAdminSession:()=>({id:'admin',role:'admin'})},
+  '@/lib/supabase':{supabase:{from:()=>query,rpc:async(name,args)=>{published=args;return {}}}},
+  '@/lib/plugin-control':{controlRecord:async()=>null,recordSecrets:()=>({})},'@/lib/plugin-secrets.mjs':{encryptSecrets:()=> 'encrypted'},'@/lib/billing/config.mjs':billingConfig,
+  '@polar-sh/sdk/2026-10':{createPolar:()=>({organizations:{get:async()=>({id:organization})},products:{get:async id=>{checked.push(id);const cadence=plans.find(p=>p.productId===id).cadence;return {organization_id:organization,is_archived:false,benefits:[{id:benefit}],is_recurring:cadence!=='lifetime',recurring_interval:cadence==='monthly'?'month':'year',recurring_interval_count:1,prices:[{is_archived:false,amount_type:'fixed',price_amount:100}]};}}})}
+ });
+ const plugin={slug:'telegram-commerce',enabled:true,manifest:'{}',testEmails:'',benefitId:benefit,plans};
+ const body={id:'polar:production',revision:0,settings:{enabled:true,organizationId:organization,plugins:[plugin]},secrets:{accessToken:'test-only',webhookSecret:'test-only'}};
+ const response=await api.POST(new Request('https://site.test/api/admin/plugins',{method:'POST',headers:{origin:'https://site.test'},body:JSON.stringify(body)}));
+ assert.equal(response.status,200,JSON.stringify(await response.json()));assert.equal(checked.length,3);assert.equal(published.p_catalog.length,3);assert.ok(published.p_catalog.every(row=>row.benefit_id===benefit));assert.ok(published.p_settings.plugins[0].plans.every(plan=>plan.benefitId===benefit));
+ delete plugin.benefitId;plugin.plans[0].benefitId=benefit;plugin.plans[1].benefitId=organization;
+ assert.equal((await api.POST(new Request('https://site.test/api/admin/plugins',{method:'POST',headers:{origin:'https://site.test'},body:JSON.stringify(body)}))).status,400);
 });

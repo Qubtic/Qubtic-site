@@ -6,7 +6,6 @@ import { controlRecord, recordSecrets } from '@/lib/plugin-control';
 import { encryptSecrets } from '@/lib/plugin-secrets.mjs';
 import { configuredCatalog } from '@/lib/billing/config.mjs';
 import { createPolar } from '@polar-sh/sdk/2026-10';
-import nodemailer from 'nodemailer';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 const headers = { 'Cache-Control': 'no-store' };
@@ -23,11 +22,14 @@ export async function GET() {
         if (error)
             throw new Error('Apply the plugin control migration before opening this panel.');
         const { data: audit } = await supabase.from('plugin_control_audit').select('config_id,revision,actor,created_at').order('created_at', { ascending: false }).limit(20);
-        return Response.json({ plugins: Object.values(REGISTERED_PLUGINS).map(p => ({ slug: p.slug, name: p.name, logo: p.logo })), records: (data || []).map(row => ({ ...row, secrets: undefined, configuredSecrets: Object.keys(recordSecrets(row)) })), audit: audit || [] }, { headers });
+        return Response.json({ plugins: Object.values(REGISTERED_PLUGINS).filter((p, i, all) => all.findIndex(other => other.slug === p.slug) === i).map(p => ({ slug: p.slug, name: p.name, logo: p.logo })), records: (data || []).map(row => ({ ...row, settings: row.id === 'mail' ? mailSettings(row.settings) : row.settings, secrets: undefined, configuredSecrets: row.id === 'mail' ? [] : Object.keys(recordSecrets(row)) })), audit: audit || [] }, { headers });
     }
     catch (error) {
         return failure(error);
     }
+}
+function mailSettings(settings: Record<string, unknown>) {
+    return { teamEmail: settings.teamEmail, signup: settings.signup, signin: settings.signin, purchase: settings.purchase };
 }
 function failure(error: unknown) { const unauthorized = error instanceof Error && error.message === 'Unauthorized'; return Response.json({ error: unauthorized ? 'Administrator access required.' : error instanceof Error && !('statusCode' in error) && !('code' in error) ? error.message : 'Provider validation failed. Check the credentials, organization and product permissions.' }, { status: unauthorized ? 401 : 400, headers }); }
 export async function POST(request: Request) {
@@ -53,15 +55,18 @@ export async function POST(request: Request) {
                 throw new Error('Undo expired or the configuration changed.');
             return Response.json({ success: true }, { headers });
         }
-        const { id, settings, revision } = body;
+        const { id, revision } = body;
+        let settings = body.settings;
         if (!['polar:production', 'polar:sandbox', 'mail'].includes(id) || !Number.isInteger(revision) || !settings || typeof settings !== 'object')
             throw new Error('Invalid configuration.');
         const { error: undoSchemaError } = await supabase.from('plugin_control_audit').select('undo_until').limit(0);
         if (undoSchemaError)
             throw new Error('Apply the plugin operations migration before publishing settings.');
         const previous = await controlRecord(id);
-        const secrets = { ...(previous ? recordSecrets(previous) : {}) };
-        const allowed = id === 'mail' ? ['user', 'password'] : ['accessToken', 'webhookSecret'];
+        const secrets = { ...(id !== 'mail' && previous ? recordSecrets(previous) : {}) };
+        const allowed = id === 'mail' ? [] : ['accessToken', 'webhookSecret'];
+        if (id === 'mail' && (Object.keys(body.secrets || {}).length || ['host', 'port', 'secure', 'from', 'user', 'password'].some(key => key in settings)))
+            throw new Error('Manage SMTP delivery settings in Vercel environment variables.');
         for (const key of allowed)
             if (body.secrets?.[key]) {
                 if (typeof body.secrets[key] !== 'string')
@@ -77,6 +82,16 @@ export async function POST(request: Request) {
                 if (!REGISTERED_PLUGINS[plugin.slug])
                     throw new Error('Register new plugins in the backend before configuring them.');
                 plugin.name = REGISTERED_PLUGINS[plugin.slug].name;
+                if (!Array.isArray(plugin.plans))
+                    throw new Error('Each plugin needs a plan list.');
+                // Read legacy per-plan benefits, but require one shared Pro benefit on publication.
+                const benefits = [...new Set(plugin.plans.map((plan: { benefitId?: string }) => plan.benefitId?.trim()).filter(Boolean))];
+                if (plugin.benefitId !== undefined && typeof plugin.benefitId !== 'string')
+                    throw new Error('Invalid shared Pro benefit UUID.');
+                if (plugin.benefitId === undefined && benefits.length > 1)
+                    throw new Error(`Choose one shared Pro benefit UUID for ${plugin.name}.`);
+                plugin.benefitId = plugin.benefitId?.trim() ?? benefits[0] ?? '';
+                plugin.plans = plugin.plans.map((plan: { cadence: string; productId: string }) => ({ ...plan, benefitId: plugin.benefitId }));
                 if (plugin.brandColor && !/^#[0-9a-f]{6}$/i.test(plugin.brandColor))
                     throw new Error('Brand color must be a six-digit hex color.');
                 if (plugin.logo && (typeof plugin.logo !== 'string' || plugin.logo.length > 1000 || !/^(?:https:\/\/res\.cloudinary\.com\/[^?#\s]+|\/?[a-zA-Z0-9_/-]+(?:\.[a-zA-Z0-9]+)?)$/.test(plugin.logo)))
@@ -133,13 +148,11 @@ export async function POST(request: Request) {
                 catalog = [];
         }
         else {
-            if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(settings.from) || !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(settings.teamEmail) || typeof settings.host !== 'string' || !settings.host || !Number.isInteger(Number(settings.port)) || Number(settings.port) < 1 || Number(settings.port) > 65535)
-                throw new Error('Enter valid SMTP and email settings.');
-            if (!secrets.user || !secrets.password)
-                throw new Error('SMTP username and password are required.');
-            await nodemailer.createTransport({ host: settings.host, port: Number(settings.port), secure: settings.secure === true, auth: { user: secrets.user, pass: secrets.password }, connectionTimeout: 10000, socketTimeout: 10000 }).verify();
+            if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(settings.teamEmail) || !['signup', 'signin', 'purchase'].every(key => typeof settings[key] === 'boolean'))
+                throw new Error('Enter a valid team email and notification preferences.');
+            settings = mailSettings(settings);
         }
-        const { error } = await supabase.rpc('publish_plugin_control', { p_id: id, p_settings: settings, p_secrets: encryptSecrets(secrets, process.env.PLUGIN_CONFIG_ENCRYPTION_KEY, id), p_revision: revision, p_actor: session.id, p_catalog: catalog } as never);
+        const { error } = await supabase.rpc('publish_plugin_control', { p_id: id, p_settings: settings, p_secrets: id === 'mail' ? '' : encryptSecrets(secrets, process.env.PLUGIN_CONFIG_ENCRYPTION_KEY, id), p_revision: revision, p_actor: session.id, p_catalog: catalog } as never);
         if (error)
             throw new Error(error.code === 'P0001' ? 'Configuration changed. Reload before saving.' : 'Unable to publish configuration. No changes were saved.');
         const { data: auditRow } = await supabase.from('plugin_control_audit').select('id,undo_until').eq('config_id', id).eq('revision', revision + 1).eq('actor', session.id).maybeSingle();

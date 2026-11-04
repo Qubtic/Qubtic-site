@@ -23,7 +23,11 @@ export async function loadManagedBilling(environment: BillingEnvironment) {
 }
 export async function loadManagedMail() {
     const row = await controlRecord('mail');
-    if (!row)
-        throw new Error('Configure email delivery in the plugin dashboard.');
-    return { ...row.settings, ...recordSecrets(row) };
+    // Delivery credentials always come from ENV. Legacy database secrets are never read.
+    return {
+        teamEmail: row?.settings.teamEmail || process.env.TEAM_NOTIFICATION_EMAIL || process.env.SMTP_FROM_EMAIL,
+        signup: row?.settings.signup ?? true,
+        signin: row?.settings.signin ?? false,
+        purchase: row?.settings.purchase ?? true,
+    };
 }

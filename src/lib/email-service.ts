@@ -90,13 +90,13 @@ export function getPluginEmailAttachments(pluginSlug: string = "frame-drop") {
  * Configures and returns Nodemailer transporter using Mailgun SMTP
  */
 export async function getMailTransporter() {
-	const config = await loadManagedMail();
-	const host = config.host;
-	const port = Number(config.port);
-	const secure = config.secure === true || port === 465;
-	const user = config.user;
-	const pass = config.password;
+	const host = process.env.SMTP_HOST || 'smtp.mailgun.org';
+	const port = Number(process.env.SMTP_PORT || 587);
+	const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+	const user = process.env.SMTP_USER;
+	const pass = process.env.SMTP_PASS;
 	if (!user || !pass) throw new Error("SMTP credentials are not configured.");
+	if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('SMTP port is invalid.');
 
 	return nodemailer.createTransport({
 		host,
@@ -138,7 +138,7 @@ export async function verifySmtpConnection(): Promise<{
  */
 export async function getSender(pluginSlug: string = "frame-drop"): Promise<string> {
 	const plugin = getPluginMetadata(pluginSlug);
-	const fromEmail = (await loadManagedMail()).from;
+	const fromEmail = process.env.SMTP_FROM_EMAIL || 'hello@qubtic.tech';
 	return `"${plugin.name} by Qubtic" <${fromEmail}>`;
 }
 
@@ -928,7 +928,7 @@ export async function flushTeamEvents() {
  const {supabase}=await import('./supabase');
  const {data,error}=await supabase.rpc('claim_plugin_team_events');
  if(error)throw new Error('Team notification queue unavailable.');
- for(const item of (data||[]) as {id:string;event:string;plugin:string;email:string;recipient?:string;subject?:string;body?:string}[]) {
+ for(const item of (data||[]) as {id:string;event:'signup'|'signin'|'purchase'|'manual';plugin:string;email:string;recipient?:string;subject?:string;body?:string}[]) {
   try {
    const mail=await loadManagedMail();
    if(item.event==='manual'||mail[item.event]) { const transport=await getMailTransporter();await transport.sendMail({from:await getSender(item.plugin),to:item.event==='manual'?item.email:item.recipient||mail.teamEmail,subject:item.event==='manual'?item.subject:`Qubtic: ${item.event} · ${getPluginMetadata(item.plugin).name}`,text:item.event==='manual'?item.body:`Event: ${item.event}\nPlugin: ${item.plugin}\nAccount: ${item.email}\nReference: ${item.id}`}); }

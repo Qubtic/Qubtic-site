@@ -14,7 +14,7 @@ export async function GET(request: Request) { try {
     const { data, error } = await supabase.rpc('plugin_operations_snapshot', { p_environment: environment, p_plugin: plugin, p_search: search, p_page: page } as never);
     if (error)
         throw Error('Unable to load operations. Apply the plugin operations migration.');
-    return Response.json({ snapshot: data, plugins: Object.values(REGISTERED_PLUGINS).map(p => ({ slug: p.slug, name: p.name, logo: p.logo })) }, { headers });
+    return Response.json({ snapshot: data, plugins: Object.values(REGISTERED_PLUGINS).filter((p, i, all) => all.findIndex(other => other.slug === p.slug) === i).map(p => ({ slug: p.slug, name: p.name, logo: p.logo })) }, { headers });
 }
 catch (error) {
     return failure(error);

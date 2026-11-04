@@ -1,21 +1,21 @@
 # Plugin dashboard deployment
 
-Open the existing `/portfolio/admin` panel and select **Plugins & payments**. No second login is created. Only authenticated administrator roles can read configuration summaries or publish changes. Secrets are write-only, encrypted using AES-256-GCM with configuration-specific authenticated context, stored under RLS, and decrypted only on the server. Audit entries contain no credentials.
+Open the existing `/portfolio/admin` panel and select **Plugins & payments**. No second login is created. Only authenticated administrator roles can read configuration summaries or publish changes. Polar secrets are write-only, encrypted using AES-256-GCM with configuration-specific authenticated context, stored under RLS, and decrypted only on the server. Admin audit responses contain no credentials; bounded undo snapshots retain encrypted previous Polar secrets. Infrastructure credentials remain in Vercel ENV.
 
 ## Bootstrap ENV
 
-Use `.env.bootstrap.example`. Keep `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_SESSION_SECRET`, `PLUGIN_CONFIG_ENCRYPTION_KEY`, and `NEXT_PUBLIC_SITE_URL` in Vercel. Use `CRON_SECRET` if using scheduled jobs. Keep unrelated website integration variables as needed.
+Use `.env.bootstrap.example`. Keep `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_SESSION_SECRET`, `PLUGIN_CONFIG_ENCRYPTION_KEY`, and `NEXT_PUBLIC_SITE_URL` in Vercel. Use `CRON_SECRET` if using scheduled jobs. Keep Cloudinary, Google OAuth and shared SMTP settings in Vercel using the names listed in the template. These are never edited or imported as dashboard credentials.
 
 Generate the encryption key with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. A local key has already been generated in the ignored `.env`; copy it to Vercel securely if importing with that key. Do not generate another key afterward: existing ciphertext needs the original key. Back up the key independently of Supabase. Do not reuse an API token as an encryption key. Key rotation requires decrypting and re-encrypting records before removing the previous key.
 
 ## Deployment order (preserves current live billing)
 
-1. Apply `supabase/migrations/20261104092628_plugin_control.sql` to the existing Supabase database after the existing billing migrations. This creates service-role-only configuration/audit/notification tables and an atomic publish RPC. No existing accounts, purchases or entitlement rows are reset.
-2. Keep the old local `.env` temporarily and run `node scripts/import-plugin-control.mjs --apply`. This imports available legacy production, sandbox and SMTP settings using encryption; it skips already configured records. No credentials are printed. It creates no checkout or charge. Rotate the previously exposed Polar credentials first.
-3. Set the bootstrap variables above in Vercel, including the exact key used for import. Deploy the new code. Production requests now require database-managed configuration; there is no automatic ENV fallback when the database is unavailable.
+1. Apply `supabase/migrations/20261104092628_plugin_control.sql`, then `supabase/migrations/20261104095407_plugin_operations.sql` to the existing Supabase database after the existing billing migrations (skip migrations already applied). This creates service-role-only configuration/audit/notification tables and an atomic publish RPC. No existing accounts, purchases or entitlement rows are reset.
+2. Keep the old local `.env` temporarily and run `node scripts/import-plugin-control.mjs --apply`. This imports available legacy production and sandbox Polar settings using encryption, plus non-secret team notification preferences; it skips already configured records. No credentials are printed. It creates no checkout or charge. Rotate the previously exposed Polar credentials first.
+3. Set the bootstrap and SMTP variables above in Vercel, including the exact key used for import. Deploy the new code, then apply `supabase/migrations/20261104112717_smtp_credentials_to_vercel.sql` to remove obsolete database SMTP settings and their audit snapshots. Production requests now require database-managed configuration; there is no automatic ENV fallback when the database is unavailable.
 4. In **Plugins & payments**, validate/publish each environment. Add developer account emails for every enabled sandbox plugin. The default empty developer list denies sandbox access. Edit manifests as JSON objects. Register future plugins in the backend registry; the dashboard discovers their names automatically. Keep existing identifiers unchanged for installed plugins and historical licenses.
-5. Configure SMTP and the team email, then choose signup/signin/purchase alerts. Saving verifies SMTP without sending an email. Account verification/reset emails use these shared SMTP settings; visitor storefront merchants retain their own separately configured SMTP credentials.
-6. Remove all old `POLAR_*`, shared `SMTP_*`, and `TEAM_NOTIFICATION_EMAIL` variables from Vercel after migration and acceptance. Keep a protected temporary local backup until you have checked both environments, then remove the legacy local variables too. The old templates/CLI are retained solely as migration references and must not manage the active catalog after this deployment.
+5. Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` and `SMTP_FROM_EMAIL` in Vercel. In the dashboard, set only the team recipient and signup/signin/purchase preferences. Saving preferences does not contact SMTP or send mail. Account verification/reset emails use Vercel SMTP settings directly, independently of dashboard configuration; visitor storefront merchants retain their own separately configured SMTP credentials.
+6. Remove only the old `POLAR_*` variables from Vercel after migration and acceptance. Keep shared `SMTP_*`, Cloudinary, Supabase and Google variables in Vercel. `TEAM_NOTIFICATION_EMAIL` remains an optional fallback recipient. Keep a protected temporary local backup until you have checked both environments, then remove the legacy Polar variables locally too. Keep SMTP and the other server integrations in your ignored local ENV for local development. The old templates/CLI are retained solely as migration references and must not manage the active catalog after this deployment.
 
 ## Production and local development together
 
@@ -37,7 +37,7 @@ Signup/signin alerts are enqueued through the existing account dispatcher. Paid-
 - Publish validates enabled products against the matching Polar organization, benefits, cadence and positive fixed prices. Retired catalog rows are retained for historical subscriptions/refunds.
 - Verify an ordinary user cannot access the admin endpoint, and a non-allowlisted account cannot use sandbox. Test production and sandbox concurrently, verify webhooks and refresh site access. A real production purchase is a separate acceptance step.
 
-Live schema application, data import, deployment and real email/payment delivery have not been performed by this change. Do not deploy before completing steps 1–3.
+Live schema application, data import, deployment and real email/payment delivery have not been performed by this change. Complete the migration and ENV prerequisites before deployment.
 
 
 ## Admin login upgrade
@@ -60,3 +60,10 @@ The five-second undo deadline is enforced in PostgreSQL, belongs to the acting a
 The existing authenticated `/api/plugin-notifications` worker dispatches eligible emails. The dashboard distinguishes queued, cancelled, SMTP-accepted and exhausted-retry states. SMTP acceptance is not proof of inbox delivery. Account verification, reset and invitation delivery logs contain metadata only, never OTPs, reset links or credentials. Tracking begins after deployment; historical emails that were never logged cannot be reconstructed.
 
 Growth charts show daily UTC signups over the past 30 days, total/new/active account counts, and payments/net amounts grouped by currency. Amounts remain in provider minor units until displayed. Search and pagination execute in the database; customer PII remains under administrator-only endpoints with RLS and service-role permissions.
+
+
+## Infrastructure credentials stay in Vercel
+
+Cloudinary uploads, Supabase access, Google sign-in and shared SMTP delivery read server environment variables. The dashboard manages Polar configuration, plugin metadata, one shared Pro benefit UUID per plugin per environment, and notification recipients/events. It never returns or accepts infrastructure passwords. `.env.bootstrap.example` and `.env.example` list all required variable names with blank secret values. Use Vercel Secret type for private values. Environment changes require a new deployment; dashboard metadata changes take effect on new requests.
+
+For an existing database that previously stored SMTP credentials, deploy this version only after copying the working SMTP values to Vercel. Apply the `supabase/migrations/20261104112717_smtp_credentials_to_vercel.sql` after the two dashboard migrations to remove obsolete mail ciphertext and delivery settings from active and audit records. It preserves the team recipient, event preferences, Polar settings, users and purchases. Database backups can retain older encrypted data under their normal retention policy.

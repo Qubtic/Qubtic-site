@@ -43,3 +43,22 @@ test('operations API authenticates filters and ignores injected licensing and re
  const patch=calls.at(-1).args.p_patch;assert.equal(patch.plan,undefined);assert.equal(patch.auth_token,undefined);assert.equal(patch.metadata,undefined);
  assert.equal((await post({action:'mail',userId:'user',email:'attacker@example.test',subject:'Account support',message:'A plain text message'})).status,200);assert.equal(inserted.email,'real@example.test');assert.equal(inserted.actor,'admin');assert.ok(Date.parse(inserted.available_at)>Date.now());
 });
+
+
+test('SMTP cleanup removes old credentials and undo snapshots without changing Polar or team preferences',async()=>{
+ const db=new PGlite();try{
+ await db.exec('create role anon;create role authenticated;create role service_role;');
+ for(const file of ['framer_users.sql','pairing_sessions.sql','billing.sql','billing_discounts.sql','billing_sites.sql','billing_telegram_sites.sql','migrations/20261104092628_plugin_control.sql','migrations/20261104095407_plugin_operations.sql'])await db.exec(readFileSync(new URL('../supabase/'+file,import.meta.url),'utf8'));
+ const old={teamEmail:'team@example.test',signup:true,signin:false,purchase:true,host:'old-smtp',user:'old-user',password:'old-password',from:'old@example.test'};
+ const publish=(settings,revision)=>db.query("select publish_plugin_control('mail',$1,'old-mail-ciphertext',$2,'admin',null)",[JSON.stringify(settings),revision]);
+ await publish(old,0);await publish(old,1);await db.query("select publish_plugin_control('polar:production','{}','polar-ciphertext',0,'admin',null)");
+ await db.exec(readFileSync(new URL('../supabase/migrations/20261104112717_smtp_credentials_to_vercel.sql',import.meta.url),'utf8'));
+ const expected={teamEmail:'team@example.test',signup:true,signin:false,purchase:true};
+ let row=(await db.query("select * from plugin_control where id='mail'")).rows[0];assert.equal(row.secrets,'');assert.deepEqual(row.settings,expected);assert.equal(row.revision,3);
+ assert.equal((await db.query("select secrets from plugin_control where id='polar:production'")).rows[0].secrets,'polar-ciphertext');
+ const snapshots=(await db.query("select prior_secrets,prior_settings from plugin_control_audit where config_id='mail'")).rows;assert.ok(snapshots.every(a=>a.prior_secrets===null));assert.deepEqual(snapshots[1].prior_settings,expected);
+ await publish(old,3);row=(await db.query("select * from plugin_control where id='mail'")).rows[0];assert.equal(row.secrets,'');assert.deepEqual(row.settings,expected);
+ const audit=(await db.query("select id from plugin_control_audit where config_id='mail' order by id desc limit 1")).rows[0];await db.query("select undo_plugin_control($1,'admin')",[audit.id]);assert.equal((await db.query("select secrets from plugin_control where id='mail'")).rows[0].secrets,'');
+ for(const role of ['anon','authenticated'])assert.equal((await db.query("select has_function_privilege($1,'sanitize_plugin_mail_preferences()','EXECUTE') as allowed",[role])).rows[0].allowed,false);
+ }finally{await db.close();}
+});

@@ -168,51 +168,6 @@ body {
   pointer-events: none;
 }
 
-.cursor-dot,
-.cursor-ring,
-.cursor-ambient-glow {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 2147483647;
-  pointer-events: none;
-  will-change: transform;
-}
-
-.cursor-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background-color: #164E33;
-  box-shadow: 0 0 0 2px rgba(244, 239, 230, 0.6);
-}
-
-.cursor-ring {
-  border: 1.5px solid #164E33;
-  border-radius: 999px;
-  box-shadow: 0 2px 8px rgba(22, 78, 51, 0.08);
-}
-
-.cursor-ambient-glow {
-  z-index: 2147483646;
-  width: 260px;
-  height: 260px;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(22, 78, 51, 0.05) 0%, rgba(204, 255, 0, 0.015) 35%, transparent 70%);
-  transition: opacity 150ms ease;
-}
-
-@media (pointer: fine) {
-  body.custom-cursor-active,
-  body.custom-cursor-active *,
-  body.custom-cursor-active input,
-  body.custom-cursor-active textarea,
-  body.custom-cursor-active select,
-  body.custom-cursor-active button,
-  body.custom-cursor-active [contenteditable="true"] {
-    cursor: none !important;
-  }
-}
 
 a,
 button {
