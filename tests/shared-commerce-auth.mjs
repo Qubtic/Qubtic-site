@@ -58,7 +58,7 @@ function harness() {
   const registry = load('src/lib/plugins-registry.ts');
   const passwords = load('src/lib/passwords.ts', { 'server-only': {} });
   const auth = load('src/lib/framer-auth.ts', {
-    './passwords': passwords, './supabase': { supabase }, './plugins-registry': registry,
+    './passwords': passwords, './supabase': { supabase }, './plugins-registry': registry, './managed-plugins':{serverPluginMetadata:async slug=>registry.getPluginMetadata(slug)},
     fs: { existsSync: file => files.has(file), mkdirSync() {}, readFileSync: file => files.get(file), writeFileSync: (file, data) => files.set(file, data) },
     './email-service': { sendVerificationEmail: async (...args) => messages.push(args), sendPasswordResetEmail: async (...args) => messages.push(args), sendNewUserTeamNotification: async () => {} },
   });

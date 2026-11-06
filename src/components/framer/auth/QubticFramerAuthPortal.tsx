@@ -36,6 +36,7 @@ export type AuthTab = "signin" | "signup" | "otp" | "reset" | "teams";
 
 interface QubticFramerAuthPortalProps {
 	initialPlugin?: string;
+	initialMetadata?: FramerPluginMetadata;
 }
 
 /**
@@ -88,6 +89,7 @@ export function sanitizeRedirectUrl(
 
 export default function QubticFramerAuthPortal({
 	initialPlugin,
+	initialMetadata,
 }: QubticFramerAuthPortalProps) {
 	const searchParams = useSearchParams();
 	const pluginParam =
@@ -102,14 +104,14 @@ export default function QubticFramerAuthPortal({
 		searchParams.get("code") || searchParams.get("user_code") || "";
 
 	const [plugin, setPlugin] = useState<FramerPluginMetadata>(() =>
-		getPluginMetadata(pluginParam),
+		initialMetadata || getPluginMetadata(pluginParam),
 	);
 	const isCommerce =
 		plugin.slug === "whatsapp-commerce" || plugin.slug === "telegram-commerce";
 	const [prevPluginParam, setPrevPluginParam] = useState(pluginParam);
 	if (prevPluginParam !== pluginParam) {
 		setPrevPluginParam(pluginParam);
-		setPlugin(getPluginMetadata(pluginParam));
+		setPlugin(initialMetadata?.slug === getPluginMetadata(pluginParam).slug ? initialMetadata : getPluginMetadata(pluginParam));
 	}
 
 	const [activeTab, setActiveTab] = useState<AuthTab>(

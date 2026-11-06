@@ -5,6 +5,7 @@ export type UndoAction = {
     id: string;
     undoUntil: string;
     action: string;
+    slug?: string;
 };
 export default function OperationUndo({ value, onUndo, onClose }: {
     value: UndoAction | null;

@@ -1,7 +1,7 @@
 'use client';
 
 import PluginDashboard from './PluginDashboard';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import {
   LayoutDashboard,
@@ -27,9 +27,14 @@ import {
   Inbox,
   Users,
   Mail,
+  Search,
+  Send,
+  Package,
+  LockKeyhole,
 } from 'lucide-react';
 import { ProjectItem, ServiceItem, PricingData, PricingPlan, BlogPostItem, SiteSettings, InquiryItem, AdminUserItem } from '@/lib/store';
 import { FramerUserRecord } from '@/lib/framer-auth';
+import { REGISTERED_PLUGINS } from '@/lib/plugins-registry';
 import { CloudinaryUploader } from './CloudinaryUploader';
 import { MediaLibraryModal } from './MediaLibraryModal';
 import { MarkdownEditor } from './MarkdownEditor';
@@ -62,9 +67,73 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   // Framer Users State
   const [framerUsers, setFramerUsers] = useState<Omit<FramerUserRecord, 'auth_token' | 'metadata'>[]>([]);
-  const [framerStats, setFramerStats] = useState({ total: 0, qubeAuth: 0, frameDrop: 0, whatsappCommerce: 0, proCount: 0, activeToday: 0 });
-  const [framerPluginFilter, setFramerPluginFilter] = useState<'all' | 'qube-auth' | 'frame-drop' | 'whatsapp-commerce'>('all');
+  const [framerStats, setFramerStats] = useState({
+    total: 0,
+    qubeAuth: 0,
+    frameDrop: 0,
+    whatsappCommerce: 0,
+    telegramCommerce: 0,
+    proCount: 0,
+    activeToday: 0,
+  });
+  const [framerPluginFilter, setFramerPluginFilter] = useState<string>('all');
   const [framerSearchQuery, setFramerSearchQuery] = useState('');
+
+  // Dynamic Plugin Filter Options & Counts
+  const dynamicPluginFilters = useMemo(() => {
+    const pluginMap = new Map<string, { slug: string; name: string; count: number }>();
+
+    // 1. Seed from registered plugins catalog
+    Object.values(REGISTERED_PLUGINS).forEach((p) => {
+      if (p.slug && !pluginMap.has(p.slug)) {
+        pluginMap.set(p.slug, {
+          slug: p.slug,
+          name: p.name || p.shortName || p.slug,
+          count: 0,
+        });
+      }
+    });
+
+    // 2. Discover from actual user records and calculate counts
+    framerUsers.forEach((u) => {
+      const slug = u.plugin_slug || 'unknown';
+      const existing = pluginMap.get(slug);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        const fallbackName = u.plugin_name || slug.split('-').map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+        pluginMap.set(slug, {
+          slug,
+          name: fallbackName,
+          count: 1,
+        });
+      }
+    });
+
+    // Sort: plugins with users first (by count descending), then alphabetically
+    return Array.from(pluginMap.values()).sort((a, b) => {
+      if (a.count > 0 && b.count === 0) return -1;
+      if (b.count > 0 && a.count === 0) return 1;
+      if (b.count !== a.count) return b.count - a.count;
+      return a.name.localeCompare(b.name);
+    });
+  }, [framerUsers]);
+
+  const filteredFramerUsers = useMemo(() => {
+    return framerUsers.filter((u) => {
+      if (framerPluginFilter !== 'all' && u.plugin_slug !== framerPluginFilter) return false;
+      if (framerSearchQuery.trim()) {
+        const q = framerSearchQuery.toLowerCase().trim();
+        const matchesEmail = Boolean(u.email?.toLowerCase().includes(q));
+        const matchesName = Boolean(u.name && u.name.toLowerCase().includes(q));
+        const matchesSlug = Boolean(u.plugin_slug && u.plugin_slug.toLowerCase().includes(q));
+        const matchesPluginName = Boolean(u.plugin_name && u.plugin_name.toLowerCase().includes(q));
+        const matchesPlan = Boolean(u.plan && u.plan.toLowerCase().includes(q));
+        return matchesEmail || matchesName || matchesSlug || matchesPluginName || matchesPlan;
+      }
+      return true;
+    });
+  }, [framerUsers, framerPluginFilter, framerSearchQuery]);
 
   // Status & Feedback
   const [loading, setLoading] = useState(true);
@@ -1709,7 +1778,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     Framer Plugin Members ({framerUsers.length})
                   </h3>
                   <p className="text-xs text-[#666C64]">
-                    User accounts authenticated across Qubtic Framer plugins (Frame Drop, Qube Auth, WhatsApp Commerce, and future extensions) stored in Supabase.
+                    User accounts authenticated across Qubtic Framer plugins (Telegram Commerce, WhatsApp Commerce, Frame Drop, Qube Auth, and future extensions) stored in Supabase.
                   </p>
                 </div>
                 <div className="flex items-center gap-2.5">
@@ -1732,77 +1801,165 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 </div>
               </div>
 
-              {/* Metric Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Dynamic Metric Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
                 <div className="bg-white border border-[#E5E0D8] rounded-2xl p-4 shadow-xs">
-                  <div className="text-[11px] font-bold text-[#666C64] uppercase tracking-wider">Total Framer Users</div>
-                  <div className="text-2xl font-bold font-heading text-[#0C3823] mt-1">{framerStats.total}</div>
+                  <div className="flex items-center justify-between text-[11px] font-bold text-[#666C64] uppercase tracking-wider">
+                    <span>Total Members</span>
+                    <Users className="w-3.5 h-3.5 text-[#0C3823]" />
+                  </div>
+                  <div className="text-2xl font-bold font-heading text-[#0C3823] mt-1">{framerUsers.length}</div>
+                  <div className="text-[11px] text-[#666C64] mt-0.5">Across all plugins</div>
                 </div>
+
                 <div className="bg-white border border-[#E5E0D8] rounded-2xl p-4 shadow-xs">
-                  <div className="text-[11px] font-bold text-[#666C64] uppercase tracking-wider">Qube Auth Users</div>
-                  <div className="text-2xl font-bold font-heading text-[#0C3823] mt-1">{framerStats.qubeAuth}</div>
+                  <div className="flex items-center justify-between text-[11px] font-bold text-[#666C64] uppercase tracking-wider">
+                    <span>Pro Licenses</span>
+                    <Sparkles className="w-3.5 h-3.5 text-[#0C3823]" />
+                  </div>
+                  <div className="text-2xl font-bold font-heading text-[#0C3823] mt-1">
+                    {framerUsers.filter((u) => u.plan === 'pro').length}
+                  </div>
+                  <div className="text-[11px] text-[#666C64] mt-0.5">Paid subscriptions</div>
                 </div>
-                <div className="bg-white border border-[#E5E0D8] rounded-2xl p-4 shadow-xs">
-                  <div className="text-[11px] font-bold text-[#666C64] uppercase tracking-wider">Frame Drop Users</div>
-                  <div className="text-2xl font-bold font-heading text-[#0C3823] mt-1">{framerStats.frameDrop}</div>
-                </div>
-                <div className="bg-white border border-[#E5E0D8] rounded-2xl p-4 shadow-xs">
-                  <div className="text-[11px] font-bold text-[#666C64] uppercase tracking-wider">Active Pro Licenses</div>
-                  <div className="text-2xl font-bold font-heading text-[#0C3823] mt-1">{framerStats.proCount}</div>
-                </div>
+
+                {dynamicPluginFilters.slice(0, 3).map((p) => {
+                  const isSelected = framerPluginFilter === p.slug;
+                  return (
+                    <button
+                      key={p.slug}
+                      type="button"
+                      onClick={() => setFramerPluginFilter(isSelected ? 'all' : p.slug)}
+                      className={`text-left bg-white border rounded-2xl p-4 shadow-xs transition-all hover:border-[#0C3823]/50 cursor-pointer ${
+                        isSelected ? 'ring-2 ring-[#0C3823] border-[#0C3823] bg-[#F9F7F2]' : 'border-[#E5E0D8]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-[11px] font-bold text-[#666C64] uppercase tracking-wider">
+                        <span className="truncate">{p.name}</span>
+                        {p.slug === 'telegram-commerce' ? (
+                          <Send className="w-3.5 h-3.5 text-[#229ED9] shrink-0" />
+                        ) : p.slug === 'whatsapp-commerce' ? (
+                          <Mail className="w-3.5 h-3.5 text-[#25D366] shrink-0" />
+                        ) : (
+                          <Package className="w-3.5 h-3.5 text-[#6366F1] shrink-0" />
+                        )}
+                      </div>
+                      <div className="text-2xl font-bold font-heading text-[#0C3823] mt-1">{p.count}</div>
+                      <div className="text-[11px] text-[#666C64] mt-0.5 flex items-center justify-between">
+                        <span>{p.count === 1 ? '1 member' : `${p.count} members`}</span>
+                        {isSelected && <span className="text-[10px] text-[#0C3823] font-bold">Active</span>}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Filters & Search */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white border border-[#E5E0D8] rounded-2xl p-3 shadow-xs">
-                <div className="flex items-center gap-2 w-full sm:w-auto">
+              {/* Dynamic Filters & Search Bar */}
+              <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white border border-[#E5E0D8] rounded-2xl p-3 shadow-xs">
+                {/* Dynamic Filter Pills */}
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <button
+                    type="button"
                     onClick={() => setFramerPluginFilter('all')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all inline-flex items-center gap-1.5 ${
                       framerPluginFilter === 'all'
                         ? 'bg-[#0C3823] text-white shadow-xs'
-                        : 'bg-[#F4F1EA] text-[#666C64] hover:text-[#141915]'
+                        : 'bg-[#F4F1EA] text-[#666C64] hover:text-[#141915] hover:bg-[#EAE5DC]'
                     }`}
                   >
-                    All Plugins
+                    <span>All Plugins</span>
+                    <span
+                      className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold leading-none ${
+                        framerPluginFilter === 'all' ? 'bg-[#CCFF00]/25 text-[#CCFF00]' : 'bg-white/80 text-[#666C64]'
+                      }`}
+                    >
+                      {framerUsers.length}
+                    </span>
                   </button>
-                  <button
-                    onClick={() => setFramerPluginFilter('qube-auth')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${
-                      framerPluginFilter === 'qube-auth'
-                        ? 'bg-[#0C3823] text-white shadow-xs'
-                        : 'bg-[#F4F1EA] text-[#666C64] hover:text-[#141915]'
-                    }`}
-                  >
-                    Qube Auth
-                  </button>
-                  <button
-                    onClick={() => setFramerPluginFilter('frame-drop')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${
-                      framerPluginFilter === 'frame-drop'
-                        ? 'bg-[#0C3823] text-white shadow-xs'
-                        : 'bg-[#F4F1EA] text-[#666C64] hover:text-[#141915]'
-                    }`}
-                  >
-                    Frame Drop
-                  </button>
-                  <button onClick={() => setFramerPluginFilter('whatsapp-commerce')} className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${framerPluginFilter === 'whatsapp-commerce' ? 'bg-[#0C3823] text-white shadow-xs' : 'bg-[#F4F1EA] text-[#666C64] hover:text-[#141915]'}`}>WhatsApp Commerce</button>
+
+                  {dynamicPluginFilters.map((p) => {
+                    const isSelected = framerPluginFilter === p.slug;
+                    return (
+                      <button
+                        key={p.slug}
+                        type="button"
+                        onClick={() => setFramerPluginFilter(p.slug)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all inline-flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-[#0C3823] text-white shadow-xs'
+                            : 'bg-[#F4F1EA] text-[#666C64] hover:text-[#141915] hover:bg-[#EAE5DC]'
+                        }`}
+                      >
+                        {p.slug === 'telegram-commerce' && <Send className="w-3 h-3 text-[#229ED9]" />}
+                        {p.slug === 'whatsapp-commerce' && <Mail className="w-3 h-3 text-[#25D366]" />}
+                        {p.slug === 'frame-drop' && <Package className="w-3 h-3 text-[#6366F1]" />}
+                        {p.slug === 'qube-auth' && <ShieldAlert className="w-3 h-3 text-[#CCFF00]" />}
+                        <span>{p.name}</span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold leading-none ${
+                            isSelected ? 'bg-[#CCFF00]/25 text-[#CCFF00]' : 'bg-white/80 text-[#666C64]'
+                          }`}
+                        >
+                          {p.count}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
 
-                <div className="w-full sm:w-72">
+                {/* Search Box */}
+                <div className="relative w-full lg:w-72 shrink-0">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#666C64] pointer-events-none" />
                   <input
                     type="text"
                     value={framerSearchQuery}
                     onChange={(e) => setFramerSearchQuery(e.target.value)}
-                    placeholder="Search by email or name..."
-                    className="w-full px-3.5 py-1.5 text-xs rounded-xl bg-[#F4F1EA] border border-[#E5E0D8] text-[#141915] placeholder-[#666C64] focus:outline-none focus:border-[#0C3823]"
+                    placeholder="Search email, name, or plugin..."
+                    className="w-full pl-9 pr-8 py-1.5 text-xs rounded-xl bg-[#F4F1EA] border border-[#E5E0D8] text-[#141915] placeholder-[#666C64] focus:outline-none focus:border-[#0C3823] transition-colors"
                   />
+                  {framerSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setFramerSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#666C64] hover:text-[#141915] p-0.5"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
+              </div>
+
+              {/* Status bar & Reset */}
+              <div className="flex items-center justify-between text-xs text-[#666C64] px-1">
+                <span>
+                  Showing <strong className="text-[#141915]">{filteredFramerUsers.length}</strong> of{' '}
+                  <strong className="text-[#141915]">{framerUsers.length}</strong> members
+                  {framerPluginFilter !== 'all' && (
+                    <>
+                      {' '}for <span className="text-[#0C3823] font-bold">{dynamicPluginFilters.find((p) => p.slug === framerPluginFilter)?.name || framerPluginFilter}</span>
+                    </>
+                  )}
+                </span>
+                {(framerPluginFilter !== 'all' || framerSearchQuery) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFramerPluginFilter('all');
+                      setFramerSearchQuery('');
+                    }}
+                    className="text-[#0C3823] font-bold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                    <span>Reset filter & search</span>
+                  </button>
+                )}
               </div>
 
               {/* Users Table */}
               <div className="bg-white border border-[#E5E0D8] rounded-[28px] overflow-hidden shadow-xs">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#F0EDE5] text-[#0C3823] font-bold uppercase">
+                  <thead className="bg-[#F0EDE5] text-[#0C3823] font-bold uppercase tracking-wider text-[11px]">
                     <tr>
                       <th className="px-6 py-4">User Details</th>
                       <th className="px-6 py-4">Plugin</th>
@@ -1813,70 +1970,112 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E5E0D8]">
-                    {framerUsers
-                      .filter((u) => {
-                        if (framerPluginFilter !== 'all' && u.plugin_slug !== framerPluginFilter) return false;
-                        if (framerSearchQuery) {
-                          const q = framerSearchQuery.toLowerCase();
-                          return u.email.toLowerCase().includes(q) || (u.name && u.name.toLowerCase().includes(q));
-                        }
-                        return true;
-                      })
-                      .map((u) => (
-                        <tr key={u.id} className="hover:bg-[#F8F6F0]/50 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="font-bold text-[#141915] text-sm">{u.name || 'Anonymous User'}</div>
-                            <div className="text-[#666C64] font-mono text-[11px] mt-0.5">{u.email}</div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span
-                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 ${
-                                u.plugin_slug === 'qube-auth'
-                                  ? 'bg-[#0C3823] text-[#CCFF00]'
-                                  : 'bg-[#00F5A0]/20 text-[#0C3823]'
-                              }`}
-                            >
+                    {filteredFramerUsers.map((u) => (
+                      <tr key={u.id} className="hover:bg-[#F8F6F0]/60 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-[#EAE5DC] text-[#0C3823] font-bold text-xs flex items-center justify-center shrink-0 uppercase">
+                              {(u.name || u.email || '?').charAt(0)}
+                            </div>
+                            <div>
+                              <div className="font-bold text-[#141915] text-sm">{u.name || 'Anonymous User'}</div>
+                              <div className="text-[#666C64] font-mono text-[11px] mt-0.5">{u.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {u.plugin_slug === 'telegram-commerce' ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 bg-[#229ED9]/15 text-[#0077B5] border border-[#229ED9]/30">
+                              <Send className="w-3 h-3 text-[#229ED9]" />
+                              <span>Telegram Commerce</span>
+                            </span>
+                          ) : u.plugin_slug === 'whatsapp-commerce' ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 bg-[#25D366]/15 text-[#0C3823] border border-[#25D366]/30">
+                              <Mail className="w-3 h-3 text-[#25D366]" />
+                              <span>WhatsApp Commerce</span>
+                            </span>
+                          ) : u.plugin_slug === 'frame-drop' ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 bg-[#6366F1]/15 text-[#4338CA] border border-[#6366F1]/30">
+                              <Package className="w-3 h-3 text-[#6366F1]" />
+                              <span>Frame Drop</span>
+                            </span>
+                          ) : u.plugin_slug === 'qube-auth' ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 bg-[#0C3823] text-[#CCFF00] border border-[#CCFF00]/40">
+                              <ShieldAlert className="w-3 h-3 text-[#CCFF00]" />
+                              <span>Qube Auth</span>
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 bg-[#F0EDE5] text-[#141915] border border-[#E5E0D8]">
+                              <Package className="w-3 h-3 text-[#666C64]" />
                               <span>{u.plugin_name || u.plugin_slug}</span>
                             </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                                u.plan === 'pro'
-                                  ? 'bg-[#CCFF00]/25 text-[#0C3823] border border-[#CCFF00]/50'
-                                  : 'bg-zinc-100 text-zinc-600'
-                              }`}
-                            >
-                              {u.plan}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="font-mono text-[11px] text-zinc-500 truncate max-w-[140px]" title="Session credentials stay on the server">
-                              Server managed
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-[#666C64] font-mono text-[11px]">
-                            {new Date(u.last_login_at).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <button
-                              onClick={() => handleDeleteFramerUser(u.id)}
-                              className="p-2 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
-                              title="Delete Session"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    {framerUsers.length === 0 && (
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 ${
+                              u.plan === 'pro'
+                                ? 'bg-[#0C3823] text-[#CCFF00] border border-[#CCFF00]/50 shadow-xs'
+                                : 'bg-[#F0EDE5] text-[#666C64] border border-[#E5E0D8]'
+                            }`}
+                          >
+                            {u.plan === 'pro' && <Sparkles className="w-2.5 h-2.5 text-[#CCFF00]" />}
+                            <span>{u.plan || 'Free'}</span>
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div
+                            className="inline-flex items-center gap-1.5 text-[11px] text-[#53615A] bg-[#F4F1EA] px-2.5 py-1 rounded-lg border border-[#E5E0D8]/70 font-mono"
+                            title="RFC 8628 Token-Based Auth — session credentials stay securely on the server"
+                          >
+                            <LockKeyhole className="w-3 h-3 text-[#0C3823]" />
+                            <span>Server managed</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-[#666C64] font-mono text-[11px]">
+                          {new Date(u.last_login_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => handleDeleteFramerUser(u.id)}
+                            className="p-2 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                            title="Delete Session"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredFramerUsers.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="px-6 py-12 text-center text-[#666C64]">
-                          No Framer users registered yet.
+                        <td colSpan={6} className="px-6 py-16 text-center">
+                          <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
+                            <div className="w-10 h-10 rounded-2xl bg-[#F0EDE5] flex items-center justify-center text-[#666C64] mb-3">
+                              <Users className="w-5 h-5 text-[#0C3823]" />
+                            </div>
+                            <p className="text-sm font-bold text-[#141915]">No members found</p>
+                            <p className="text-xs text-[#666C64] mt-1">
+                              {framerSearchQuery
+                                ? `No members matched "${framerSearchQuery}" in ${framerPluginFilter === 'all' ? 'any plugin' : framerPluginFilter}.`
+                                : `No members registered for ${framerPluginFilter} yet.`}
+                            </p>
+                            {(framerPluginFilter !== 'all' || framerSearchQuery) && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFramerPluginFilter('all');
+                                  setFramerSearchQuery('');
+                                }}
+                                className="mt-4 px-3.5 py-1.5 rounded-xl bg-[#0C3823] text-white text-xs font-bold hover:bg-[#164E33] transition-colors cursor-pointer"
+                              >
+                                Show all members
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     )}

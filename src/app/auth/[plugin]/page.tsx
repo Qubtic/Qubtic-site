@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import QubticFramerAuthPortal from '@/components/framer/auth/QubticFramerAuthPortal';
 import { TechLoader } from '@/components/ui/TechLoader';
-import { getPluginMetadata } from '@/lib/plugins-registry';
+import { serverPluginMetadata } from '@/lib/managed-plugins';
 
 interface AuthPluginPageProps {
   params: Promise<{
@@ -12,7 +12,7 @@ interface AuthPluginPageProps {
 
 export async function generateMetadata({ params }: AuthPluginPageProps): Promise<Metadata> {
   const { plugin: rawSlug } = await params;
-  const meta = getPluginMetadata(rawSlug);
+  const meta = await serverPluginMetadata(rawSlug);
 
   return {
     title: `Sign In to ${meta.name} — Qubtic Auth for Framer`,
@@ -26,6 +26,7 @@ export async function generateMetadata({ params }: AuthPluginPageProps): Promise
 
 export default async function AuthPluginPage({ params }: AuthPluginPageProps) {
   const { plugin: rawSlug } = await params;
+  const meta = await serverPluginMetadata(rawSlug);
 
   return (
     <Suspense
@@ -35,7 +36,7 @@ export default async function AuthPluginPage({ params }: AuthPluginPageProps) {
         </div>
       }
     >
-      <QubticFramerAuthPortal initialPlugin={rawSlug} />
+      <QubticFramerAuthPortal initialPlugin={rawSlug} initialMetadata={meta} />
     </Suspense>
   );
 }

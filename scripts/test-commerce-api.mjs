@@ -93,6 +93,7 @@ function harness() {
 		"./passwords": passwords,
 		"./supabase": { supabase },
 		"./plugins-registry": registry,
+        "./managed-plugins": {serverPluginMetadata:async slug=>registry.getPluginMetadata(slug)},
 		fs: {
 			existsSync: (file) => files.has(file),
 			mkdirSync() {},

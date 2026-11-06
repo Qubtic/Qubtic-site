@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { supabase } from './supabase';
 import { getPluginMetadata } from './plugins-registry';
+import { serverPluginMetadata } from './managed-plugins';
 import {
   sendVerificationEmail,
   sendPasswordResetEmail,
@@ -201,7 +202,7 @@ export async function createOrUpdateFramerUser(params: {
 }): Promise<{ user: FramerUserRecord; isNew: boolean; token: string }> {
   const normalizedEmail = params.email.toLowerCase().trim();
   const pluginSlug = getPluginMetadata(params.pluginSlug).slug;
-  const plugin = getPluginMetadata(pluginSlug);
+  const plugin = await serverPluginMetadata(pluginSlug);
   const commerce = isCommercePlugin(plugin.slug);
   const now = new Date().toISOString();
   const token = generateFramerAuthToken(pluginSlug);
@@ -620,6 +621,7 @@ export async function getFramerUsersList(pluginFilter?: string): Promise<{
     qubeAuth: number;
     frameDrop: number;
     whatsappCommerce: number;
+    telegramCommerce: number;
     proCount: number;
     activeToday: number;
   };
@@ -651,6 +653,7 @@ export async function getFramerUsersList(pluginFilter?: string): Promise<{
     qubeAuth: allUsers.filter((u) => u.plugin_slug === 'qube-auth').length,
     frameDrop: allUsers.filter((u) => u.plugin_slug === 'frame-drop').length,
     whatsappCommerce: allUsers.filter((u) => u.plugin_slug === 'whatsapp-commerce').length,
+    telegramCommerce: allUsers.filter((u) => u.plugin_slug === 'telegram-commerce').length,
     proCount: allUsers.filter((u) => accountPlan(u) === 'pro').length,
     activeToday: allUsers.filter((u) => new Date(u.last_login_at) >= todayStart).length,
   };
@@ -763,8 +766,8 @@ export async function initiatePairingSession(params?: {
   interval: number;
 }> {
   const pluginSlug = getPluginMetadata(params?.pluginSlug || 'frame-drop').slug;
-  const pluginMeta = getPluginMetadata(pluginSlug);
-  const pluginName = isCommercePlugin(pluginSlug) ? pluginMeta.name : params?.pluginName || pluginMeta.name;
+  const pluginMeta = await serverPluginMetadata(pluginSlug);
+  const pluginName = pluginMeta.name;
 
   // Clamp TTL between 60s and 3600s, default 600s (RFC 8628 timing contracts)
   const requestedTtl = params?.ttlSeconds ?? PAIRING_TTL_SECONDS;

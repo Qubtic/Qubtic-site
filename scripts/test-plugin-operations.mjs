@@ -32,12 +32,13 @@ test('operations API authenticates filters and ignores injected licensing and re
  const exports={};const source=ts.transpileModule(readFileSync(new URL('../src/app/api/admin/plugin-operations/route.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
  const deps={
  '@/lib/admin-guard':{requirePluginAdmin:async request=>{if(!authorized)throw Error('Administrator access required.');if(request&&request.headers.get('origin')!=='https://admin.test')throw Error('Invalid request origin.');return {id:'admin'};}},
- '@/lib/plugins-registry':{REGISTERED_PLUGINS:{'telegram-commerce':{slug:'telegram-commerce',name:'Telegram Commerce'}}},
+ '@/lib/managed-plugins':{registeredPlugins:async()=>[{slug:'telegram-commerce',name:'Telegram Commerce'},{slug:'new-tool',name:'New Tool'}]},
  '@/lib/supabase':{supabase:{rpc:async(name,args)=>{calls.push({name,args});return {data:{id:'audit',undoUntil:new Date(Date.now()+5000).toISOString()}};},from:()=>({select(){return this},eq(){return this},maybeSingle:async()=>({data:{email:'real@example.test',plugin_slug:'telegram-commerce'}}),insert:async value=>{inserted=value;return {};}})}}};
  new Function('require','exports',source)(name=>name in deps?deps[name]:native(name),exports);
  assert.equal((await exports.GET(new Request('https://admin.test/api/admin/plugin-operations'))).status,401);authorized=true;
  assert.equal((await exports.GET(new Request('https://admin.test/api/admin/plugin-operations'))).status,200);assert.equal(calls[0].args.p_environment,'production');
  assert.equal((await exports.GET(new Request('https://admin.test/api/admin/plugin-operations?environment=invalid'))).status,400);
+ assert.equal((await exports.GET(new Request('https://admin.test/api/admin/plugin-operations?plugin=new-tool'))).status,200);assert.equal(calls.at(-1).args.p_plugin,'new-tool');
  const post=body=>exports.POST(new Request('https://admin.test/api/admin/plugin-operations',{method:'POST',headers:{origin:'https://admin.test'},body:JSON.stringify(body)}));
  assert.equal((await post({action:'update',userId:'user',patch:{name:'Name',company_name:'',website_url:'',status:'active',expected_updated_at:new Date().toISOString(),plan:'pro',auth_token:'injected',metadata:{email_verified:true}}})).status,200);
  const patch=calls.at(-1).args.p_patch;assert.equal(patch.plan,undefined);assert.equal(patch.auth_token,undefined);assert.equal(patch.metadata,undefined);
@@ -60,5 +61,41 @@ test('SMTP cleanup removes old credentials and undo snapshots without changing P
  await publish(old,3);row=(await db.query("select * from plugin_control where id='mail'")).rows[0];assert.equal(row.secrets,'');assert.deepEqual(row.settings,expected);
  const audit=(await db.query("select id from plugin_control_audit where config_id='mail' order by id desc limit 1")).rows[0];await db.query("select undo_plugin_control($1,'admin')",[audit.id]);assert.equal((await db.query("select secrets from plugin_control where id='mail'")).rows[0].secrets,'');
  for(const role of ['anon','authenticated'])assert.equal((await db.query("select has_function_privilege($1,'sanitize_plugin_mail_preferences()','EXECUTE') as allowed",[role])).rows[0].allowed,false);
+ }finally{await db.close();}
+});
+
+
+test('real UUID catalog publishes and restores plans atomically without changing other environments',async()=>{
+ const db=new PGlite();try{
+ await db.exec('create role anon;create role authenticated;create role service_role;');
+ for(const file of ['framer_users.sql','pairing_sessions.sql','billing.sql','billing_discounts.sql','billing_sites.sql','billing_telegram_sites.sql','migrations/20261104092628_plugin_control.sql','migrations/20261104095407_plugin_operations.sql','migrations/20261104112717_smtp_credentials_to_vercel.sql'])await db.exec(readFileSync(new URL('../supabase/'+file,import.meta.url),'utf8'));
+ const benefit='11111111-1111-4111-8111-111111111111';
+ const rows=['monthly','yearly','lifetime'].map((cadence,i)=>({plugin_slug:'telegram-commerce',cadence,product_id:`22222222-2222-4222-8222-22222222222${i}`,benefit_id:benefit}));
+ const publish=(env,revision,catalog,settings={enabled:true})=>db.query('select publish_plugin_control($1,$2,$3,$4,$5,$6)',['polar:'+env,JSON.stringify(settings),'encrypted',revision,'admin',JSON.stringify(catalog)]);
+ // The previous test used text IDs and missed this production-only operator mismatch.
+ await assert.rejects(()=>publish('production',0,rows),error=>error.code==='42883');
+ assert.equal((await db.query('select count(*)::int n from plugin_control')).rows[0].n,0);
+ await db.exec(readFileSync(new URL('../supabase/migrations/20261106115046_plugin_catalog_uuid_publish.sql',import.meta.url),'utf8'));
+ // Preserve a pre-existing active catalog for the first-publication undo branch.
+ await db.query('insert into billing_catalog(environment,plugin_slug,cadence,product_id,benefit_id,enabled) values($1,$2,$3,$4,$5,true)',['production','whatsapp-commerce','monthly','33333333-3333-4333-8333-333333333333',benefit]);
+ await publish('production',0,rows);await publish('sandbox',0,rows);
+ assert.equal((await db.query("select count(*)::int n from billing_catalog where environment='production' and enabled")).rows[0].n,3);
+ const initial=(await db.query("select id from plugin_control_audit where config_id='polar:production' and revision=1")).rows[0].id;
+ await db.query("select undo_plugin_control($1,'admin')",[initial]);
+ assert.equal((await db.query("select plugin_slug from billing_catalog where environment='production' and enabled")).rows[0].plugin_slug,'whatsapp-commerce');
+ assert.equal((await db.query("select count(*)::int n from billing_catalog where environment='sandbox' and enabled")).rows[0].n,3);
+ await publish('production',0,rows);
+ await assert.rejects(()=>publish('production',0,rows));
+ const invalid=rows.map((row,i)=>i===0?{...row,plugin_slug:'qube-auth'}:row);
+ await assert.rejects(()=>publish('production',1,invalid),/historical product/);
+ assert.equal((await db.query("select revision from plugin_control where id='polar:production'")).rows[0].revision,1);
+ await publish('production',1,[]);
+ const audit=(await db.query("select id from plugin_control_audit where config_id='polar:production' and revision=2")).rows[0].id;
+ await db.query("select undo_plugin_control($1,'admin')",[audit]);
+ assert.equal((await db.query("select count(*)::int n from billing_catalog where environment='production' and enabled")).rows[0].n,3);
+ const version=(await db.query("select revision from plugin_control where id='polar:production'")).rows[0].revision;
+ await assert.rejects(()=>publish('production',version,[{...rows[0],benefit_id:'not-a-uuid'}]),error=>error.code==='22P02');
+ assert.equal((await db.query("select count(*)::int n from billing_catalog where environment='production' and enabled")).rows[0].n,3);
+ for(const role of ['anon','authenticated'])for(const fn of ['publish_plugin_control(text,jsonb,text,integer,text,jsonb)','undo_plugin_control(bigint,text)'])assert.equal((await db.query("select has_function_privilege($1,$2,'EXECUTE') as allowed",[role,fn])).rows[0].allowed,false);
  }finally{await db.close();}
 });

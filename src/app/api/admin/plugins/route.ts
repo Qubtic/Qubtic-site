@@ -1,4 +1,4 @@
-import { REGISTERED_PLUGINS } from '@/lib/plugins-registry';
+import { registeredPlugins } from '@/lib/managed-plugins';
 import { cookies } from 'next/headers';
 import { verifyAdminSession } from '@/lib/admin-session';
 import { supabase } from '@/lib/supabase';
@@ -18,11 +18,12 @@ async function admin() {
 export async function GET() {
     try {
         await admin();
+        const plugins = await registeredPlugins();
         const { data, error } = await supabase.from('plugin_control').select('id,settings,secrets,revision,updated_at');
         if (error)
             throw new Error('Apply the plugin control migration before opening this panel.');
         const { data: audit } = await supabase.from('plugin_control_audit').select('config_id,revision,actor,created_at').order('created_at', { ascending: false }).limit(20);
-        return Response.json({ plugins: Object.values(REGISTERED_PLUGINS).filter((p, i, all) => all.findIndex(other => other.slug === p.slug) === i).map(p => ({ slug: p.slug, name: p.name, logo: p.logo })), records: (data || []).map(row => ({ ...row, settings: row.id === 'mail' ? mailSettings(row.settings) : row.settings, secrets: undefined, configuredSecrets: row.id === 'mail' ? [] : Object.keys(recordSecrets(row)) })), audit: audit || [] }, { headers });
+        return Response.json({ plugins: plugins.map(p => ({ slug: p.slug, name: p.name, logo: p.logo })), records: (data || []).map(row => ({ ...row, settings: row.id === 'mail' ? mailSettings(row.settings) : row.settings, secrets: undefined, configuredSecrets: row.id === 'mail' ? [] : Object.keys(recordSecrets(row)) })), audit: audit || [] }, { headers });
     }
     catch (error) {
         return failure(error);
@@ -76,12 +77,14 @@ export async function POST(request: Request) {
         let catalog = null;
         if (id.startsWith('polar:')) {
             const environment = id === 'polar:production' ? 'production' : 'sandbox';
+            const registry = await registeredPlugins();
             if (!Array.isArray(settings.plugins) || settings.plugins.length > 50 || typeof settings.enabled !== 'boolean')
                 throw new Error('Invalid plugin list.');
             for (const plugin of settings.plugins) {
-                if (!REGISTERED_PLUGINS[plugin.slug])
-                    throw new Error('Register new plugins in the backend before configuring them.');
-                plugin.name = REGISTERED_PLUGINS[plugin.slug].name;
+                const registered = registry.find(item => item.slug === plugin.slug);
+                if (!registered)
+                    throw new Error('Register this plugin using Add plugin before configuring it.');
+                plugin.name = registered.name;
                 if (!Array.isArray(plugin.plans))
                     throw new Error('Each plugin needs a plan list.');
                 // Read legacy per-plan benefits, but require one shared Pro benefit on publication.

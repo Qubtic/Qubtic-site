@@ -3,7 +3,8 @@ import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
 import { FRAMEDROP_ICON_BASE64, QUBEAUTH_ICON_BASE64 } from "./logoAssets";
-import { getPluginMetadata } from "./plugins-registry";
+import { getPluginMetadata, type FramerPluginMetadata } from "./plugins-registry";
+import { serverPluginMetadata } from "./managed-plugins";
 
 const WHATSAPP_COMMERCE_ICON =
 	'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="#f6deaf"/><path d="M8 10h16v13H8zM12 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#141822" stroke-width="2" stroke-linejoin="round"/><path d="m13 16 2 2 4-4" fill="none" stroke="#141822" stroke-width="2" stroke-linecap="round"/></svg>';
@@ -137,7 +138,7 @@ export async function verifySmtpConnection(): Promise<{
  * Returns sender display name and email
  */
 export async function getSender(pluginSlug: string = "frame-drop"): Promise<string> {
-	const plugin = getPluginMetadata(pluginSlug);
+	const plugin = await serverPluginMetadata(pluginSlug);
 	const fromEmail = process.env.SMTP_FROM_EMAIL || 'hello@qubtic.tech';
 	return `"${plugin.name} by Qubtic" <${fromEmail}>`;
 }
@@ -150,8 +151,9 @@ export function generateVerificationEmailHtml(
 	recipientName?: string,
 	pluginSlug: string = "frame-drop",
 	logoSrc: string = `cid:${LOGO_CID}`,
+	metadata?: FramerPluginMetadata,
 ): string {
-	const plugin = getPluginMetadata(pluginSlug);
+	const plugin = metadata || getPluginMetadata(pluginSlug);
 	const greeting =
 		recipientName && recipientName.trim()
 			? `Hi ${recipientName.trim()},`
@@ -279,8 +281,9 @@ export function generatePasswordResetEmailHtml(
 	recipientName?: string,
 	pluginSlug: string = "frame-drop",
 	logoSrc: string = `cid:${LOGO_CID}`,
+	metadata?: FramerPluginMetadata,
 ): string {
-	const plugin = getPluginMetadata(pluginSlug);
+	const plugin = metadata || getPluginMetadata(pluginSlug);
 	const greeting =
 		recipientName && recipientName.trim()
 			? `Hi ${recipientName.trim()},`
@@ -695,8 +698,9 @@ export function generateTeamInviteEmailHtml(
 	inviteLink: string = "https://qubtic.tech/auth",
 	role: string = "Editor",
 	logoSrc: string = `cid:${LOGO_CID}`,
+	metadata?: FramerPluginMetadata,
 ): string {
-	const plugin = getPluginMetadata(pluginSlug);
+	const plugin = metadata || getPluginMetadata(pluginSlug);
 
 	return `
 <!DOCTYPE html>
@@ -803,9 +807,9 @@ export async function sendVerificationEmail(
 	name?: string,
 	pluginSlug: string = "frame-drop",
 ): Promise<{ messageId: string }> {
-	const plugin = getPluginMetadata(pluginSlug);
+	const plugin = await serverPluginMetadata(pluginSlug);
 	const transporter = await getMailTransporter();
-	const html = generateVerificationEmailHtml(code, name, plugin.slug);
+	const html = generateVerificationEmailHtml(code, name, plugin.slug, undefined, plugin);
 	const attachments = getPluginEmailAttachments(plugin.slug);
 	const from = await getSender(plugin.slug);
 
@@ -830,9 +834,9 @@ export async function sendPasswordResetEmail(
 	name?: string,
 	pluginSlug: string = "frame-drop",
 ): Promise<{ messageId: string }> {
-	const plugin = getPluginMetadata(pluginSlug);
+	const plugin = await serverPluginMetadata(pluginSlug);
 	const transporter = await getMailTransporter();
-	const html = generatePasswordResetEmailHtml(code, name, plugin.slug);
+	const html = generatePasswordResetEmailHtml(code, name, plugin.slug, undefined, plugin);
 	const attachments = getPluginEmailAttachments(plugin.slug);
 	const from = await getSender(plugin.slug);
 
@@ -892,7 +896,7 @@ export async function sendTeamInviteEmail(
 	inviteLink: string = "https://qubtic.tech/auth",
 	role: string = "Editor",
 ): Promise<{ messageId: string }> {
-	const plugin = getPluginMetadata(pluginSlug);
+	const plugin = await serverPluginMetadata(pluginSlug);
 	const transporter = await getMailTransporter();
 	const html = generateTeamInviteEmailHtml(
 		to,
@@ -901,6 +905,8 @@ export async function sendTeamInviteEmail(
 		plugin.slug,
 		inviteLink,
 		role,
+		undefined,
+		plugin,
 	);
 	const attachments = getPluginEmailAttachments(plugin.slug);
 	const from = await getSender(plugin.slug);

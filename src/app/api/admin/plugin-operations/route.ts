@@ -1,20 +1,21 @@
 import { requirePluginAdmin } from '@/lib/admin-guard';
 import { supabase } from '@/lib/supabase';
-import { REGISTERED_PLUGINS } from '@/lib/plugins-registry';
+import { registeredPlugins } from '@/lib/managed-plugins';
 import { randomBytes, randomUUID } from 'node:crypto';
 export const runtime = 'nodejs';
 const headers = { 'Cache-Control': 'no-store' };
 function failure(error: unknown) { const message = error instanceof Error ? error.message : 'Request failed.'; return Response.json({ error: message }, { status: message === 'Administrator access required.' ? 401 : 400, headers }); }
 export async function GET(request: Request) { try {
     await requirePluginAdmin();
+    const plugins = await registeredPlugins();
     const params = new URL(request.url).searchParams;
     const environment = params.get('environment') || 'production', plugin = params.get('plugin') || '', search = (params.get('search') || '').trim(), page = Number(params.get('page') || 0);
-    if (!['production', 'sandbox'].includes(environment) || plugin && !REGISTERED_PLUGINS[plugin] || search.length > 200 || !Number.isInteger(page) || page < 0 || page > 10000)
+    if (!['production', 'sandbox'].includes(environment) || plugin && !plugins.some(item => item.slug === plugin) || search.length > 200 || !Number.isInteger(page) || page < 0 || page > 10000)
         throw Error('Invalid filters.');
     const { data, error } = await supabase.rpc('plugin_operations_snapshot', { p_environment: environment, p_plugin: plugin, p_search: search, p_page: page } as never);
     if (error)
         throw Error('Unable to load operations. Apply the plugin operations migration.');
-    return Response.json({ snapshot: data, plugins: Object.values(REGISTERED_PLUGINS).filter((p, i, all) => all.findIndex(other => other.slug === p.slug) === i).map(p => ({ slug: p.slug, name: p.name, logo: p.logo })) }, { headers });
+    return Response.json({ snapshot: data, plugins: plugins.map(p => ({ slug: p.slug, name: p.name, logo: p.logo })) }, { headers });
 }
 catch (error) {
     return failure(error);
@@ -77,11 +78,13 @@ export async function POST(request: Request) {
             }
         }
         if (action === 'create') {
-            if (typeof patch.email !== 'string' || patch.email.length > 254 || !/^\S+@[^\s@,;]+\.[^\s@,;]+$/.test(patch.email) || !REGISTERED_PLUGINS[patch.plugin_slug])
+            const plugins = await registeredPlugins();
+            const registered = plugins.find(item => item.slug === patch.plugin_slug);
+            if (typeof patch.email !== 'string' || patch.email.length > 254 || !/^\S+@[^\s@,;]+\.[^\s@,;]+$/.test(patch.email) || !registered)
                 throw Error('Choose a registered plugin and valid email.');
             clean.email = patch.email.trim().toLowerCase();
             clean.plugin_slug = patch.plugin_slug;
-            clean.plugin_name = REGISTERED_PLUGINS[patch.plugin_slug].name;
+            clean.plugin_name = registered!.name;
             const prefix = patch.plugin_slug.split('-')[0];
             clean.auth_token = 'qbt_fr_' + prefix + '_' + randomBytes(24).toString('hex');
         }
