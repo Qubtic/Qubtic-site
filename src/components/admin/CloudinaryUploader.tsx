@@ -1,17 +1,20 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useId } from 'react';
 import { UploadCloud, Image as ImageIcon, Trash2, FolderOpen, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import { CloudImage } from '@/components/ui/CloudImage';
 import { MediaLibraryModal } from './MediaLibraryModal';
 import { TechLoader } from '@/components/ui/TechLoader';
+import './cloudinary-uploader.css';
+import { canPreviewPluginLogo } from '@/lib/plugin-logo';
 
 interface CloudinaryUploaderProps {
   value?: string;
   onChange: (value: string) => void;
   label?: string;
   folder?: string;
+  variant?: 'default' | 'logo';
 }
 
 export function CloudinaryUploader({
@@ -19,6 +22,7 @@ export function CloudinaryUploader({
   onChange,
   label = 'Image Asset',
   folder = 'qubtic_uploads',
+  variant = 'default',
 }: CloudinaryUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +34,7 @@ export function CloudinaryUploader({
   }
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const referenceId = useId();
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -68,6 +73,36 @@ export function CloudinaryUploader({
 
   const isLocalFile = value.startsWith('/');
   const isCloudinary = value && !isLocalFile;
+  const supportedLocal = isLocalFile;
+  const supportedUrl = value.startsWith('https:');
+  const canPreviewLogo = canPreviewPluginLogo(value);
+  const unavailableLogo = imageError || Boolean(value && !canPreviewLogo);
+
+  if (variant === 'logo') return <>
+    <section className="asset-logo" aria-label={label} aria-busy={uploading}>
+      <header className="asset-logo__header"><h4><ImageIcon size={17} aria-hidden="true"/>{label}</h4>{value && <span className="asset-logo__source">{isLocalFile ? 'Site asset' : 'Cloudinary'}</span>}</header>
+      <div className="asset-logo__content">
+        <div className="asset-logo__preview">
+          {value && !unavailableLogo ? supportedLocal || supportedUrl ?
+            <Image src={value} alt="Plugin logo preview" width={112} height={112} className="asset-logo__image" onError={() => setImageError(true)}/> :
+            <CloudImage src={value} alt="Plugin logo preview" width={112} height={112} className="asset-logo__image" crop={{ type: 'fit', source: true }} onError={() => setImageError(true)}/> :
+            <div className="asset-logo__empty">{unavailableLogo ? <AlertCircle size={26} aria-hidden="true"/> : <ImageIcon size={26} aria-hidden="true"/>}<span>{unavailableLogo ? 'Preview unavailable' : 'No logo yet'}</span></div>}
+        </div>
+        <div className="asset-logo__controls">
+          <p>Use a square logo. Your full image stays visible.</p>
+          <input type="file" ref={fileInputRef} accept="image/*" onChange={handleFileUpload} className="asset-logo__file" aria-label="Choose plugin logo file" disabled={uploading}/>
+          <div className="asset-logo__buttons">
+            <button type="button" className="asset-logo__upload" disabled={uploading} onClick={() => fileInputRef.current?.click()}><UploadCloud size={16} aria-hidden="true"/>{uploading ? 'Uploading…' : value ? 'Replace logo' : 'Upload logo'}</button>
+            <button type="button" disabled={uploading} onClick={() => setIsMediaModalOpen(true)}><FolderOpen size={16} aria-hidden="true"/>Media library</button>
+          </div>
+          {value && <button type="button" className="asset-logo__remove" aria-label="Remove plugin logo" disabled={uploading} onClick={() => onChange('')}><Trash2 size={14} aria-hidden="true"/>Remove logo</button>}
+        </div>
+      </div>
+      {error && <p className="asset-logo__error" role="alert"><AlertCircle size={15} aria-hidden="true"/>{error}</p>}
+      <details className="asset-logo__reference"><summary>Asset reference</summary><label htmlFor={referenceId}>Cloudinary ID or image path<input id={referenceId} value={value} onChange={event => onChange(event.target.value)} disabled={uploading} spellCheck={false} placeholder="Choose an image or paste its reference"/></label></details>
+    </section>
+    <MediaLibraryModal isOpen={isMediaModalOpen} onClose={() => setIsMediaModalOpen(false)} selectedPublicId={value} onSelect={publicId => { onChange(publicId); setIsMediaModalOpen(false); }}/>
+  </>;
 
   return (
     <>

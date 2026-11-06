@@ -1,0 +1,42 @@
+.asset-logo {
+  --asset-bg: var(--pc-bg, var(--color-canvas-card, #fff));
+  --asset-text: var(--pc-text, var(--color-ink, #141915));
+  --asset-muted: var(--pc-muted, #53615a);
+  --asset-border: var(--pc-border, var(--color-canvas-border, #e0d9cd));
+  --asset-accent: var(--pc-accent, var(--color-forest, #0c3823));
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--asset-border);
+  border-radius: 16px;
+  padding: 18px;
+  background: var(--asset-bg);
+  color: var(--asset-text);
+}
+.asset-logo__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.asset-logo__header h4 { display: flex; align-items: center; gap: 9px; margin: 0; font: 700 14px var(--font-heading, system-ui), sans-serif; letter-spacing: -.02em; }
+.asset-logo__header h4 svg { color: var(--asset-accent); }
+.asset-logo__source { border: 1px solid var(--asset-border); border-radius: 6px; padding: 4px 7px; font-size: 10px; color: var(--asset-muted); }
+.asset-logo__content { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: 18px; margin: 20px 0; flex: 1; }
+.asset-logo__preview { display: flex; align-items: center; justify-content: center; width: 112px; height: 112px; border: 1px solid var(--asset-border); border-radius: 18px; padding: 10px; overflow: hidden; background: repeating-conic-gradient(color-mix(in srgb, var(--asset-border) 28%, var(--asset-bg)) 0% 25%, var(--asset-bg) 0% 50%) 50% / 16px 16px; }
+.asset-logo__image { display: block; width: 100%; height: 100%; object-fit: contain; }
+.asset-logo__empty { display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--asset-muted); text-align: center; font-size: 10px; line-height: 1.4; }
+.asset-logo__empty svg { opacity: .7; }
+.plugin-control .asset-logo__controls p { margin: 0 0 12px; font-size: 12px; line-height: 1.6; color: var(--asset-muted); }
+.asset-logo__buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.plugin-control .asset-logo button { padding: 9px 11px; min-height: 40px; font-size: 12px; border-radius: 9px; }
+.plugin-control .asset-logo__upload { background: var(--asset-accent); color: var(--asset-bg); border-color: var(--asset-accent); }
+.plugin-control .asset-logo__remove { padding: 7px 0; min-height: 32px; margin-top: 5px; border: 0; border-radius: 4px; background: transparent; color: var(--asset-muted); font-size: 11px; }
+.asset-logo__file { display: none; }
+.asset-logo__reference { border-top: 1px solid var(--asset-border); padding-top: 12px; font-size: 11px; color: var(--asset-muted); }
+.asset-logo__reference summary { cursor: pointer; width: fit-content; border-radius: 4px; }
+.asset-logo__reference label { margin-top: 12px; }
+.plugin-control .asset-logo__reference input { font: 11px ui-monospace, monospace; }
+.asset-logo__reference summary:focus-visible { outline: 3px solid var(--asset-accent); outline-offset: 4px; }
+.plugin-control .asset-logo__error { display: flex; align-items: start; gap: 7px; font-size: 12px; color: var(--pc-danger, #ad322b); margin: 0 0 12px; overflow-wrap: anywhere; }
+@media (max-width: 440px) {
+  .asset-logo { padding: 14px; }
+  .asset-logo__content { grid-template-columns: 88px minmax(0, 1fr); gap: 12px; }
+  .asset-logo__preview { width: 88px; height: 88px; border-radius: 14px; }
+  .plugin-control .asset-logo button { min-height: 40px; }
+}

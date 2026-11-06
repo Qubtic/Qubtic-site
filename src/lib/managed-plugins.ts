@@ -2,12 +2,16 @@ import 'server-only';
 import { supabase } from './supabase';
 import { REGISTERED_PLUGINS, getPluginMetadata, type FramerPluginMetadata } from './plugins-registry';
 
-export async function registeredPlugins(): Promise<FramerPluginMetadata[]> {
+export type ManagedPlugin = FramerPluginMetadata & { archived: boolean; registryVersion: number };
+export async function registeredPlugins(includeArchived = false): Promise<ManagedPlugin[]> {
     const builtins = [...new Map(Object.values(REGISTERED_PLUGINS).map(plugin => [plugin.slug, plugin])).values()];
-    const { data, error } = await supabase.from('plugin_registry').select('slug,name').is('cancelled_at', null).eq('builtin', false).order('created_at');
-    if (error) throw new Error('Apply the dashboard plugin registry migration before registering plugins.');
+    const { data, error } = await supabase.from('plugin_registry').select('slug,name,builtin,archived_at,version').is('cancelled_at', null).order('created_at');
+    if (error) throw new Error('Apply the plugin archive migration before managing plugins.');
     const known = new Set(builtins.map(plugin => plugin.slug));
-    return [...builtins, ...(data || []).filter(plugin => !known.has(plugin.slug)).map(plugin => ({ ...getPluginMetadata(plugin.slug), name: plugin.name, shortName: plugin.name, logo: '' }))];
+    const rows = data || [];
+    const result: ManagedPlugin[] = builtins.map(plugin => { const row = rows.find(item => item.slug === plugin.slug); return { ...plugin, archived: Boolean(row?.archived_at), registryVersion: row?.version || 0 }; });
+    for (const row of rows) if (!known.has(row.slug)) result.push({ ...getPluginMetadata(row.slug), name: row.name, shortName: row.name, logo: '', archived: Boolean(row.archived_at), registryVersion: row.version || 0 });
+    return includeArchived ? result : result.filter(plugin => !plugin.archived);
 }
 
 export async function serverPluginMetadata(rawSlug: string): Promise<FramerPluginMetadata> {

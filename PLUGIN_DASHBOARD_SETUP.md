@@ -88,3 +88,16 @@ Once this dashboard version is deployed, registering future plugins requires no 
 Before deploying this feature, apply `supabase/migrations/20261106122130_dashboard_plugin_registry.sql` after the plugin operations and UUID publication repairs. The migration creates the registry/audit and registration RPC, seeds existing built-in IDs, and leaves production/sandbox settings and catalogs unchanged. It contains no provider credentials.
 
 The Brand color editor has been removed from plugin settings. Cloudinary, Supabase, Google and SMTP credentials remain managed through Vercel ENV.
+
+
+## Remove or restore a plugin
+
+Select a plugin in **Credentials & plugin settings**, then choose **Remove plugin** and confirm. Removal archives that identity globally and disables its new-purchase plans in both production and sandbox. IDs, logo/manifest settings, accounts, orders, subscriptions and entitlements remain stored. Existing Polar subscriptions keep billing on their existing schedule, and already-open Polar checkouts may complete. Cancellation is a separate provider operation.
+
+The **Removed** list retains the plugin and a **Restore plugin** action. Immediate **Undo** is available for five seconds and restores the prior payment settings/catalog if no later configuration edit has occurred. A later **Restore plugin** returns the plugin to the active list with plans still disabled; validate and publish before accepting new purchases. Existing customers keep production access under the normal entitlement rules, including renewals, expiry and refunds. Historical user/payment filters include removed plugins; the admin account-creation picker excludes them. IDs remain reserved.
+
+Removal and restoration reload saved settings; confirmation explicitly warns that unsaved edits will be discarded. Their audit snapshots are protected by RLS, contain no plaintext credentials, and cannot be restored by another admin or after the deadline. Environment/configuration revisions prevent undo from overwriting subsequent changes. Database publication rejects enabled products belonging to an archived plugin, including requests from an old browser tab.
+
+For another database, apply `supabase/migrations/20261106125605_plugin_archive_restore.sql` after the registry migration. This migration is already applied to the connected live Qubtic database. No existing plugin was removed by this implementation. Deploy the updated Qubtic app to show the removal/restoration controls.
+
+The plugin asset editor now uses a square logo preview with the complete image visible, upload/replace and media-library actions, and an expandable asset-reference field. The adjacent manifest editor supports JSON formatting, object validation and a character count. These UI changes require no provider credentials or storage migration.

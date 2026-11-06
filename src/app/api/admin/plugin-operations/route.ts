@@ -7,7 +7,7 @@ const headers = { 'Cache-Control': 'no-store' };
 function failure(error: unknown) { const message = error instanceof Error ? error.message : 'Request failed.'; return Response.json({ error: message }, { status: message === 'Administrator access required.' ? 401 : 400, headers }); }
 export async function GET(request: Request) { try {
     await requirePluginAdmin();
-    const plugins = await registeredPlugins();
+    const plugins = await registeredPlugins(true);
     const params = new URL(request.url).searchParams;
     const environment = params.get('environment') || 'production', plugin = params.get('plugin') || '', search = (params.get('search') || '').trim(), page = Number(params.get('page') || 0);
     if (!['production', 'sandbox'].includes(environment) || plugin && !plugins.some(item => item.slug === plugin) || search.length > 200 || !Number.isInteger(page) || page < 0 || page > 10000)
@@ -15,7 +15,7 @@ export async function GET(request: Request) { try {
     const { data, error } = await supabase.rpc('plugin_operations_snapshot', { p_environment: environment, p_plugin: plugin, p_search: search, p_page: page } as never);
     if (error)
         throw Error('Unable to load operations. Apply the plugin operations migration.');
-    return Response.json({ snapshot: data, plugins: plugins.map(p => ({ slug: p.slug, name: p.name, logo: p.logo })) }, { headers });
+    return Response.json({ snapshot: data, plugins: plugins.map(p => ({ slug: p.slug, name: p.archived ? p.name + ' (removed)' : p.name, logo: p.logo, archived: p.archived })) }, { headers });
 }
 catch (error) {
     return failure(error);

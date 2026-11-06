@@ -44,3 +44,16 @@ All 154 tests passed, including actual UUID-schema registration/RLS checks, serv
 Applied `supabase/migrations/20261106122130_dashboard_plugin_registry.sql` to the live Qubtic database. A service-role registration/undo verification ran in a rolled-back transaction. Readback shows five built-in registrations, zero custom examples, RLS enabled, denied public writes/function access and allowed service-role registration. Production revision 7 and three enabled production plans, plus zero active sandbox plans at the time of this migration, were unchanged. Existing unrelated advisor warnings were unchanged.
 
 The new dashboard/server code still requires a Qubtic deployment before the live Add plugin button is available. Registration creates Qubtic identity/configuration; Framer client login, billing and paid-feature enforcement must use the same ID. No Framer Marketplace submission, real email or purchase was performed.
+
+
+## Plugin removal and asset editor (2026-11-06)
+
+Added a confirmation modal, five-second Undo, Active/Removed lists and restoration for built-in and dashboard-registered plugins. Removal disables new-purchase catalog rows and plan settings across both environments, preserving identity, credentials, customer/history records, subscriptions and verified paid access. A normal restore leaves plans off pending provider validation/publication. Historical filters retain removed plugins; account creation excludes them.
+
+All 155 backend/database tests passed. New checks exercise real UUID catalogs in both environments, retained order/site-entitlement access, unrelated plugin preservation, service-role execution, actor/deadline/version guards, publication rejection for removed plugins, restoration and orphan catalog undo. The browser preview checked removal confirmation/cancellation, removal/undo, later restoration, disabled plan controls, full-logo containment, JSON formatting/object validation, existing registration/operations flows and mobile overflow.
+
+The logo/manifest UI uses scoped external CSS and Qubtic tokens with dark/light styles. The existing media manager and server credentials are reused. The default image uploader elsewhere remains unchanged. Previews use synthetic data; no file was uploaded to the live media account.
+
+Applied `supabase/migrations/20261106125605_plugin_archive_restore.sql` to the connected live database. A synthetic registration/removal/undo check ran as service_role inside a rolled-back transaction. Readback confirmed six existing registry rows, zero removed plugins, production revision 7 with three active plans and sandbox revision 3 with zero active plans, matching the pre-migration state. Archive audit RLS is enabled; public invocation/read access is denied. Existing unrelated advisor warnings were unchanged. No real plugin, user, subscription or payment was removed or cancelled.
+
+Removal stops new checkout creation; existing Polar subscriptions continue billing and already-open checkouts may complete. Invalid or unsupported logo references show an unavailable preview rather than breaking the editor or sidebar. The updated app code must be deployed to Vercel before these controls and the asset editor appear live. Real provider cancellation/checkout flows were not exercised by this UI change.
