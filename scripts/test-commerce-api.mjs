@@ -21,7 +21,10 @@ function load(file, dependencies) {
 	);
 	return exports;
 }
-function harness() {
+class BillingError extends Error {
+	constructor(message, status = 503) { super(message); this.status = status; }
+}
+function harness(billingOverrides = {}) {
 	const tables = { framer_users: [], framer_pairing_sessions: [] };
 	const files = new Map();
 	const messages = [];
@@ -109,7 +112,7 @@ function harness() {
 	const api = load("src/lib/commerce-access.ts", {
 		"server-only": {},
 		"./framer-auth": auth,
-		"./billing/core": { environment: () => "production", actor: async () => ({}), paidAccess: async () => false, billingConfig: () => ({}), billingRequest: (_request, callback) => callback() },
+		"./billing/core": { BillingError, environment: () => "production", actor: async () => ({}), paidAccess: async () => false, billingConfig: () => ({}), billingRequest: (_request, callback) => callback(), ...billingOverrides },
 		"./supabase": { supabase },
 	});
 	const next = {
@@ -159,6 +162,48 @@ for (const product of ["whatsapp-commerce", "telegram-commerce"]) {
 		assert.equal(response.status, 200);
 		return response.json();
 	}
+
+	test(`${product} sandbox restrictions keep their actionable 403 and never grant access`, async () => {
+		let grants = 0;
+		const h = harness({
+			environment: () => 'sandbox',
+			actor: async () => { throw new BillingError('Sandbox billing is restricted to approved developer accounts.', 403); },
+			paidAccess: async () => { grants++; return true; },
+		});
+		const account = await signup(h);
+		const response = await h.api.commerceRequest(h.request({}, account.token), 'access', product);
+		assert.equal(response.status, 403);
+		assert.deepEqual(await response.json(), {error:'Sandbox billing is restricted to approved developer accounts.'});
+		assert.equal(response.headers.get('access-control-allow-origin'), '*');
+		assert.equal(grants, 0);
+	});
+
+	test(`${product} account connection and signout survive unavailable billing but access fails closed`, async () => {
+		let billingReads = 0;
+		const h = harness({billingRequest: async () => { billingReads++; return Response.json({error:'Payments are disabled.'}, {status:503}); }});
+		const account = await signup(h);
+		const pairResponse = await h.api.commerceRequest(h.request({action:'initiate'}), 'pair', product);
+		assert.equal(pairResponse.status, 200);
+		const pair = await pairResponse.json();
+		assert.equal(new URL(pair.verification_uri_complete).pathname, `/auth/${product}`);
+		assert.equal((await h.api.commerceRequest(h.request({action:'resolve',device_code:pair.device_code}), 'pair', product)).status, 200);
+		assert.equal((await h.api.commerceRequest(h.request({}), 'auth', product)).status, 410);
+		assert.equal((await h.api.commerceRequest(new Request('https://example.test/api/'+product+'/access', {method:'OPTIONS'}), 'access', product)).status, 204);
+		assert.equal(billingReads, 0);
+		assert.equal((await h.api.commerceRequest(h.request({}, account.token), 'access', product)).status, 503);
+		assert.equal(billingReads, 1);
+		assert.equal((await h.api.commerceRequest(h.request({}, account.token), 'signout', product)).status, 200);
+		assert.equal(billingReads, 1);
+		assert.equal(await h.auth.verifyFramerSessionToken(account.token, product), null);
+	});
+
+	test(`${product} unexpected access failures hide internal details`, async () => {
+		const h = harness({paidAccess: async () => { throw Error('private database diagnostics'); }});
+		const account = await signup(h);
+		const response = await h.api.commerceRequest(h.request({}, account.token), 'access', product);
+		assert.equal(response.status, 503);
+		assert.deepEqual(await response.json(), {error:'Account service is unavailable. Please try again shortly.'});
+	});
 	test("shared signup creates verified Free Email Commerce account even when the browser requests Pro", async () => {
 		const h = harness();
 		const result = await signup(h);

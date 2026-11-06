@@ -30,6 +30,7 @@ Webhook registrations remain `/api/billing/webhook/production` and `/api/billing
 - Live Telegram billing separately requires **Live payments → Enable this payment environment** and enabled Telegram plans, followed by **Validate & publish**. Sandbox settings never enable production.
 - Browser `OPTIONS` preflights must return 204 even when billing is disabled or its database is unavailable. Preflights list requested header names without the actual billing selector/account token; they must not load payment configuration. Actual requests still validate configuration and account access. Deploy the Qubtic preflight fix if the hosted API returns 503 to `OPTIONS`.
 - `localhost:5173/framer.json` with `ERR_CONNECTION_REFUSED` means the local plugin server cannot be reached. Keep Vite running on the displayed port, then reopen the development plugin. It is separate from a hosted API preflight failure.
+- Renaming the visible product to **Email Commerce** does not rename its permanent `whatsapp-commerce` account/API identifier. Keep that identifier for existing users and purchases. A sandbox access restriction returns 403 with an approved-developer message; add the verified account email in the sandbox plugin settings and publish. Account pairing and signout remain available independently of Polar activation/credentials; entitlement checks still require the selected payment environment.
 
 These steps require no additional SQL migration. Existing Email Commerce installations retain the canonical `whatsapp-commerce` identifier.
 

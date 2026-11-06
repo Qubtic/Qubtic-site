@@ -1,5 +1,13 @@
 # Plugin dashboard verification
 
+## Commerce account transport repair (2026-11-07)
+
+Read-only live checks now show both managed payment environments enabled (production revision 9, sandbox revision 5). Anonymous access/catalog requests return the expected 401 in both environments, and preflight returns 204. Email Commerce sandbox plans are enabled, but its approved developer email list is empty. The visible Email Commerce name correctly retains the canonical `whatsapp-commerce` account and API identity.
+
+Reproduced a separate transport error with synthetic verified accounts: the Commerce access catch converted the sandbox actor's approved-developer 403 into a generic account-service 503. It now preserves controlled BillingError status/messages while hiding unexpected database details. Pairing, the retired auth response, signout and preflight bypass payment configuration; access continues to load the selected environment and validate current entitlements. No plan or entitlement fallback was added.
+
+All 164 tests, typecheck and the Webpack production build passed. New regressions cover both Commerce plugins, approved-developer rejection before entitlement work, generic private-error handling, pairing/resolution and signout while billing is unavailable, revoked token verification, and retained failure for access. The patch requires deployment. The testing email must be explicitly entered and published by the administrator; no allowlist, account or credential was changed. Vercel runtime-log access returned 403, and the scoped CLI fallback had no stored credentials; its login prompt was cancelled. The exact authenticated request shown in the screenshot and real Framer sign-in remain unverified.
+
 ## Local plugin preflight repair (2026-11-07)
 
 The deployed billing catalog/status/refresh and Commerce access preflights returned 503 with CORS headers because the shared billing wrapper loaded managed payment configuration before handling OPTIONS. Read-only live configuration checks showed production revision 8 and sandbox revision 4 both globally disabled, despite enabled Telegram production plans and Email Commerce sandbox plans. Sandbox developer lists were empty. No settings or credentials were changed.

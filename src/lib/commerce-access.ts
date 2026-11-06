@@ -2,6 +2,7 @@ import "server-only";
 import { supabase } from "./supabase";
 import {
 	database,
+    BillingError,
     actor,
     billingConfig,
     billingRequest,
@@ -186,15 +187,19 @@ async function handleCommerceRequest(
 			return reply({ success: true });
 		}
 		return reply({ error: "Not found." }, 404);
-	} catch {
+	} catch (error) {
 		// Do not log private device codes, email codes, or bearer tokens.
 		return reply(
-			{ error: "Account service is unavailable. Please try again shortly." },
-			503,
+			{ error: error instanceof BillingError ? error.message : "Account service is unavailable. Please try again shortly." },
+			error instanceof BillingError ? error.status : 503,
 		);
 	}
 }
 
 export function commerceRequest(request: Request, action: string, product: CommerceProduct = "whatsapp-commerce") {
+    // Account connection and revocation do not depend on payment activation or credentials.
+    // Access still loads the selected environment for server-authoritative site entitlements.
+    if (request.method === "OPTIONS" || ["pair", "auth", "signout"].includes(action))
+        return handleCommerceRequest(request, action, product);
     return billingRequest(request, () => handleCommerceRequest(request, action, product));
 }
