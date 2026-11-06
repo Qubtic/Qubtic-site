@@ -1,5 +1,13 @@
 # Plugin dashboard verification
 
+## Rejected-session pairing recovery (2026-11-07)
+
+Read-only live diagnostics confirm Email Commerce sandbox revision 7 contains the testing email and enabled plans; the account is active and verified. The screenshot's pairing record was consumed, so the plugin received it, but its stored token no longer matches the account's current token. No token values were retrieved or printed. Earlier 403 access denial and the later stale-session 401 are separate states.
+
+The Email Commerce client retained the received pairing token after access rejection and retried it repeatedly. It now stops pairing on terminal 401/403/410 responses, retains retries for transient service/network failures, and prevents an older unauthorized response from clearing a more recent session. A sandbox denial retains the current token so explicit access refresh remains possible after approval. Qubtic also acknowledges duplicate confirmation of a consumed connection only for the same verified current account/token within the existing 120-second window, without restoring or rewriting the consumed session. Revoked sessions, wrong plugins and expired retries remain denied.
+
+All 164 backend tests and all 91 Email Commerce browser tests passed. Both projects passed typecheck and production builds. Browser regressions cover rejected-token retry termination, preservation of a newer token against an older 401, and the existing successful pairing path. Backend regressions cover bounded consumed-confirmation acknowledgement, no status/timestamp reset, wrong-plugin rejection and revocation. No account, allowlist, credential or SQL changes were made. Deploy Qubtic, restart the local sandbox plugin, close stale sign-in tabs and start one fresh connection. Hosted authenticated Framer reconnection remains an acceptance check after those updates.
+
 ## Commerce account transport repair (2026-11-07)
 
 Read-only live checks now show both managed payment environments enabled (production revision 9, sandbox revision 5). Anonymous access/catalog requests return the expected 401 in both environments, and preflight returns 204. Email Commerce sandbox plans are enabled, but its approved developer email list is empty. The visible Email Commerce name correctly retains the canonical `whatsapp-commerce` account and API identity.

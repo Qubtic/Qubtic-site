@@ -121,7 +121,16 @@ for (const product of products) {
     assert.equal((await h.auth.confirmPairingSession(pair.user_code, { ...user, status: 'inactive' })).status, 403);
     assert.equal((await h.auth.confirmPairingSession(pair.user_code, user)).success, true);
     assert.equal((await h.auth.resolvePairingSession(pair.device_code)).auth_token, account.token);
+    const consumed = h.tables.framer_pairing_sessions[0];
+    const consumedAt = consumed.updated_at;
+    const afterConsumption = new Date(consumedAt).getTime() + 1;
+    assert.equal((await h.auth.confirmPairingSession(pair.user_code, user, afterConsumption)).success, true);
+    assert.equal((await h.auth.confirmPairingSession(pair.user_code, other.user, afterConsumption)).status, 403);
+    assert.equal(consumed.status, 'consumed');
+    assert.equal(consumed.updated_at, consumedAt);
+    assert.equal((await h.auth.confirmPairingSession(pair.user_code, user, afterConsumption + 120000)).status, 410);
     await h.auth.revokeCommerceSession(account.token);
+    assert.equal((await h.auth.confirmPairingSession(pair.user_code, user, afterConsumption)).success, false);
     assert.equal(await h.auth.verifyFramerSessionToken(account.token), null);
     const row = h.tables.framer_users.find(u => u.plugin_slug === product);
     for (const status of ['pending_verification', 'inactive', 'suspended']) {

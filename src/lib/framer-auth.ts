@@ -952,6 +952,13 @@ export async function confirmPairingSession(
   }
 
   if (session.status === 'consumed') {
+    // The plugin can consume a connection before the portal's duplicate confirmation arrives.
+    // Acknowledge only the same still-current account/session within the existing retry window.
+    const consumedAge = customNow - new Date(session.updated_at).getTime();
+    if (isCommercePlugin(session.plugin_slug) && user && session.user_data?.id === user.id &&
+        session.auth_token === user.auth_token && consumedAge >= 0 && consumedAge < 120000) {
+      return { success: true, message: 'Plugin paired successfully' };
+    }
     return { success: false, status: 410, error: 'Session already consumed' };
   }
 
