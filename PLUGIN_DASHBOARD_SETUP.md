@@ -23,6 +23,16 @@ Use the existing normal production plugin build for live billing. Use `build:san
 
 Webhook registrations remain `/api/billing/webhook/production` and `/api/billing/webhook/sandbox`. Signing secrets are entered in the dashboard. Credential changes take effect on new requests without redeploying.
 
+### Local plugin billing troubleshooting
+
+- In **Sandbox testing**, check **Enable this payment environment**, enable the plugin's plans, and enter the verified testing account email in **Allowed developer emails**. Click **Validate & publish**. Enabled plans alone do not enable their environment; an empty developer list denies sandbox requests.
+- For the local Email Commerce checkout flow, run `npm run dev:sandbox` from the `whatsapp-commerce` project and load its displayed HTTPS URL through Framer's development-plugin workflow. This sends `X-Billing-Environment: sandbox`. Normal development/build commands use production unless `VITE_QUBTIC_BILLING_ENVIRONMENT` explicitly selects sandbox. Restart Vite after changing that public variable. Do not put Polar secrets in the plugin.
+- Live Telegram billing separately requires **Live payments → Enable this payment environment** and enabled Telegram plans, followed by **Validate & publish**. Sandbox settings never enable production.
+- Browser `OPTIONS` preflights must return 204 even when billing is disabled or its database is unavailable. Preflights list requested header names without the actual billing selector/account token; they must not load payment configuration. Actual requests still validate configuration and account access. Deploy the Qubtic preflight fix if the hosted API returns 503 to `OPTIONS`.
+- `localhost:5173/framer.json` with `ERR_CONNECTION_REFUSED` means the local plugin server cannot be reached. Keep Vite running on the displayed port, then reopen the development plugin. It is separate from a hosted API preflight failure.
+
+These steps require no additional SQL migration. Existing Email Commerce installations retain the canonical `whatsapp-commerce` identifier.
+
 ## Scheduled work and notifications
 
 Keep the existing bounded billing reconciliation jobs for each environment. Add a separate authenticated GET job at `/api/plugin-notifications` to drain up to five team alerts per invocation. Vercel supplies `Authorization: Bearer CRON_SECRET`. Use a frequency supported by your plan (for example every five minutes with an eligible plan). Provider failures retain leases for retry, up to ten attempts. Inspect undelivered rows in `plugin_team_events` if attempts are exhausted. Notifications are at-least-once: SMTP acceptance followed by a database outage can cause a duplicate on retry.

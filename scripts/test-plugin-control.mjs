@@ -9,6 +9,21 @@ import {randomBytes} from 'node:crypto';
 import {encryptSecrets,decryptSecrets} from '../src/lib/plugin-secrets.mjs';
 import ts from 'typescript';
 function load(file,deps){const exports={};const code=ts.transpileModule(readFileSync(new URL('../'+file,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','exports',code)(name=>{return name in deps?deps[name]:native(name);},exports);return exports;}
+test('disabled or missing managed billing configuration fails before decrypting credentials', async () => {
+ let row=null, reads=0, decryptions=0;
+ const control=load('src/lib/plugin-control.ts',{
+  'server-only':{},
+  './supabase':{supabase:{from:()=>{const q={select(){return q},eq(_key,id){assert.match(id,/^polar:(production|sandbox)$/);return q},maybeSingle:async()=>{reads++;return {data:row}}};return q}}},
+  './plugin-secrets.mjs':{decryptSecrets:()=>{decryptions++;throw Error('Must not decrypt disabled credentials')}},
+ });
+ for(const environment of ['production','sandbox']){
+  row=null;
+  await assert.rejects(()=>control.loadManagedBilling(environment),{code:'BILLING_ENVIRONMENT_NOT_CONFIGURED'});
+  row={id:'polar:'+environment,settings:{enabled:false},secrets:'encrypted'};
+  await assert.rejects(()=>control.loadManagedBilling(environment),{code:'BILLING_ENVIRONMENT_DISABLED'});
+ }
+ assert.equal(reads,4);assert.equal(decryptions,0);
+});
 test('credentials are encrypted, authenticated, bound to their row and fail closed with the wrong key',()=>{
  const key=randomBytes(32).toString('base64');const secret={accessToken:'private-token',webhookSecret:'private-signing-secret'};
  const cipher=encryptSecrets(secret,key,'polar:production');assert.ok(!cipher.includes('private'));assert.deepEqual(decryptSecrets(cipher,key,'polar:production'),secret);

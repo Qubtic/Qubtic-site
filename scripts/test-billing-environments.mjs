@@ -15,7 +15,7 @@ function load(file, deps) {
   new Function('require', 'exports', js)(name => name in deps ? deps[name] : native(name), exports);
   return exports;
 }
-function harness() {
+function harness(managedLoader) {
   for (const env of ['SANDBOX', 'PRODUCTION']) {
     process.env[`POLAR_${env}_ACCESS_TOKEN`] = `${env}-token`;
     process.env[`POLAR_${env}_ORGANIZATION_ID`] = `${env}-org`;
@@ -26,7 +26,7 @@ function harness() {
   const calls = [];
   const core = load('src/lib/billing/core.ts', {
     '../email-service': { sendTeamEvent: async () => {} },
-        '../plugin-control': { loadManagedBilling: async selected => config.resolveBillingConfig(process.env, selected) },
+    '../plugin-control': { loadManagedBilling: managedLoader ?? (async selected => config.resolveBillingConfig(process.env, selected)) },
     './config.mjs': config,
     './upgrade-refunds': {},
     'server-only': {},
@@ -62,6 +62,63 @@ test('configuration defaults to production; legacy sandbox cannot supply product
   const incomplete = config.resolveBillingConfig({ ...legacy, POLAR_SANDBOX_ORGANIZATION_ID: 'new-org' }, 'sandbox');
   assert.equal(incomplete.POLAR_ACCESS_TOKEN, undefined);
   assert.equal(incomplete.POLAR_ORGANIZATION_ID, 'new-org');
+});
+
+test('browser preflights bypass configuration, authentication and provider work across billing and commerce', async () => {
+  let configReads = 0, callbacks = 0;
+  const { core, calls } = harness(async () => { configReads++; throw Error('Database or encryption unavailable'); });
+  for (const [path, method] of [
+    ['/api/billing/catalog', 'GET'], ['/api/billing/status', 'GET'],
+    ['/api/billing/refresh', 'POST'], ['/api/whatsapp-commerce/access', 'GET'],
+    ['/api/telegram-commerce/access', 'GET'],
+  ]) {
+    const response = await core.billingRequest(new Request('https://example.test' + path, {
+      method: 'OPTIONS', headers: {
+        Origin: 'https://localhost:5173', 'Access-Control-Request-Method': method,
+        'Access-Control-Request-Headers': 'authorization,content-type,x-framer-site-id,x-billing-environment',
+      },
+    }), async () => { callbacks++; return Response.json({}); });
+    assert.equal(response.status, 204);
+    assert.equal(await response.text(), '');
+    assert.equal(response.headers.get('access-control-allow-origin'), '*');
+    assert.match(response.headers.get('access-control-allow-methods'), new RegExp(method));
+    for (const name of ['authorization', 'content-type', 'x-framer-site-id', 'x-billing-environment'])
+      assert.ok(response.headers.get('access-control-allow-headers').toLowerCase().includes(name));
+  }
+  assert.equal(configReads, 0);
+  assert.equal(callbacks, 0);
+  assert.equal(calls.length, 0);
+  // A successful preflight never enables the corresponding business request.
+  const actual = await core.billingRequest(new Request('https://example.test/api/billing/refresh', { method: 'POST' }),
+    async () => { callbacks++; return Response.json({}); });
+  assert.equal(actual.status, 503);
+  assert.deepEqual(await actual.json(), { error: 'Billing service is unavailable.' });
+  assert.equal(configReads, 1);
+  assert.equal(callbacks, 0);
+});
+
+test('disabled and unconfigured environments fail closed with safe environment-specific diagnostics', async () => {
+  for (const environment of ['production', 'sandbox']) {
+    for (const code of ['BILLING_ENVIRONMENT_DISABLED', 'BILLING_ENVIRONMENT_NOT_CONFIGURED', 'UNKNOWN']) {
+      const { core, calls } = harness(async () => { throw Object.assign(Error('private configuration details'), { code }); });
+      for (const method of ['GET', 'POST']) {
+        const response = await core.billingRequest(new Request('https://example.test/api/billing/status', {
+          method, headers: { 'X-Billing-Environment': environment },
+        }), async () => { assert.fail('Disabled environment executed business work'); });
+        assert.equal(response.status, 503);
+        assert.equal(response.headers.get('access-control-allow-origin'), '*');
+        const { error } = await response.json();
+        assert.ok(!error.includes('private'));
+        if (code === 'UNKNOWN') assert.equal(error, 'Billing service is unavailable.');
+        else {
+          assert.match(error, environment === 'sandbox' ? /^Sandbox payments/ : /^Production payments/);
+          assert.match(error, code === 'BILLING_ENVIRONMENT_DISABLED' ? /are disabled/ : /are not configured/);
+          assert.match(error, /Plugins & payments and publish/);
+        }
+        assert.equal(calls.length, 0);
+      }
+    }
+  }
 });
 
 test('concurrent requests keep provider credentials and entitlement RPCs isolated across awaits', async () => {

@@ -1,5 +1,13 @@
 # Plugin dashboard verification
 
+## Local plugin preflight repair (2026-11-07)
+
+The deployed billing catalog/status/refresh and Commerce access preflights returned 503 with CORS headers because the shared billing wrapper loaded managed payment configuration before handling OPTIONS. Read-only live configuration checks showed production revision 8 and sandbox revision 4 both globally disabled, despite enabled Telegram production plans and Email Commerce sandbox plans. Sandbox developer lists were empty. No settings or credentials were changed.
+
+The shared wrapper now returns 204 before configuration loading for preflight requests. Actual requests continue to fail closed and report safe environment-specific disabled/unconfigured messages. Unexpected database/decryption errors retain a generic response. No additional migration is required.
+
+All 158 tests, typecheck and production builds (Turbopack and Webpack) passed. HTTP checks against the built local server confirmed 204 for catalog, status, refresh and both Commerce access routes with the browser's requested headers and `https://localhost:5173` origin. Chromium cross-origin fetches from a local test origin reached the real built catalog route in both environments and read the expected disabled-environment 503 JSON, rather than a CORS network failure. Verification used an invalid account token and created no checkout, payment, email or data mutation. The temporary test servers were stopped. The updated backend still needs deployment, dashboard activation and authenticated Framer checkout acceptance.
+
 - Qubtic typecheck passed.
 - 150 backend tests passed, including credential encryption/tamper protection, anonymous and cross-origin admin rejection, no secret readback, optimistic publication conflicts, database rollback, historical product ownership, RLS grants, and sandbox developer authorization.
 - Browser preview verified live/sandbox/mail tabs, the plugin workspace, mobile overflow, and no authored inline CSS declarations. Preview uses mocked configuration and Qubtic's actual built Inter/Plus Jakarta Sans fonts; it does not represent live account state.

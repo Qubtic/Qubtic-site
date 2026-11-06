@@ -49,6 +49,11 @@ export function withBillingEnvironment<T>(selected: BillingEnvironment, callback
     return billingContext.run(resolveBillingConfig(process.env, selected), callback);
 }
 export async function billingRequest(request: Request, callback: () => Promise<Response>): Promise<Response> {
+    // Browser preflights contain header names, not the billing selector or account token.
+    // Answer before loading configuration so a disabled environment cannot block CORS.
+    if (request.method === "OPTIONS")
+        return new Response(null, { status: 204, headers: billingHeaders });
+    let selected: BillingEnvironment = "production";
     try {
         const url = new URL(request.url);
         const allowQuery = /^\/api\/billing\/(webhook|resolve|reconcile)$/.test(url.pathname);
@@ -56,13 +61,21 @@ export async function billingRequest(request: Request, callback: () => Promise<R
         const header = request.headers.get("x-billing-environment");
         if (query !== null && header !== null && query !== header)
             throw new BillingError("Conflicting billing environments.", 400);
-        let selected: BillingEnvironment;
         try { selected = parseBillingEnvironment(query ?? header); }
         catch { throw new BillingError("Invalid billing environment.", 400); }
         const config = await loadManagedBilling(selected);
         return await billingContext.run(config, callback);
     } catch (error) {
-        return Response.json({ error: error instanceof BillingError ? error.message : "Billing service is unavailable." },
+        let message = error instanceof BillingError ? error.message : "Billing service is unavailable.";
+        // Only known configuration codes get public diagnostics; never expose DB or secret errors.
+        if (error instanceof Error && "code" in error) {
+            const label = selected === "sandbox" ? "Sandbox" : "Production";
+            if (error.code === "BILLING_ENVIRONMENT_DISABLED")
+                message = `${label} payments are disabled. Enable this payment environment in Qubtic → Plugins & payments and publish.`;
+            if (error.code === "BILLING_ENVIRONMENT_NOT_CONFIGURED")
+                message = `${label} payments are not configured. Configure this environment in Qubtic → Plugins & payments and publish.`;
+        }
+        return Response.json({ error: message },
             { status: error instanceof BillingError ? error.status : 503, headers: billingHeaders });
     }
 }

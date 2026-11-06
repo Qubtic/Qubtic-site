@@ -15,7 +15,9 @@ export function recordSecrets(row: {
 export async function loadManagedBilling(environment: BillingEnvironment) {
     const row = await controlRecord('polar:' + environment);
     if (!row || !row.settings.enabled)
-        throw new Error('Enable and validate this Polar environment in the plugin dashboard.');
+        throw Object.assign(new Error('Enable and validate this Polar environment in the plugin dashboard.'), {
+            code: row ? 'BILLING_ENVIRONMENT_DISABLED' : 'BILLING_ENVIRONMENT_NOT_CONFIGURED',
+        });
     const secrets = recordSecrets(row);
     return Object.freeze({ POLAR_ENVIRONMENT: environment, POLAR_ACCESS_TOKEN: secrets.accessToken,
         POLAR_WEBHOOK_SECRET: secrets.webhookSecret, POLAR_ORGANIZATION_ID: row.settings.organizationId,
