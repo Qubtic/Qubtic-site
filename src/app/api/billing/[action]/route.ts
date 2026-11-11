@@ -844,7 +844,12 @@ async function handle(request: Request, { params }: Context) {
 							Date.parse(refundBinding.upgrade_period_start) &&
 						Date.parse(openCheckout.upgrade_period_end) ===
 							Date.parse(refundBinding.upgrade_period_end));
-				if (available && discountMatches && refundPolicyMatches) {
+				if (
+					available &&
+					discountMatches &&
+					refundPolicyMatches &&
+					body.replace_previous !== true
+				) {
 					// Rebind the polling fallback to this launch tab when reusing an open checkout.
 					const { data: rebound, error: rebindError } = await db
 						.from("billing_checkouts")

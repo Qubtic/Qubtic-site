@@ -463,6 +463,25 @@ function harness(plugin = "whatsapp-commerce") {
 		setDiscountRecords: (value) => (discountRecords = value),
 	};
 }
+test("explicit replacement creates a fresh checkout even when the old plan and discount match", async () => {
+	const h = harness("telegram-commerce");
+	const first = await h.request("checkout", {
+		cadence: "lifetime",
+		request_id: randomUUID(),
+		replace_previous: true,
+	});
+	assert.equal(first.status, 200);
+	const retry = await h.request("checkout", {
+		cadence: "lifetime",
+		request_id: randomUUID(),
+		replace_previous: true,
+	});
+	assert.equal(retry.status, 200);
+	assert.equal(h.calls.filter((c) => c.external_customer_id).length, 2);
+	assert.equal(h.tables.billing_checkouts[0].status, "superseded");
+	assert.equal(h.tables.billing_checkouts[1].status, "open");
+});
+
 function promotion(h, cadences = ["monthly", "lifetime"]) {
 	h.setDiscount({ code: "SAVE20", cadences });
 	h.setDiscountRecords([
