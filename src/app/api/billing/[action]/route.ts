@@ -1,4 +1,4 @@
-import { billingSiteUrl } from "@/lib/billing/config.mjs";
+import { billingSiteUrl, PLUGINS } from "@/lib/billing/config.mjs";
 import { resolveCheckoutDiscount } from "@/lib/billing/discounts";
 import { quotePlan } from "@/lib/billing/pricing";
 import {
@@ -139,8 +139,36 @@ async function handle(request: Request, { params }: Context) {
 				failed ? 503 : 200,
 			);
 		}
+		const publicCatalog =
+			action === "catalog" &&
+			request.method === "GET" &&
+			!request.headers.has("authorization");
+		let plugin: string;
+		if (publicCatalog) {
+			if (env !== "production")
+				throw new BillingError(
+					"Sign in to an approved developer account for sandbox billing.",
+					403,
+				);
+			const ip = (request.headers.get("x-forwarded-for") || "unknown")
+				.split(",")[0]
+				.trim();
+			await limit(`catalog:${ip}`, 30, 60);
+			const values = new URL(request.url).searchParams.getAll("plugin");
+			if (
+				values.length !== 1 ||
+				!PLUGINS.some((item) => item.slug === values[0])
+			)
+				throw new BillingError("Provide a valid plugin query.", 400);
+			plugin = values[0];
+		} else {
+			const user = await actor(request);
+			await limit(`api:${user.id}`);
+			plugin = user.plugin;
+		}
+		if (action === "catalog" && request.method === "GET")
+			return catalogReply(plugin);
 		const user = await actor(request);
-		await limit(`api:${user.id}`);
 		if (action === "manifest" && request.method === "GET") {
 			const plugins = JSON.parse(billingConfig().MANAGED_PLUGINS || "[]");
 			const plugin = plugins.find(
@@ -154,9 +182,9 @@ async function handle(request: Request, { params }: Context) {
 				manifest: JSON.parse(plugin?.manifest || "{}"),
 			});
 		}
-		if (action === "catalog" && request.method === "GET") {
+		async function catalogReply(plugin: string) {
 			const rows = (await catalog()).filter(
-				(row) => row.plugin_slug === user.plugin,
+				(row) => row.plugin_slug === plugin,
 			);
 			const sdk = polar();
 			const plans = await Promise.all(
