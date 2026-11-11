@@ -492,11 +492,13 @@ async function handle(request: Request, { params }: Context) {
 					409,
 				);
 
+			// Lifetime-only offering: the requested cadence (default lifetime)
+			// selects the single product the checkout shows.
 			const targetCadence =
-				isUpgrade && upgradeTo ? upgradeTo : body.cadence || "yearly";
+				isUpgrade && upgradeTo ? upgradeTo : body.cadence || "lifetime";
 			const targetRow =
 				rows.find((item) => item.cadence === targetCadence) || selectable[0]!;
-			const row = isUpgrade ? targetRow : selectable[0]!;
+			const row = targetRow;
 
 			const { data: existing, error: existingError } = existingResult;
 			check(existingError);
@@ -734,9 +736,7 @@ async function handle(request: Request, { params }: Context) {
 				.lt("expires_at", new Date().toISOString());
 			check(expiryError);
 
-			const targetProducts = isUpgrade
-				? [targetRow.product_id]
-				: selectable.map((item) => item!.product_id);
+			const targetProducts = [row.product_id];
 
 			const openQuery = db
 				.from("billing_checkouts")
