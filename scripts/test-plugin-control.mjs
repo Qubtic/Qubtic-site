@@ -8,7 +8,203 @@ import {PGlite} from '@electric-sql/pglite';
 import {randomBytes} from 'node:crypto';
 import {encryptSecrets,decryptSecrets} from '../src/lib/plugin-secrets.mjs';
 import ts from 'typescript';
-function load(file,deps){const exports={};const code=ts.transpileModule(readFileSync(new URL('../'+file,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','exports',code)(name=>{return name in deps?deps[name]:native(name);},exports);return exports;}
+function load(file,deps){const exports={};const code=ts.transpileModule(readFileSync(new URL('../'+file,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','exports',code)(name=>{return name in deps?deps[name]:name==='@/lib/billing/discounts'?load('src/lib/billing/discounts.ts',{}):native(name);},exports);return exports;}
+const discounts = load("src/lib/billing/discounts.ts", {});
+const validDiscount = () => ({
+	id: "discount-id",
+	code: "SAVE",
+	organization_id: "org",
+	starts_at: null,
+	ends_at: null,
+	max_redemptions: null,
+	redemptions_count: 0,
+	products: [],
+});
+
+test("discount settings default, trim and reject malformed or incomplete selections", () => {
+	assert.deepEqual(discounts.validateDiscountConfig(undefined), {
+		code: "",
+		cadences: [],
+	});
+	assert.deepEqual(
+		discounts.validateDiscountConfig({ code: " SAVE ", cadences: ["monthly"] }),
+		{ code: "SAVE", cadences: ["monthly"] },
+	);
+	assert.deepEqual(
+		discounts.validateDiscountConfig({ code: " ", cadences: [] }),
+		{ code: "", cadences: [] },
+	);
+	for (const value of [
+		null,
+		[],
+		{},
+		{ code: 1, cadences: [] },
+		{ code: "x".repeat(129), cadences: ["monthly"] },
+		{ code: "SAVE\n", cadences: ["monthly"] },
+		{ code: "SA\u007fVE", cadences: ["monthly"] },
+		{ code: "SAVE", cadences: ["weekly"] },
+		{ code: "SAVE", cadences: ["monthly", "monthly"] },
+		{ code: "SAVE", cadences: [] },
+		{ code: "", cadences: ["yearly"] },
+		{ code: "SAVE", cadences: "monthly" },
+	])
+		assert.throws(() => discounts.validateDiscountConfig(value));
+});
+
+test("discount resolution reads all pages, exact-matches codes and skips unselected plans", async () => {
+	const calls = [];
+	const sdk = {
+		discounts: {
+			list: async (query) => {
+				calls.push(query);
+				return {
+					items:
+						query.page === 1
+							? [{ ...validDiscount(), code: "SAVE-MORE" }]
+							: [validDiscount()],
+					pagination: { max_page: 2 },
+				};
+			},
+		},
+	};
+	const config = { code: " SAVE ", cadences: ["monthly"] };
+	assert.equal(
+		await discounts.resolveCheckoutDiscount(
+			sdk,
+			undefined,
+			"monthly",
+			"product",
+			"org",
+		),
+		undefined,
+	);
+	assert.equal(
+		await discounts.resolveCheckoutDiscount(
+			sdk,
+			config,
+			"yearly",
+			"product",
+			"org",
+		),
+		undefined,
+	);
+	assert.equal(calls.length, 0);
+	assert.equal(
+		await discounts.resolveCheckoutDiscount(
+			sdk,
+			config,
+			"monthly",
+			"product",
+			"org",
+		),
+		"discount-id",
+	);
+	assert.deepEqual(
+		calls,
+		[1, 2].map((page) => ({
+			organization_id: "org",
+			query: "SAVE",
+			limit: 100,
+			page,
+		})),
+	);
+	sdk.discounts.list = async () => ({
+		items: [validDiscount()],
+		pagination: { max_page: 2 },
+	});
+	await assert.rejects(
+		() =>
+			discounts.resolveCheckoutDiscount(
+				sdk,
+				config,
+				"monthly",
+				"product",
+				"org",
+			),
+		/exactly one/,
+	);
+});
+
+test("discount resolution rejects inactive, exhausted, foreign or product-restricted discounts safely", async () => {
+	const config = { code: "SAVE", cadences: ["monthly", "yearly", "lifetime"] };
+	let items = [validDiscount()];
+	const sdk = {
+		discounts: { list: async () => ({ items, pagination: { max_page: 1 } }) },
+	};
+	for (const [patch, message] of [
+		[{ starts_at: "2999-01-01T00:00:00Z" }, /not active/],
+		[{ ends_at: "2000-01-01T00:00:00Z" }, /expired/],
+		[{ starts_at: "invalid" }, /start time/],
+		[{ ends_at: "invalid" }, /end time/],
+		[{ max_redemptions: 2, redemptions_count: 2 }, /redemption limit/],
+		[{ max_redemptions: 0 }, /redemption limit/],
+		[{ organization_id: "other" }, /different organization/],
+		[{ products: [{ id: "other" }] }, /product restrictions/],
+	]) {
+		items = [{ ...validDiscount(), ...patch }];
+		await assert.rejects(
+			() =>
+				discounts.resolveCheckoutDiscount(
+					sdk,
+					config,
+					"monthly",
+					"product",
+					"org",
+				),
+			message,
+		);
+	}
+	items = [];
+	await assert.rejects(
+		() =>
+			discounts.resolveCheckoutDiscount(
+				sdk,
+				config,
+				"monthly",
+				"product",
+				"org",
+			),
+		/exactly one/,
+	);
+	items = [
+		{
+			...validDiscount(),
+			starts_at: "2000-01-01T00:00:00Z",
+			ends_at: "2999-01-01T00:00:00Z",
+			max_redemptions: 2,
+			redemptions_count: 1,
+			products: [{ id: "product" }],
+		},
+	];
+	for (const cadence of config.cadences)
+		assert.equal(
+			await discounts.resolveCheckoutDiscount(
+				sdk,
+				config,
+				cadence,
+				"product",
+				"org",
+			),
+			"discount-id",
+		);
+	sdk.discounts.list = async () => {
+		throw Error("secret-provider-response");
+	};
+	await assert.rejects(
+		() =>
+			discounts.resolveCheckoutDiscount(
+				sdk,
+				config,
+				"monthly",
+				"product",
+				"org",
+			),
+		(error) =>
+			error.message.includes("discounts:read") &&
+			!error.message.includes("secret-provider-response"),
+	);
+});
+
 test('disabled or missing managed billing configuration fails before decrypting credentials', async () => {
  let row=null, reads=0, decryptions=0;
  const control=load('src/lib/plugin-control.ts',{
@@ -111,7 +307,7 @@ test('mail API exposes only preferences and rejects database SMTP credential wri
 });
 
 test('one shared Pro benefit is validated against every plan and expanded into the catalog', async () => {
- let published;const checked=[];
+ let published;const checked=[],discountChecks=[];let providerDiscount=validDiscount();
  const benefit='319ad5dd-6194-4ba7-9f57-b955a4390dd4',organization='d43e5d7d-6f92-4a84-a9cc-65e8c8efc786';
  const plans=['monthly','yearly','lifetime'].map((cadence,i)=>({cadence,productId:`d5876f82-cbd2-4189-b25a-e8367ff852e${i}`,benefitId:''}));
  const query={select(){return query},eq(){return query},limit:async()=>({}),maybeSingle:async()=>({data:null})};
@@ -119,13 +315,54 @@ test('one shared Pro benefit is validated against every plan and expanded into t
   '@/lib/managed-plugins':{registeredPlugins:async()=>[{slug:'telegram-commerce',name:'Telegram Commerce'},{slug:'new-tool',name:'New Tool'}]},'next/headers':{cookies:async()=>({get:()=>({value:'cookie'})})},'@/lib/admin-session':{verifyAdminSession:()=>({id:'admin',role:'admin'})},
   '@/lib/supabase':{supabase:{from:()=>query,rpc:async(name,args)=>{published=args;return {}}}},
   '@/lib/plugin-control':{controlRecord:async()=>null,recordSecrets:()=>({})},'@/lib/plugin-secrets.mjs':{encryptSecrets:()=> 'encrypted'},'@/lib/billing/config.mjs':billingConfig,
-  '@polar-sh/sdk/2026-10':{createPolar:()=>({organizations:{get:async()=>({id:organization})},products:{get:async id=>{checked.push(id);const cadence=plans.find(p=>p.productId===id).cadence;return {organization_id:organization,is_archived:false,benefits:[{id:benefit}],is_recurring:cadence!=='lifetime',recurring_interval:cadence==='monthly'?'month':'year',recurring_interval_count:1,prices:[{is_archived:false,amount_type:'fixed',price_amount:100}]};}}})}
+  '@polar-sh/sdk/2026-10':{createPolar:()=>({discounts:{list:async query=>{discountChecks.push(query);return {items:[{...providerDiscount,organization_id:organization}],pagination:{max_page:1}};}},organizations:{get:async()=>({id:organization})},products:{get:async id=>{checked.push(id);const cadence=plans.find(p=>p.productId===id).cadence;return {organization_id:organization,is_archived:false,benefits:[{id:benefit}],is_recurring:cadence!=='lifetime',recurring_interval:cadence==='monthly'?'month':'year',recurring_interval_count:1,prices:[{is_archived:false,amount_type:'fixed',price_amount:100}]};}}})}
  });
  const plugin={slug:'telegram-commerce',enabled:true,manifest:'{}',testEmails:'',benefitId:benefit,plans};
  const body={id:'polar:production',revision:0,settings:{enabled:true,organizationId:organization,plugins:[plugin]},secrets:{accessToken:'test-only',webhookSecret:'test-only'}};
  const response=await api.POST(new Request('https://site.test/api/admin/plugins',{method:'POST',headers:{origin:'https://site.test'},body:JSON.stringify(body)}));
  assert.equal(response.status,200,JSON.stringify(await response.json()));assert.equal(checked.length,3);assert.equal(published.p_catalog.length,3);assert.ok(published.p_catalog.every(row=>row.benefit_id===benefit));assert.ok(published.p_settings.plugins[0].plans.every(plan=>plan.benefitId===benefit));
  plugin.slug='new-tool';assert.equal((await api.POST(new Request('https://site.test/api/admin/plugins',{method:'POST',headers:{origin:'https://site.test'},body:JSON.stringify(body)}))).status,200);assert.equal(published.p_settings.plugins[0].name,'New Tool');assert.ok(published.p_catalog.every(row=>row.plugin_slug==='new-tool'));
+
+const post = () =>
+	api.POST(
+		new Request("https://site.test/api/admin/plugins", {
+			method: "POST",
+			headers: { origin: "https://site.test" },
+			body: JSON.stringify(body),
+		}),
+	);
+assert.deepEqual(published.p_settings.plugins[0].discount, {
+	code: "",
+	cadences: [],
+});
+plugin.discount = { code: " SAVE ", cadences: ["monthly", "lifetime"] };
+for (const environment of ["production", "sandbox"]) {
+	body.id = "polar:" + environment;
+	assert.equal((await post()).status, 200);
+	assert.deepEqual(published.p_settings.plugins[0].discount, {
+		code: "SAVE",
+		cadences: ["monthly", "lifetime"],
+	});
+	assert.equal(published.p_id, body.id);
+}
+assert.equal(discountChecks.length, 4);
+providerDiscount.products = [{ id: plans[0].productId }];
+const lastPublished = published;
+assert.equal((await post()).status, 400);
+assert.equal(published, lastPublished);
+const beforeDisabled = discountChecks.length;
+plugin.enabled = false;
+assert.equal((await post()).status, 200);
+assert.equal(discountChecks.length, beforeDisabled);
+assert.deepEqual(published.p_settings.plugins[0].discount, {
+	code: "SAVE",
+	cadences: ["monthly", "lifetime"],
+});
+plugin.discount.cadences = [];
+assert.equal((await post()).status, 400);
+plugin.enabled = true;
+delete plugin.discount;
+body.id = "polar:production";
  plugin.slug='unregistered-tool';assert.equal((await api.POST(new Request('https://site.test/api/admin/plugins',{method:'POST',headers:{origin:'https://site.test'},body:JSON.stringify(body)}))).status,400);plugin.slug='new-tool';
  delete plugin.benefitId;plugin.plans[0].benefitId=benefit;plugin.plans[1].benefitId=organization;
  assert.equal((await api.POST(new Request('https://site.test/api/admin/plugins',{method:'POST',headers:{origin:'https://site.test'},body:JSON.stringify(body)}))).status,400);

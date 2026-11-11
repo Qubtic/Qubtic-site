@@ -9,6 +9,7 @@ import PluginOperations from './PluginOperations';
 import AddPluginDialog from './AddPluginDialog';
 import PluginRemovalDialog from './PluginRemovalDialog';
 import OperationUndo, { type UndoAction } from './OperationUndo';
+import type { DiscountConfig } from '@/lib/billing/discounts';
 type Plan = {
     cadence: string;
     productId: string;
@@ -22,6 +23,7 @@ type Plugin = {
     manifest: string;
     testEmails: string;
     benefitId?: string;
+    discount?: DiscountConfig;
     plans: Plan[];
 };
 type Settings = {
@@ -88,7 +90,7 @@ export default function PluginDashboard() {
         const saved = base.plugins.find(v => v.slug === p.slug);
         const item = saved || { slug: p.slug, name: p.name, logo: p.logo, enabled: false, manifest: '{}', testEmails: '', plans: ['monthly', 'yearly', 'lifetime'].map(cadence => ({ cadence, productId: '', benefitId: '' })) };
         const benefits = [...new Set(item.plans.map(plan => plan.benefitId).filter(Boolean))];
-        return { ...item, benefitId: item.benefitId ?? (benefits.length === 1 ? benefits[0] : '') };
+        return { ...item, discount: item.discount ?? { code: '', cadences: [] }, benefitId: item.benefitId ?? (benefits.length === 1 ? benefits[0] : '') };
     }); return base; }); if (!keepDraft) setSecrets({}); }, [tab, records, registry]);
     function field(key: keyof Settings, value: unknown) { setSettings(s => ({ ...s, [key]: value })); }
     function plugin(index: number, value: Partial<Plugin>) {
@@ -98,7 +100,7 @@ export default function PluginDashboard() {
     }
     async function save() {
         setBusy(true);
-        setMessage('Validating provider settingsâ€¦');
+        setMessage('Validating provider settings…');
         try {
             const r = await fetch('/api/admin/plugins', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: tab, settings, secrets, revision: records.find(r => r.id === tab)?.revision || 0 }) });
             const d = await r.json();
@@ -120,12 +122,12 @@ export default function PluginDashboard() {
     const info = (slug: string) => registry.find(item => item.slug === slug);
     const visiblePlugins = settings.plugins.filter(plugin => Boolean(info(plugin.slug)?.archived) === showArchived);
     const activePlugin = visiblePlugins.some(p => p.slug === selectedPlugin) ? selectedPlugin : visiblePlugins[0]?.slug;
-    function secret(key: string, label: string) { return <label>{label}<input type="password" autoComplete="new-password" value={secrets[key] || ''} placeholder={row?.configuredSecrets.includes(key) ? 'Saved securely Â· leave blank to keep' : 'Enter credential'} onChange={e => setSecrets(s => ({ ...s, [key]: e.target.value }))}/></label>; }
+    function secret(key: string, label: string) { return <label>{label}<input type="password" autoComplete="new-password" value={secrets[key] || ''} placeholder={row?.configuredSecrets.includes(key) ? 'Saved securely · leave blank to keep' : 'Enter credential'} onChange={e => setSecrets(s => ({ ...s, [key]: e.target.value }))}/></label>; }
     return <section className="plugin-control" aria-label="Plugin dashboard">
  <header className="pc-heading"><div><span className="pc-eyebrow"><ShieldCheck size={15}/> QUBTIC CONTROL CENTER</span><h2>Plugins & payments</h2><p>Manage live products, development testing and team notifications in one place.</p></div><div className="pc-heading-actions"><button type="button" disabled={busy || !loaded} onClick={() => setRegisterOpen(true)}><Plus size={16}/> Add plugin</button><button type="button" disabled={busy} onClick={reload}><RefreshCw size={16}/> Reload</button></div></header>
  <div className="pc-tabs" role="group" aria-label="Dashboard workspace"><button aria-pressed={section === 'operations'} onClick={() => setSection('operations')}>Users, payments & growth</button><button aria-pressed={section === 'configuration'} onClick={() => setSection('configuration')}>Credentials & plugin settings</button></div>
  {section === 'operations' ? <PluginOperations version={operationsVersion}/> : <>
- <div className="pc-overview">{[{ id: 'polar:production', label: 'Live payments', icon: CircleDollarSign }, { id: 'polar:sandbox', label: 'Development', icon: FlaskConical }, { id: 'mail', label: 'Team notifications', icon: Mail }].map(({ id, label, icon: Icon }) => { const saved = records.find(r => r.id === id); return <button type="button" className="pc-stat" key={id} onClick={() => setTab(id)}><span className="pc-stat-top"><span className="pc-icon-tile"><Icon size={20} aria-hidden="true"/></span><ArrowUpRight size={16} aria-hidden="true"/></span><span className="pc-stat-label">{label}</span><strong>{!loaded ? 'Loadingâ€¦' : !saved ? 'Not configured' : id === 'mail' ? 'Alerts configured' : saved.settings.enabled ? 'Enabled' : 'Paused'}</strong><span className="pc-stat-detail">{saved && id !== 'mail' ? `${saved.settings.plugins.filter(p => p.enabled).length} enabled plugins Â· revision ${saved.revision}` : saved ? 'Manage recipients & event alerts' : 'Complete setup to get started'}</span></button>; })}</div>
+ <div className="pc-overview">{[{ id: 'polar:production', label: 'Live payments', icon: CircleDollarSign }, { id: 'polar:sandbox', label: 'Development', icon: FlaskConical }, { id: 'mail', label: 'Team notifications', icon: Mail }].map(({ id, label, icon: Icon }) => { const saved = records.find(r => r.id === id); return <button type="button" className="pc-stat" key={id} onClick={() => setTab(id)}><span className="pc-stat-top"><span className="pc-icon-tile"><Icon size={20} aria-hidden="true"/></span><ArrowUpRight size={16} aria-hidden="true"/></span><span className="pc-stat-label">{label}</span><strong>{!loaded ? 'Loading…' : !saved ? 'Not configured' : id === 'mail' ? 'Alerts configured' : saved.settings.enabled ? 'Enabled' : 'Paused'}</strong><span className="pc-stat-detail">{saved && id !== 'mail' ? `${saved.settings.plugins.filter(p => p.enabled).length} enabled plugins · revision ${saved.revision}` : saved ? 'Manage recipients & event alerts' : 'Complete setup to get started'}</span></button>; })}</div>
  <div className="pc-tabs" role="group" aria-label="Configuration section">{[['polar:production', 'Live payments'], ['polar:sandbox', 'Sandbox testing'], ['mail', 'Team & email']].map(([id, label]) => <button key={id} aria-pressed={tab === id} onClick={() => { setTab(id); setMessage(''); }} disabled={busy}>{id === 'mail' ? <Mail size={16} aria-hidden="true"/> : id === 'polar:sandbox' ? <FlaskConical size={16} aria-hidden="true"/> : <CircleDollarSign size={16} aria-hidden="true"/>} {label}</button>)}</div>
  {message && <p className="pc-notice" role="status">{message}</p>}
  {!loaded ? <p>Load the dashboard to configure your plugins.</p> : <form onSubmit={e => { e.preventDefault(); void save(); }}>
@@ -133,12 +135,93 @@ export default function PluginDashboard() {
  <div className="pc-workspace"><aside className="pc-plugin-list" aria-label="Plugins"><div className="pc-list-heading"><span>Your plugins</span><span>{visiblePlugins.length}</span></div><div className="pc-plugin-status-tabs"><button type="button" aria-pressed={!showArchived} onClick={() => setShowArchived(false)}>Active</button><button type="button" aria-pressed={showArchived} onClick={() => setShowArchived(true)}>Removed <span>{registry.filter(item => item.archived).length}</span></button></div>{visiblePlugins.map(p => <button type="button" key={p.slug} aria-pressed={activePlugin === p.slug} onClick={() => setSelectedPlugin(p.slug)}><span className="pc-icon-tile">{canPreviewPluginLogo(p.logo) ? <CloudImage src={p.logo} alt="" width={24} height={24}/> : p.slug === 'telegram-commerce' ? <Send size={18} aria-hidden="true"/> : p.slug === 'whatsapp-commerce' ? <Mail size={18} aria-hidden="true"/> : <Package size={18} aria-hidden="true"/>}</span><span><strong>{p.name}</strong><small>{info(p.slug)?.archived ? 'Removed' : p.enabled ? 'Plans enabled' : 'Not enabled'}</small></span></button>)}{!visiblePlugins.length && <p className="pc-empty-list">{showArchived ? 'No removed plugins.' : 'No active plugins.'}</p>}</aside><div className="pc-editor">
  {settings.plugins.map((p, i) => p.slug === activePlugin ? <article key={p.slug} className="pc-card"><div className="pc-heading"><div><h3 className="pc-section-title"><Package size={20} aria-hidden="true"/>{p.name}</h3><p>{p.slug === 'whatsapp-commerce' ? 'Existing Email Commerce account identity' : p.slug}</p></div><div className="pc-plugin-editor-actions"><label className="pc-toggle"><input type="checkbox" checked={p.enabled} disabled={info(p.slug)?.archived} onChange={e => plugin(i, { enabled: e.target.checked })}/> Enable plans</label><button type="button" className={info(p.slug)?.archived ? '' : 'pc-remove-plugin'} disabled={busy} onClick={() => setRemoval({ slug: p.slug, name: p.name, action: info(p.slug)?.archived ? 'restore' : 'archive', version: info(p.slug)?.version || 0 })}>{info(p.slug)?.archived ? <RotateCcw size={15}/> : <Archive size={15}/>} {info(p.slug)?.archived ? 'Restore plugin' : 'Remove plugin'}</button></div></div>
  {info(p.slug)?.archived && <p className="pc-notice">This plugin is removed from the active list. Restore it before enabling new checkouts.</p>}
- <div className="pc-grid"><label>Plugin identifier<input value={p.slug} disabled onChange={e => plugin(i, { slug: e.target.value })}/></label><label>Display name<input value={p.name} readOnly/></label></div><div className="pc-plan-grid">{p.plans.map((plan, j) => <fieldset key={plan.cadence}><legend>{plan.cadence}</legend><label>Product UUID<input value={plan.productId} onChange={e => plugin(i, { plans: p.plans.map((v, k) => k === j ? { ...v, productId: e.target.value } : v) })}/></label></fieldset>)}</div><label className="pc-shared-benefit">Shared Pro benefit UUID<input value={p.benefitId || ''} onChange={e => plugin(i, { benefitId: e.target.value, plans: p.plans.map(plan => ({ ...plan, benefitId: e.target.value })) })}/><span className="pc-muted">One Pro benefit shared by monthly, yearly and lifetime plans in this environment.</span></label>
+ <div className="pc-grid"><label>Plugin identifier<input value={p.slug} disabled onChange={e => plugin(i, { slug: e.target.value })}/></label><label>Display name<input value={p.name} readOnly/></label></div><div className="pc-plan-grid">{p.plans.map((plan, j) => <fieldset key={plan.cadence}><legend>{plan.cadence}</legend><label>Product UUID<input value={plan.productId} onChange={e => plugin(i, { plans: p.plans.map((v, k) => k === j ? { ...v, productId: e.target.value } : v) })}/></label></fieldset>)}</div>
+<div className="pc-grid pc-benefit-discount">
+	<label className="pc-shared-benefit">
+		Shared Pro benefit UUID
+		<input
+			value={p.benefitId || ""}
+			onChange={(e) =>
+				plugin(i, {
+					benefitId: e.target.value,
+					plans: p.plans.map((plan) => ({
+						...plan,
+						benefitId: e.target.value,
+					})),
+				})
+			}
+		/>
+		<span className="pc-muted">
+			One Pro benefit shared by monthly, yearly and
+			lifetime plans in this environment.
+		</span>
+	</label>
+	<div>
+		<label>
+			Polar discount CODE
+			<input
+				maxLength={128}
+				autoComplete="off"
+				value={p.discount?.code || ""}
+				onChange={(e) =>
+					plugin(i, {
+						discount: {
+							code: e.target.value,
+							cadences: p.discount?.cadences || [],
+						},
+					})
+				}
+			/>
+		</label>
+		<fieldset className="pc-discount-plans">
+			<legend>Auto-apply discount to</legend>
+			{(
+				["monthly", "yearly", "lifetime"] as const
+			).map((cadence) => (
+				<label className="pc-toggle" key={cadence}>
+					<input
+						type="checkbox"
+						checked={
+							p.discount?.cadences.includes(
+								cadence,
+							) || false
+						}
+						onChange={(e) =>
+							plugin(i, {
+								discount: {
+									code: p.discount?.code || "",
+									cadences: e.target.checked
+										? [
+												...(p.discount?.cadences ||
+													[]),
+												cadence,
+											]
+										: (
+												p.discount?.cadences || []
+											).filter(
+												(value) =>
+													value !== cadence,
+											),
+								},
+							})
+						}
+					/>
+					{cadence[0].toUpperCase() +
+						cadence.slice(1)}
+				</label>
+			))}
+		</fieldset>
+		<p className="pc-muted">
+			Use a code from this Polar environment. Clear
+			the code and all plans to disable.
+		</p>
+	</div>
+</div>
  {tab === 'polar:sandbox' && <label>Allowed developer emails (comma separated)<input value={p.testEmails || ''} onChange={e => plugin(i, { testEmails: e.target.value })}/><span className="pc-muted">Only these verified plugin accounts may use sandbox billing.</span></label>}
  <PluginAssets logo={p.logo || ''} manifest={p.manifest ?? '{}'} onLogoChange={logo => plugin(i, { logo })} onManifestChange={manifest => plugin(i, { manifest })}/></article> : null)}
  </div></div></> : <article className="pc-card"><h3 className="pc-section-title"><Mail size={20} aria-hidden="true"/>Team notifications</h3><p>Choose who receives plugin activity alerts. SMTP delivery and sender settings are managed in Vercel environment variables.</p><div className="pc-grid"><label>Team notification email<input type="email" required value={settings.teamEmail} onChange={e => field('teamEmail', e.target.value)}/></label></div>{(['signup', 'signin', 'purchase'] as const).map(event => <label className="pc-toggle" key={event}><input type="checkbox" checked={settings[event]} onChange={e => field(event, e.target.checked)}/> Notify team on {event}</label>)}</article>}
- <footer className="pc-actions"><p>Changes publish together. Existing purchases and account identities are preserved.</p><button type="submit" disabled={busy}><Save size={16}/>{busy ? 'Validatingâ€¦' : 'Validate & publish'}</button></footer></form>}
- <article className="pc-card"><h3 className="pc-section-title"><History size={20} aria-hidden="true"/>Recent changes</h3>{audit.length ? audit.map((a, i) => <p key={i} className="pc-muted">{a.config_id} Â· revision {a.revision} Â· {new Date(a.created_at).toLocaleString()}</p>) : <p>No configuration changes yet.</p>}</article>
+ <footer className="pc-actions"><p>Changes publish together. Existing purchases and account identities are preserved.</p><button type="submit" disabled={busy}><Save size={16}/>{busy ? 'Validating…' : 'Validate & publish'}</button></footer></form>}
+ <article className="pc-card"><h3 className="pc-section-title"><History size={20} aria-hidden="true"/>Recent changes</h3>{audit.length ? audit.map((a, i) => <p key={i} className="pc-muted">{a.config_id} · revision {a.revision} · {new Date(a.created_at).toLocaleString()}</p>) : <p>No configuration changes yet.</p>}</article>
  </>}
  {registerOpen && <AddPluginDialog onClose={() => setRegisterOpen(false)} onRegistered={(created, action) => {
         setRegistry(list => [...list, created]); setSelectedPlugin(created.slug); setShowArchived(false); setSection('configuration'); if (tab === 'mail') setTab('polar:production');

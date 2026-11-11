@@ -6,6 +6,7 @@ import { controlRecord, recordSecrets } from '@/lib/plugin-control';
 import { encryptSecrets } from '@/lib/plugin-secrets.mjs';
 import { configuredCatalog } from '@/lib/billing/config.mjs';
 import { createPolar } from '@polar-sh/sdk/2026-10';
+import { validateDiscountConfig, resolveCheckoutDiscount } from '@/lib/billing/discounts';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 const headers = { 'Cache-Control': 'no-store' };
@@ -85,6 +86,7 @@ export async function POST(request: Request) {
                 if (!registered)
                     throw new Error('Register this plugin using Add plugin before configuring it.');
                 plugin.name = registered.name;
+                plugin.discount = validateDiscountConfig(plugin.discount);
                 if (registered.archived && plugin.enabled) throw new Error('Restore this plugin before enabling plans.');
                 if (!Array.isArray(plugin.plans))
                     throw new Error('Each plugin needs a plan list.');
@@ -146,6 +148,8 @@ export async function POST(request: Request) {
                     const p = await polar.products.get(row.product_id);
                     if (p.organization_id !== settings.organizationId || p.is_archived || !p.benefits.some(b => b.id === row.benefit_id) || (row.cadence === 'lifetime' ? p.is_recurring : !p.is_recurring || p.recurring_interval !== (row.cadence === 'monthly' ? 'month' : 'year') || p.recurring_interval_count !== 1) || !p.prices.some(price => !price.is_archived && price.amount_type === 'fixed' && typeof price.price_amount === 'number' && price.price_amount > 0))
                         throw new Error(`Invalid product or benefit for ${row.plugin_slug}/${row.cadence}.`);
+                    const plugin = settings.plugins.find((item: { slug: string }) => item.slug === row.plugin_slug);
+                    await resolveCheckoutDiscount(polar, plugin.discount, row.cadence, row.product_id, settings.organizationId);
                 }));
             }
             else

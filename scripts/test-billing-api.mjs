@@ -103,6 +103,10 @@ function harness(plugin = "whatsapp-commerce") {
 	let databaseError = false;
 	let apiError = false;
 	let checkoutProducts = [{ id: monthlyProduct }];
+	let checkoutDiscountId = null;
+	let createdCheckout;
+	let managedPlugins = [];
+	let discountRecords = [];
 	const state = {
 		id: "polar1",
 		external_id: customer,
@@ -126,6 +130,10 @@ function harness(plugin = "whatsapp-commerce") {
 	const discountId = randomUUID();
 	const sdk = {
 		discounts: {
+			list: async () => ({
+				items: discountRecords,
+				pagination: { max_page: 1 },
+			}),
 			get: async () => ({
 				id: discountId,
 				organization_id: "org1",
@@ -217,8 +225,20 @@ function harness(plugin = "whatsapp-commerce") {
 			}),
 		},
 		checkouts: {
-			get: async () => ({ status: "open", products: checkoutProducts }),
+			get: async (id) =>
+				id === "checkout1" && createdCheckout
+					? {
+							status: "open",
+							products: createdCheckout.products.map((id) => ({ id })),
+							discount_id: createdCheckout.discount_id || null,
+						}
+					: {
+							status: "open",
+							products: checkoutProducts,
+							discount_id: checkoutDiscountId,
+						},
 			create: async (body) => {
+				createdCheckout = body;
 				calls.push(body);
 				return {
 					id: "checkout1",
@@ -358,10 +378,15 @@ function harness(plugin = "whatsapp-commerce") {
 		},
 	};
 	const core = load("src/lib/billing/core.ts", {
-		'../email-service': { sendTeamEvent: async () => {} },
-        "../plugin-control": { loadManagedBilling: async selected => billingConfiguration.resolveBillingConfig(process.env, selected) },
-        "./config.mjs": {
-            ...billingConfiguration,
+		"../email-service": { sendTeamEvent: async () => {} },
+		"../plugin-control": {
+			loadManagedBilling: async (selected) => ({
+				...billingConfiguration.resolveBillingConfig(process.env, selected),
+				MANAGED_PLUGINS: JSON.stringify(managedPlugins),
+			}),
+		},
+		"./config.mjs": {
+			...billingConfiguration,
 			configuredCatalog: () => desiredCatalog,
 			catalogMatches: billingConfiguration.catalogMatches,
 		},
@@ -378,6 +403,7 @@ function harness(plugin = "whatsapp-commerce") {
 	const route = load("src/app/api/billing/[action]/route.ts", {
 		"@/lib/billing/core": core,
 		"@/lib/billing/config.mjs": billingConfiguration,
+		"@/lib/billing/discounts": load("src/lib/billing/discounts.ts", {}),
 	});
 	const request = async (action, body, token = "token", site = "site-a") => {
 		const r = await route[body === undefined ? "GET" : "POST"](
@@ -385,7 +411,7 @@ function harness(plugin = "whatsapp-commerce") {
 				method: body === undefined ? "GET" : "POST",
 				headers: {
 					"X-Framer-Site-Id": site,
-                    "X-Billing-Environment": "sandbox",
+					"X-Billing-Environment": "sandbox",
 					Authorization: `Bearer ${token}`,
 					...(body === undefined ? {} : { "Content-Type": "application/json" }),
 				},
@@ -395,11 +421,15 @@ function harness(plugin = "whatsapp-commerce") {
 		);
 		return { status: r.status, data: await r.json() };
 	};
-    const sandboxCore = { ...core };
-    for (const [key, value] of Object.entries(core)) {
-        if (typeof value === "function" && !["BillingError", "withBillingEnvironment"].includes(key))
-            sandboxCore[key] = (...args) => core.withBillingEnvironment("sandbox", () => value(...args));
-    }
+	const sandboxCore = { ...core };
+	for (const [key, value] of Object.entries(core)) {
+		if (
+			typeof value === "function" &&
+			!["BillingError", "withBillingEnvironment"].includes(key)
+		)
+			sandboxCore[key] = (...args) =>
+				core.withBillingEnvironment("sandbox", () => value(...args));
+	}
 	return {
 		core: sandboxCore,
 		route,
@@ -418,8 +448,188 @@ function harness(plugin = "whatsapp-commerce") {
 		setDbError: (v) => (databaseError = v),
 		setApiError: (v) => (apiError = v),
 		setCheckoutProducts: (v) => (checkoutProducts = v),
+		setCheckoutDiscount: (v) => (checkoutDiscountId = v),
+		setDiscount: (value) =>
+			(managedPlugins = [{ slug: plugin, discount: value }]),
+		setDiscountRecords: (value) => (discountRecords = value),
 	};
 }
+function promotion(h, cadences = ["monthly", "lifetime"]) {
+	h.setDiscount({ code: "SAVE20", cadences });
+	h.setDiscountRecords([
+		{
+			id: h.discountId,
+			code: "SAVE20",
+			organization_id: "org1",
+			starts_at: null,
+			ends_at: null,
+			max_redemptions: null,
+			redemptions_count: 0,
+			products: [],
+		},
+	]);
+}
+
+test("each plan creates its own single-product checkout and only checked plans receive the saved discount", async () => {
+	for (const cadence of ["monthly", "yearly", "lifetime"]) {
+		const h = harness("telegram-commerce");
+		promotion(h);
+		const listing = await h.request("catalog");
+		assert.equal(
+			listing.data.plans.find((p) => p.cadence === cadence).discount_code,
+			cadence === "yearly" ? undefined : "SAVE20",
+		);
+		const response = await h.request("checkout", {
+			cadence,
+			request_id: randomUUID(),
+			discount_id: "attacker",
+			discount_code: "FAKE",
+		});
+		assert.equal(response.status, 200, JSON.stringify(response.data));
+		const checkout = h.calls.find((c) => c.external_customer_id);
+		assert.deepEqual(checkout.products, [
+			cadence === "monthly"
+				? h.monthlyProduct
+				: cadence === "yearly"
+					? h.yearlyProduct
+					: h.product,
+		]);
+		assert.equal(
+			checkout.discount_id,
+			cadence === "yearly" ? undefined : h.discountId,
+		);
+		assert.equal(
+			h.calls.some((c) => c.method === "discounts.create"),
+			false,
+		);
+	}
+});
+
+test("invalid configured discount blocks checkout rather than silently charging full price", async () => {
+	const h = harness("telegram-commerce");
+	promotion(h, ["lifetime"]);
+	h.setDiscountRecords([]);
+	const response = await h.request("checkout", {
+		cadence: "lifetime",
+		request_id: randomUUID(),
+	});
+	assert.equal(response.status, 409);
+	assert.match(response.data.error, /discount/i);
+	assert.equal(
+		h.calls.some((c) => c.external_customer_id),
+		false,
+	);
+});
+
+test("removing a saved promotion invalidates even an idempotent old checkout until deliberate replacement", async () => {
+	const h = harness("telegram-commerce");
+	promotion(h, ["lifetime"]);
+	const requestId = randomUUID();
+	assert.equal(
+		(
+			await h.request("checkout", {
+				cadence: "lifetime",
+				request_id: requestId,
+			})
+		).status,
+		200,
+	);
+	assert.equal(
+		h.calls.find((c) => c.external_customer_id).discount_id,
+		h.discountId,
+	);
+	h.setDiscount({ code: "", cadences: [] });
+	const old = await h.request("checkout", {
+		cadence: "lifetime",
+		request_id: requestId,
+	});
+	assert.equal(old.status, 409);
+	assert.equal(old.data.can_replace, true);
+	assert.equal(
+		(
+			await h.request("checkout", {
+				cadence: "lifetime",
+				request_id: randomUUID(),
+				replace_previous: true,
+			})
+		).status,
+		200,
+	);
+	const checkouts = h.calls.filter((c) => c.external_customer_id);
+	assert.equal(checkouts.length, 2);
+	assert.equal(checkouts[1].discount_id, undefined);
+});
+
+test("switching plans cannot reuse another plan's single-product checkout", async () => {
+	const h = harness("telegram-commerce");
+	assert.equal(
+		(
+			await h.request("checkout", {
+				cadence: "monthly",
+				request_id: randomUUID(),
+			})
+		).status,
+		200,
+	);
+	const conflict = await h.request("checkout", {
+		cadence: "yearly",
+		request_id: randomUUID(),
+	});
+	assert.equal(conflict.status, 409);
+	assert.equal(conflict.data.can_replace, true);
+	assert.equal(
+		(
+			await h.request("checkout", {
+				cadence: "yearly",
+				request_id: randomUUID(),
+				replace_previous: true,
+			})
+		).status,
+		200,
+	);
+	assert.deepEqual(
+		h.calls.filter((c) => c.external_customer_id).map((c) => c.products),
+		[[h.monthlyProduct], [h.yearlyProduct]],
+	);
+});
+
+test("a saved promotion cannot silently replace an earned monthly-to-yearly proration credit", async () => {
+	const h = harness("telegram-commerce");
+	promotion(h, ["yearly"]);
+	h.tables.billing_subscriptions.push({
+		polar_subscription_id: "monthly",
+		customer_id: h.customer,
+		environment: "sandbox",
+		plugin_slug: "telegram-commerce",
+		site_id: "site-a",
+		cadence: "monthly",
+		status: "active",
+		current_period_end: new Date(Date.now() + 20 * 86400000).toISOString(),
+	});
+	h.tables.billing_orders.push({
+		customer_id: h.customer,
+		environment: "sandbox",
+		subscription_id: "monthly",
+		status: "paid",
+		amount: 500,
+		refunded_amount: 0,
+		currency: "usd",
+		purchased_at: new Date(Date.now() - 10 * 86400000).toISOString(),
+	});
+	const response = await h.request("checkout", {
+		cadence: "yearly",
+		request_id: randomUUID(),
+	});
+	assert.equal(response.status, 409);
+	assert.match(response.data.error, /cannot combine/i);
+	assert.equal(
+		h.calls.some(
+			(c) => c.external_customer_id || c.method === "discounts.create",
+		),
+		false,
+	);
+});
+
 test("checkout binds verified identity and ignores client prices and account IDs", async () => {
 	const h = harness();
 	const response = await h.request("checkout", {
@@ -433,11 +643,7 @@ test("checkout binds verified identity and ignores client prices and account IDs
 	const checkout = h.calls.find((call) => call.external_customer_id);
 	assert.equal(checkout.external_customer_id, h.customer);
 	assert.equal(checkout.customer_email, "owner@example.test");
-	assert.deepEqual(checkout.products, [
-		h.yearlyProduct,
-		h.monthlyProduct,
-		h.product,
-	]);
+	assert.deepEqual(checkout.products, [h.product]);
 	assert.equal(checkout.allow_trial, false);
 	assert.ok(!JSON.stringify(checkout).includes("Bearer"));
 });
@@ -680,7 +886,7 @@ test("refresh discovers a paid customer even if all initial webhook deliveries w
 	);
 });
 
-test("single account-linked checkout offers all three products and records Polar discount on the selected order", async () => {
+test("single account-linked checkout contains only the selected product and records its Polar discount", async () => {
 	const h = harness();
 	const listing = await h.request("catalog");
 	assert.equal(listing.status, 200);
@@ -691,11 +897,7 @@ test("single account-linked checkout offers all three products and records Polar
 	});
 	assert.equal(response.status, 200);
 	const checkout = h.calls.find((call) => call.external_customer_id);
-	assert.deepEqual(checkout.products, [
-		h.yearlyProduct,
-		h.monthlyProduct,
-		h.product,
-	]);
+	assert.deepEqual(checkout.products, [h.product]);
 	assert.equal(checkout.allow_discount_codes, true);
 	assert.equal(checkout.discount_id, undefined);
 	const order = {
@@ -712,7 +914,7 @@ test("single account-linked checkout offers all three products and records Polar
 	);
 });
 
-test("old single-plan checkout returns recovery choices and explicit replacement opens the three-plan selector", async () => {
+test("another-plan checkout returns recovery choices and replacement opens only the requested plan", async () => {
 	const h = harness();
 	h.tables.billing_checkouts.push({
 		id: randomUUID(),
@@ -740,8 +942,6 @@ test("old single-plan checkout returns recovery choices and explicit replacement
 	assert.equal(next.status, 200);
 	assert.equal(h.tables.billing_checkouts[0].status, "superseded");
 	assert.deepEqual(h.calls.find((call) => call.external_customer_id).products, [
-		h.yearlyProduct,
-		h.monthlyProduct,
 		h.product,
 	]);
 });
@@ -792,16 +992,14 @@ test("resolve distinguishes active creation, expired creation, and terminal chec
 test("reused checkout resolves for the new launch channel without a duplicate Polar checkout", async () => {
 	const h = harness();
 	const channel = randomUUID();
-	h.setCheckoutProducts(
-		[h.yearlyProduct, h.monthlyProduct, h.product].map((id) => ({ id })),
-	);
+	h.setCheckoutProducts([{ id: h.product }]);
 	h.tables.billing_checkouts.push({
 		id: randomUUID(),
 		user_id: "user",
 		site_id: "site-a",
 		environment: "sandbox",
 		plugin_slug: "whatsapp-commerce",
-		product_id: h.yearlyProduct,
+		product_id: h.product,
 		request_key: randomUUID(),
 		status: "open",
 		polar_checkout_id: "old",
@@ -1277,7 +1475,7 @@ test("all apps bind monthly and yearly Lifetime upgrades on the server and rejec
 	);
 });
 
-test("Telegram replaces an old yearly-first checkout with monthly, yearly, lifetime ordering", async () => {
+test("Telegram replaces an old multi-plan checkout with a single-product checkout", async () => {
 	const h = harness("telegram-commerce");
 	h.setCheckoutProducts(
 		[h.yearlyProduct, h.monthlyProduct, h.product].map((id) => ({ id })),
@@ -1305,8 +1503,6 @@ test("Telegram replaces an old yearly-first checkout with monthly, yearly, lifet
 	});
 	assert.equal(replacement.status, 200);
 	assert.deepEqual(h.calls.find((c) => c.external_customer_id).products, [
-		h.monthlyProduct,
-		h.yearlyProduct,
 		h.product,
 	]);
 	assert.equal(h.tables.billing_checkouts[0].status, "superseded");
@@ -1341,11 +1537,7 @@ test("Telegram catalog enables all three plans and checkout is bound to the sign
 	assert.equal(created.metadata.plugin_slug, "telegram-commerce");
 	assert.equal(created.metadata.site_id, "site-a");
 	assert.ok(created.success_url.includes("plugin=telegram-commerce"));
-	assert.deepEqual(created.products, [
-		h.monthlyProduct,
-		h.yearlyProduct,
-		h.product,
-	]);
+	assert.deepEqual(created.products, [h.product]);
 	const guard = h.calls.find((c) => c.name === "billing_site_has_purchase");
 	assert.equal(guard.args.p_plugin, "telegram-commerce");
 	assert.equal(

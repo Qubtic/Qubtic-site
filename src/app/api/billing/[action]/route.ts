@@ -1,8 +1,12 @@
 import { billingSiteUrl } from "@/lib/billing/config.mjs";
 import {
+	resolveCheckoutDiscount,
+	validateDiscountConfig,
+} from "@/lib/billing/discounts";
+import {
 	actor,
-    billingConfig,
-    billingRequest,
+	billingConfig,
+	billingRequest,
 	BillingError,
 	billingHeaders,
 	catalog,
@@ -27,6 +31,13 @@ export const maxDuration = 60;
 type Context = { params: Promise<{ action: string }> };
 function reply(body: unknown, status = 200) {
 	return Response.json(body, { status, headers: billingHeaders });
+}
+function configuredDiscount(plugin: string) {
+	const plugins = JSON.parse(billingConfig().MANAGED_PLUGINS || "[]") as {
+		slug: string;
+		discount?: unknown;
+	}[];
+	return plugins.find((item) => item.slug === plugin)?.discount;
 }
 async function handle(request: Request, { params }: Context) {
 	if (request.method === "OPTIONS")
@@ -131,17 +142,32 @@ async function handle(request: Request, { params }: Context) {
 		}
 		const user = await actor(request);
 		await limit(`api:${user.id}`);
-		if(action === "manifest" && request.method === "GET") {
-            const plugins=JSON.parse(billingConfig().MANAGED_PLUGINS||'[]');
-            const plugin=plugins.find((p:{slug:string})=>p.slug===user.plugin);
-            return reply({plugin:user.plugin,name:plugin?.name||user.plugin,logo:plugin?.logo||null,brandColor:plugin?.brandColor||null,manifest:JSON.parse(plugin?.manifest||'{}')});
-        }
-        if (action === "catalog" && request.method === "GET") {
+		if (action === "manifest" && request.method === "GET") {
+			const plugins = JSON.parse(billingConfig().MANAGED_PLUGINS || "[]");
+			const plugin = plugins.find(
+				(p: { slug: string }) => p.slug === user.plugin,
+			);
+			return reply({
+				plugin: user.plugin,
+				name: plugin?.name || user.plugin,
+				logo: plugin?.logo || null,
+				brandColor: plugin?.brandColor || null,
+				manifest: JSON.parse(plugin?.manifest || "{}"),
+			});
+		}
+		if (action === "catalog" && request.method === "GET") {
 			const rows = (await catalog()).filter(
 				(row) => row.plugin_slug === user.plugin,
 			);
+			const discount = validateDiscountConfig(configuredDiscount(user.plugin));
 			return reply({
-				plans: rows.map((row) => ({ cadence: row.cadence, available: true })),
+				plans: rows.map((row) => ({
+					cadence: row.cadence,
+					available: true,
+					...(discount.cadences.includes(row.cadence)
+						? { discount_code: discount.code }
+						: {}),
+				})),
 			});
 		}
 		const customerId = await identity(user.id);
@@ -386,7 +412,7 @@ async function handle(request: Request, { params }: Context) {
 					.select("*")
 					.eq("user_id", user.id)
 					.eq("request_key", body.request_id)
-                    .eq("environment", env)
+					.eq("environment", env)
 					.maybeSingle(),
 				siteScoped && site
 					? baseSubQuery.eq("site_id", site)
@@ -492,8 +518,7 @@ async function handle(request: Request, { params }: Context) {
 					409,
 				);
 
-			// Lifetime-only offering: the requested cadence (default lifetime)
-			// selects the single product the checkout shows.
+			// Every checkout is bound to one selected plan; legacy callers default to Lifetime.
 			const targetCadence =
 				isUpgrade && upgradeTo ? upgradeTo : body.cadence || "lifetime";
 			const targetRow =
@@ -515,15 +540,14 @@ async function handle(request: Request, { params }: Context) {
 				)
 					throw new BillingError("Checkout request does not match.", 409);
 				if (
-					existing.status === "open" &&
-					existing.checkout_url &&
-					Date.parse(existing.expires_at) > Date.now()
+					existing.status !== "open" ||
+					!existing.checkout_url ||
+					Date.parse(existing.expires_at) <= Date.now()
 				)
-					return reply({ url: safePolarUrl(existing.checkout_url) });
-				throw new BillingError(
-					"This checkout request is already processing or expired. Start a new checkout.",
-					409,
-				);
+					throw new BillingError(
+						"This checkout request is already processing or expired. Start a new checkout.",
+						409,
+					);
 			}
 			const sdk = polar();
 			let refundBinding:
@@ -622,8 +646,24 @@ async function handle(request: Request, { params }: Context) {
 				}),
 			);
 
-			// Calculate prorated discount for Monthly -> Yearly upgrade
 			let discountId: string | undefined;
+			try {
+				discountId = await resolveCheckoutDiscount(
+					sdk,
+					configuredDiscount(user.plugin),
+					targetRow.cadence,
+					targetRow.product_id,
+					billingConfig().POLAR_ORGANIZATION_ID!,
+				);
+			} catch (error) {
+				throw new BillingError(
+					error instanceof Error
+						? error.message
+						: "Unable to validate this plan's discount.",
+					409,
+				);
+			}
+			// Calculate prorated discount for Monthly -> Yearly upgrade
 			if (
 				isUpgrade &&
 				upgradeFrom === "monthly" &&
@@ -709,6 +749,12 @@ async function handle(request: Request, { params }: Context) {
 				}
 
 				if (unusedCreditCents > 0) {
+					// shortcut: Polar accepts one discount; combined coupon/proration accounting needs a separate policy.
+					if (discountId)
+						throw new BillingError(
+							"This upgrade has unused subscription credit and cannot combine it with the configured promotion. Contact billing support before upgrading.",
+							409,
+						);
 					try {
 						const discount = await sdk.discounts.create({
 							organization_id: billingConfig().POLAR_ORGANIZATION_ID,
@@ -773,8 +819,8 @@ async function handle(request: Request, { params }: Context) {
 						: previousProducts.sort().join(",") ===
 							targetProducts.slice().sort().join(",");
 				const discountMatches =
-					!discountId ||
-					("discount_id" in previous && previous.discount_id === discountId);
+					(("discount_id" in previous ? previous.discount_id : null) ??
+						null) === (discountId ?? null);
 				const refundPolicyMatches =
 					!refundBinding ||
 					(openCheckout.upgrade_policy_version === 1 &&
@@ -885,7 +931,7 @@ async function handle(request: Request, { params }: Context) {
 	}
 }
 export function GET(request: Request, context: Context) {
-    return billingRequest(request, () => handle(request, context));
+	return billingRequest(request, () => handle(request, context));
 }
 export const POST = GET;
 export const OPTIONS = GET;

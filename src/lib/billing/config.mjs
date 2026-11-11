@@ -1,7 +1,11 @@
 /** Central server configuration shared by the Next backend and setup CLI. No credentials are returned to plugins. */
 export const CADENCES = ["monthly", "yearly", "lifetime"];
 export const PLUGINS = [
-	{ slug: "whatsapp-commerce", prefix: "POLAR_EMAIL_COMMERCE", aliases: ["POLAR_WHATSAPP_COMMERCE"] },
+	{
+		slug: "whatsapp-commerce",
+		prefix: "POLAR_EMAIL_COMMERCE",
+		aliases: ["POLAR_WHATSAPP_COMMERCE"],
+	},
 	{ slug: "telegram-commerce", prefix: "POLAR_TELEGRAM_COMMERCE" },
 	{ slug: "frame-drop", prefix: "POLAR_FRAME_DROP" },
 	{ slug: "qube-auth", prefix: "POLAR_QUBE_AUTH" },
@@ -9,6 +13,8 @@ export const PLUGINS = [
 export const REQUIRED_SCOPES = [
 	"organizations:read",
 	"products:read",
+	"discounts:read",
+	"discounts:write",
 	"customers:read",
 	"orders:read",
 	"subscriptions:read",
@@ -48,18 +54,27 @@ export function configuredCatalog(env) {
 		throw new Error("Set POLAR_ENVIRONMENT to sandbox or production.");
 	const rows = [];
 	for (const plugin of PLUGINS) {
-        // Branding changed; the stored plugin slug remains stable for existing paid sites.
-        const suffixes = [...CADENCES.map(cadence => `${cadence.toUpperCase()}_PRODUCT_ID`), "PRO_BENEFIT_ID"];
-        const prefixes = [plugin.prefix, ...(plugin.aliases || [])];
-        const active = prefixes.filter(prefix => suffixes.some(suffix => env[`${prefix}_${suffix}`]?.trim()));
-        for (const suffix of suffixes) {
-            const values = active.map(prefix => env[`${prefix}_${suffix}`]?.trim().toLowerCase()).filter(Boolean);
-            if (new Set(values).size > 1)
-                throw new Error(`Conflicting Email Commerce configuration: use ${plugin.prefix}_${suffix} consistently; remove the conflicting legacy alias.`);
-        }
-        // Do not stitch an incomplete new group together with legacy keys.
-        const prefix = active[0] || plugin.prefix;
-        const keys = suffixes.map(suffix => `${prefix}_${suffix}`);
+		// Branding changed; the stored plugin slug remains stable for existing paid sites.
+		const suffixes = [
+			...CADENCES.map((cadence) => `${cadence.toUpperCase()}_PRODUCT_ID`),
+			"PRO_BENEFIT_ID",
+		];
+		const prefixes = [plugin.prefix, ...(plugin.aliases || [])];
+		const active = prefixes.filter((prefix) =>
+			suffixes.some((suffix) => env[`${prefix}_${suffix}`]?.trim()),
+		);
+		for (const suffix of suffixes) {
+			const values = active
+				.map((prefix) => env[`${prefix}_${suffix}`]?.trim().toLowerCase())
+				.filter(Boolean);
+			if (new Set(values).size > 1)
+				throw new Error(
+					`Conflicting Email Commerce configuration: use ${plugin.prefix}_${suffix} consistently; remove the conflicting legacy alias.`,
+				);
+		}
+		// Do not stitch an incomplete new group together with legacy keys.
+		const prefix = active[0] || plugin.prefix;
+		const keys = suffixes.map((suffix) => `${prefix}_${suffix}`);
 		if (!keys.some((key) => env[key]?.trim())) continue;
 		const missing = keys.filter((key) => !env[key]?.trim());
 		if (missing.length)
@@ -71,8 +86,7 @@ export function configuredCatalog(env) {
 				plugin_slug: plugin.slug,
 				cadence,
 				environment,
-				product_id:
-					env[`${prefix}_${cadence.toUpperCase()}_PRODUCT_ID`].trim(),
+				product_id: env[`${prefix}_${cadence.toUpperCase()}_PRODUCT_ID`].trim(),
 				benefit_id: env[`${prefix}_PRO_BENEFIT_ID`].trim(),
 				enabled: true,
 			});
@@ -187,27 +201,30 @@ export function catalogMatches(actual, desired) {
 
 /** Public selectors are routing hints, never authorization or provider credentials. */
 export function parseBillingEnvironment(value) {
-    if (value === null || value === undefined) return "production";
-    if (value !== "sandbox" && value !== "production")
-        throw new Error("Billing environment must be sandbox or production.");
-    return value;
+	if (value === null || value === undefined) return "production";
+	if (value !== "sandbox" && value !== "production")
+		throw new Error("Billing environment must be sandbox or production.");
+	return value;
 }
 /** Return a private snapshot; never mutate process.env while serving a request. */
 export function resolveBillingConfig(source, selected = "production") {
-    const environment = parseBillingEnvironment(selected);
-    const prefix = `POLAR_${environment.toUpperCase()}_`;
-    const explicit = Object.keys(source).some(key => key.startsWith(prefix));
-    const legacy = !explicit && source.POLAR_ENVIRONMENT === environment;
-    const result = { ...source, POLAR_ENVIRONMENT: environment };
-    // Remove both namespaces and every legacy provider key before projecting one set.
-    for (const key of Object.keys(result)) if (key.startsWith("POLAR_")) delete result[key];
-    result.POLAR_ENVIRONMENT = environment;
-    if (legacy) {
-        for (const [key, value] of Object.entries(source))
-            if (key.startsWith("POLAR_") && !/^POLAR_(SANDBOX|PRODUCTION)_/.test(key)) result[key] = value;
-    } else {
-        for (const [key, value] of Object.entries(source))
-            if (key.startsWith(prefix)) result[`POLAR_${key.slice(prefix.length)}`] = value;
-    }
-    return Object.freeze(result);
+	const environment = parseBillingEnvironment(selected);
+	const prefix = `POLAR_${environment.toUpperCase()}_`;
+	const explicit = Object.keys(source).some((key) => key.startsWith(prefix));
+	const legacy = !explicit && source.POLAR_ENVIRONMENT === environment;
+	const result = { ...source, POLAR_ENVIRONMENT: environment };
+	// Remove both namespaces and every legacy provider key before projecting one set.
+	for (const key of Object.keys(result))
+		if (key.startsWith("POLAR_")) delete result[key];
+	result.POLAR_ENVIRONMENT = environment;
+	if (legacy) {
+		for (const [key, value] of Object.entries(source))
+			if (key.startsWith("POLAR_") && !/^POLAR_(SANDBOX|PRODUCTION)_/.test(key))
+				result[key] = value;
+	} else {
+		for (const [key, value] of Object.entries(source))
+			if (key.startsWith(prefix))
+				result[`POLAR_${key.slice(prefix.length)}`] = value;
+	}
+	return Object.freeze(result);
 }
