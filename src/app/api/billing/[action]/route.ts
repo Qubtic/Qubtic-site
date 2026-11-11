@@ -195,7 +195,7 @@ async function handle(request: Request, { params }: Context) {
 							...(await quotePlan(
 								sdk,
 								row,
-								configuredDiscount(user.plugin),
+								configuredDiscount(plugin),
 								billingConfig().POLAR_ORGANIZATION_ID!,
 							)),
 						};
