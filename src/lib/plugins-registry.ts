@@ -62,7 +62,7 @@ export const REGISTERED_PLUGINS: Record<string, FramerPluginMetadata> = {
 		description:
 			"Manage products, customize storefront components, and prepare Telegram orders from Framer.",
 		version: "v0.2.0",
-		logo: "/images/brand/telegram-commerce-icon.svg",
+		logo: "/images/brand/telegram-commerce-logo.png",
 		accentColor: "#F6DEAF",
 		glowColor: "rgba(246, 222, 175, 0.25)",
 		badge: "Qubtic Plugin",
