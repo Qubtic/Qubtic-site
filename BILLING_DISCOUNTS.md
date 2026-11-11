@@ -28,7 +28,9 @@ The server token needs `discounts:read` to validate existing codes. Existing aut
 
 The existing Lifetime-only offer is preserved. Its purchase request explicitly selects Lifetime, and the server applies the dashboard code only if **Lifetime** is checked. Other apps/clients selecting Monthly or Yearly get separate checkouts for those products.
 
-The catalog response adds an optional `discount_code` on eligible plans. Telegram displays that configured code without claiming a fixed percentage or discounted price. Polar confirms the final price, taxes, eligibility, and total before payment. **Refresh billing** reloads catalog settings so a newly saved or removed code can appear without signing out.
+The catalog response reads the current Polar product price and returns `price_amount`, `discount_amount`, `amount_due`, and `currency` in integer minor units, plus the configured discount code and duration when applicable. Telegram displays the real full price without a code, or the original price, discounted amount, and savings with a code. For recurring plans, once-only and repeating discounts are identified rather than advertised as permanent. Taxes and customer-specific eligibility are confirmed by Polar at checkout; the displayed quote is not a tax-inclusive final total. Products with ambiguous multi-currency/variable pricing or unverifiable discounts are marked unavailable, never given a guessed price. **Refresh billing** reloads current prices and settings.
+
+The normal “Checkout tab opened in Polar” card has been removed. Purchase Pro still opens checkout directly; only an actually blocked popup displays a small recovery link.
 
 Deploy the updated site code, rebuild/reinstall Telegram Commerce for its updated display, and publish the desired dashboard settings. Existing applications using the shared checkout API receive the server-side policy without their own discount implementation.
 

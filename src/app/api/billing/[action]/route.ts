@@ -1,8 +1,6 @@
 import { billingSiteUrl } from "@/lib/billing/config.mjs";
-import {
-	resolveCheckoutDiscount,
-	validateDiscountConfig,
-} from "@/lib/billing/discounts";
+import { resolveCheckoutDiscount } from "@/lib/billing/discounts";
+import { quotePlan } from "@/lib/billing/pricing";
 import {
 	actor,
 	billingConfig,
@@ -159,16 +157,32 @@ async function handle(request: Request, { params }: Context) {
 			const rows = (await catalog()).filter(
 				(row) => row.plugin_slug === user.plugin,
 			);
-			const discount = validateDiscountConfig(configuredDiscount(user.plugin));
-			return reply({
-				plans: rows.map((row) => ({
-					cadence: row.cadence,
-					available: true,
-					...(discount.cadences.includes(row.cadence)
-						? { discount_code: discount.code }
-						: {}),
-				})),
-			});
+			const sdk = polar();
+			const plans = await Promise.all(
+				rows.map(async (row) => {
+					try {
+						return {
+							cadence: row.cadence,
+							...(await quotePlan(
+								sdk,
+								row,
+								configuredDiscount(user.plugin),
+								billingConfig().POLAR_ORGANIZATION_ID!,
+							)),
+						};
+					} catch (error) {
+						return {
+							cadence: row.cadence,
+							available: false,
+							error:
+								error instanceof Error && !("statusCode" in error)
+									? error.message
+									: "Unable to load the Polar price. Refresh billing to try again.",
+						};
+					}
+				}),
+			);
+			return reply({ plans });
 		}
 		const customerId = await identity(user.id);
 		const siteScoped =

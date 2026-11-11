@@ -204,6 +204,8 @@ function harness(plugin = "whatsapp-commerce") {
 		},
 		products: {
 			get: async (id) => ({
+				id,
+				recurring_interval_count: id === product ? null : 1,
 				organization_id: "org1",
 				is_archived: false,
 				is_recurring: id !== product,
@@ -215,6 +217,8 @@ function harness(plugin = "whatsapp-commerce") {
 							: null,
 				prices: [
 					{
+						product_id: id,
+						source: "catalog",
 						amount_type: "fixed",
 						price_amount: 4900,
 						price_currency: "usd",
@@ -404,6 +408,9 @@ function harness(plugin = "whatsapp-commerce") {
 		"@/lib/billing/core": core,
 		"@/lib/billing/config.mjs": billingConfiguration,
 		"@/lib/billing/discounts": load("src/lib/billing/discounts.ts", {}),
+		"@/lib/billing/pricing": load("src/lib/billing/pricing.ts", {
+			"./discounts": load("src/lib/billing/discounts.ts", {}),
+		}),
 	});
 	const request = async (action, body, token = "token", site = "site-a") => {
 		const r = await route[body === undefined ? "GET" : "POST"](
@@ -460,6 +467,9 @@ function promotion(h, cadences = ["monthly", "lifetime"]) {
 		{
 			id: h.discountId,
 			code: "SAVE20",
+			type: "percentage",
+			basis_points: 2000,
+			duration: "once",
 			organization_id: "org1",
 			starts_at: null,
 			ends_at: null,
@@ -503,6 +513,40 @@ test("each plan creates its own single-product checkout and only checked plans r
 			false,
 		);
 	}
+});
+
+test("catalog returns the live full price or discounted price without inventing taxes", async () => {
+	const h = harness("telegram-commerce");
+	let listing = await h.request("catalog");
+	assert.equal(listing.status, 200);
+	assert.ok(
+		listing.data.plans.every(
+			(p) =>
+				p.available &&
+				p.price_amount === 4900 &&
+				p.amount_due === 4900 &&
+				p.discount_amount === 0 &&
+				p.currency === "usd",
+		),
+	);
+	promotion(h, ["lifetime"]);
+	listing = await h.request("catalog");
+	const lifetime = listing.data.plans.find((p) => p.cadence === "lifetime");
+	assert.equal(lifetime.price_amount, 4900);
+	assert.equal(lifetime.amount_due, 3920);
+	assert.equal(lifetime.discount_amount, 980);
+	assert.equal(lifetime.discount_code, "SAVE20");
+	assert.equal(lifetime.tax_amount, undefined);
+	h.setDiscountRecords([]);
+	listing = await h.request("catalog");
+	assert.equal(
+		listing.data.plans.find((p) => p.cadence === "lifetime").available,
+		false,
+	);
+	assert.equal(
+		listing.data.plans.find((p) => p.cadence === "monthly").available,
+		true,
+	);
 });
 
 test("invalid configured discount blocks checkout rather than silently charging full price", async () => {
