@@ -193,6 +193,51 @@ function harness() {
 	};
 }
 
+test("fully discounted paid Lifetime keeps benefit, ownership and site requirements", () => {
+	for (const plugin of ["whatsapp-commerce", "telegram-commerce"]) {
+		const h = harness();
+		const order = h.purchase(plugin, "site-a");
+		Object.assign(order, {
+			total_amount: 0,
+			subtotal_amount: 4999,
+			discount_amount: 4999,
+			discount_id: "promotion",
+		});
+		assert.deepEqual(h.snapshot().siteGrants, [
+			{ plugin_slug: plugin, site_id: "site-a", access_ends_at: null },
+		]);
+		for (const patch of [
+			{ status: "pending" },
+			{ status: "refunded" },
+			{ status: "partially_refunded" },
+			{ refunded_amount: 1 },
+			{ subtotal_amount: 0, discount_amount: 0 },
+			{ discount_amount: 4998 },
+			{ discount_amount: 5000 },
+			{ discount_id: null },
+		]) {
+			const saved = { ...order };
+			Object.assign(order, patch);
+			assert.deepEqual(h.snapshot().siteGrants, [], JSON.stringify(patch));
+			Object.assign(order, saved);
+		}
+		h.state.granted_benefits = [];
+		assert.deepEqual(h.snapshot().siteGrants, []);
+		h.state.granted_benefits = [{ benefit_id: plugin }];
+		order.customer_id = "other";
+		assert.throws(h.snapshot, /ownership mismatch/);
+		order.customer_id = h.state.id;
+		order.customer.organization_id = "other";
+		assert.throws(h.snapshot, /ownership mismatch/);
+		order.customer.organization_id = h.state.organization_id;
+		h.checkouts[0].plugin_slug = "other";
+		assert.deepEqual(h.snapshot().siteGrants, []);
+		h.checkouts.length = 0;
+		order.metadata = { site_id: "site-a" };
+		assert.deepEqual(h.snapshot().siteGrants, []);
+	}
+});
+
 test("Telegram paidAccess requires a valid site and never uses account-wide entitlements", async () => {
 	const h = harness();
 	for (const site of [null, undefined, "", "bad site"])

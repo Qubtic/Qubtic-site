@@ -252,6 +252,26 @@ interface SubscriptionSnapshot {
 	current_period_end: string;
 	cancel_at_period_end: boolean;
 }
+export function paidOrder(order: {
+	status: string;
+	amount: number;
+	refunded_amount: number;
+	subtotal_amount?: number | null;
+	discount_amount?: number | null;
+	discount_id?: string | null;
+}) {
+	return (
+		(["paid", "partially_refunded"].includes(order.status) &&
+			order.amount > order.refunded_amount) ||
+		(order.status === "paid" &&
+			order.amount === 0 &&
+			order.refunded_amount === 0 &&
+			Number.isSafeInteger(order.subtotal_amount) &&
+			(order.subtotal_amount ?? 0) > 0 &&
+			order.discount_amount === order.subtotal_amount &&
+			!!order.discount_id)
+	);
+}
 export function normalizeState(
 	state: models.CustomerState,
 	entries: Catalog[],
@@ -315,16 +335,13 @@ export function normalizeState(
 			},
 		];
 	});
-	const paid = (order: (typeof mappedOrders)[number]) =>
-		["paid", "partially_refunded"].includes(order.status) &&
-		order.amount > order.refunded_amount;
 	const grants = benefitGrants.flatMap((grant) => {
 		const lifetime = entries.some(
 			(row) =>
 				row.plugin_slug === grant.plugin_slug &&
 				row.cadence === "lifetime" &&
 				mappedOrders.some(
-					(order) => order.product_id === row.product_id && paid(order),
+					(order) => order.product_id === row.product_id && paidOrder(order),
 				),
 		);
 		const eligible = subscriptions.filter(
@@ -335,7 +352,7 @@ export function normalizeState(
 				mappedOrders.some(
 					(order) =>
 						order.subscription_id === sub.id &&
-						paid(order) &&
+						paidOrder(order) &&
 						Date.parse(order.created_at) >=
 							Date.parse(sub.current_period_start),
 				),

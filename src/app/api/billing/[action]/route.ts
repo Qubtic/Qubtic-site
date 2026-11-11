@@ -15,6 +15,7 @@ import {
 	identity,
 	limit,
 	paidAccess,
+	paidOrder,
 	polar,
 	processEvent,
 	safePolarUrl,
@@ -195,7 +196,7 @@ async function handle(request: Request, { params }: Context) {
 			const orderQuery = db
 				.from("billing_orders")
 				.select(
-					"polar_order_id,cadence,status,amount,subtotal_amount,discount_amount,refunded_amount,currency,purchased_at,site_id,customer_id",
+					"polar_order_id,cadence,status,amount,subtotal_amount,discount_amount,discount_id,refunded_amount,currency,purchased_at,site_id,customer_id",
 				)
 				.eq("environment", env)
 				.eq("plugin_slug", user.plugin)
@@ -224,13 +225,13 @@ async function handle(request: Request, { params }: Context) {
 				.eq("payload->>plugin_slug", user.plugin);
 			check(refundError);
 			let isPro = await paidAccess(user.id, user.plugin, site);
+			const hasLife = (orders || []).some(
+				(o) =>
+					o.cadence === "lifetime" &&
+					(!siteScoped || (!!site && o.site_id === site)) &&
+					paidOrder(o),
+			);
 			if (!isPro && siteScoped && site) {
-				const hasLife = (orders || []).some(
-					(o) =>
-						o.cadence === "lifetime" &&
-						["paid", "partially_refunded"].includes(o.status) &&
-						o.amount > o.refunded_amount,
-				);
 				const hasActiveSub = (subscriptions || []).some(
 					(s) =>
 						s.status === "active" &&
@@ -264,6 +265,7 @@ async function handle(request: Request, { params }: Context) {
 						currency: job.payload?.currency,
 					})),
 				is_pro: isPro,
+				has_lifetime: isPro && hasLife,
 				orders: (orders || []).map((o) => ({
 					polar_order_id: o.polar_order_id,
 					cadence: o.cadence,
@@ -405,7 +407,7 @@ async function handle(request: Request, { params }: Context) {
 			const baseLifeQuery = db
 				.from("billing_orders")
 				.select(
-					"polar_order_id,cadence,status,amount,refunded_amount,currency,purchased_at,site_id,customer_id",
+					"polar_order_id,cadence,status,amount,subtotal_amount,discount_amount,discount_id,refunded_amount,currency,purchased_at,site_id,customer_id",
 				)
 				.eq("environment", env)
 				.eq("plugin_slug", user.plugin)
@@ -441,9 +443,7 @@ async function handle(request: Request, { params }: Context) {
 			const activeSub = (activeSubsResult.data || []).find(
 				(s) => Date.parse(s.current_period_end) > Date.now(),
 			);
-			const hasLifetime = (lifeOrdersResult.data || []).some(
-				(o) => o.amount > o.refunded_amount,
-			);
+			const hasLifetime = (lifeOrdersResult.data || []).some(paidOrder);
 
 			let isUpgrade = false;
 			let upgradeFrom: Cadence | null = null;

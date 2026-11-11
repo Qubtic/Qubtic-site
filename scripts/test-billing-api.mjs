@@ -1441,6 +1441,89 @@ test("monthly subscriber attempting duplicate monthly checkout is rejected", asy
 	assert.match(response.data.error, /Pro is already active/);
 });
 
+test("canonical Lifetime status and duplicate checkout recognize fully discounted orders", async () => {
+	for (const plugin of [
+		"frame-drop",
+		"whatsapp-commerce",
+		"telegram-commerce",
+	]) {
+		const h = harness(plugin);
+		const order = {
+			environment: "sandbox",
+			polar_order_id: "discounted",
+			customer_id: h.customer,
+			plugin_slug: plugin,
+			cadence: "lifetime",
+			product_id: h.product,
+			status: "paid",
+			amount: 0,
+			subtotal_amount: 4999,
+			discount_amount: 4999,
+			discount_id: randomUUID(),
+			refunded_amount: 0,
+			currency: "usd",
+			purchased_at: new Date().toISOString(),
+			site_id: "site-a",
+		};
+		h.tables.billing_orders.push(order);
+		h.setPaid(true);
+		assert.equal((await h.request("status")).data.has_lifetime, true);
+		for (const cadence of ["monthly", "yearly", "lifetime"]) {
+			const result = await h.request("checkout", {
+				cadence,
+				request_id: randomUUID(),
+			});
+			assert.equal(result.status, 409);
+		}
+		assert.equal(
+			h.calls.some((c) => c.method === "checkout"),
+			false,
+		);
+		if (plugin !== "frame-drop") {
+			assert.equal(
+				(await h.request("status", undefined, "token", "site-b")).data
+					.has_lifetime,
+				false,
+			);
+			assert.equal(
+				(await h.request("status", undefined, "token", "")).data.has_lifetime,
+				false,
+			);
+		}
+		order.plugin_slug = "another-plugin";
+		assert.equal((await h.request("status")).data.has_lifetime, false);
+		order.plugin_slug = plugin;
+		for (const patch of [
+			{ status: "pending" },
+			{ status: "refunded" },
+			{ refunded_amount: 1 },
+			{ subtotal_amount: 0, discount_amount: 0 },
+			{ discount_id: null },
+			{ amount: 4999, refunded_amount: 4999 },
+		]) {
+			const saved = { ...order };
+			Object.assign(order, patch);
+			assert.equal(
+				(await h.request("status")).data.has_lifetime,
+				false,
+				JSON.stringify(patch),
+			);
+			Object.assign(order, saved);
+		}
+		order.amount = 4999;
+		assert.equal((await h.request("status")).data.has_lifetime, true);
+		order.amount = 0;
+		h.setPaid(false);
+		h.setApiError(true);
+		assert.equal((await h.request("status")).data.has_lifetime, false);
+		const result = await h.request("checkout", {
+			cadence: "lifetime",
+			request_id: randomUUID(),
+		});
+		assert.equal(result.status, 409);
+	}
+});
+
 test("lifetime subscriber attempting any checkout is rejected", async () => {
 	const h = harness();
 	h.tables.billing_orders.push({

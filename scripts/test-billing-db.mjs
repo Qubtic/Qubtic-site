@@ -82,6 +82,105 @@ test('discount migration stores provider subtotal, discount and charged amount i
 });
 
 
+test("discounted-order migration is repeatable and guards only qualifying Lifetime purchases", async () => {
+	const db = await setup();
+	try {
+		for (const file of [
+			"billing_discounts.sql",
+			"billing_sites.sql",
+			"billing_telegram_sites.sql",
+			"billing_environments.sql",
+			"billing_discounted_orders.sql",
+			"billing_discounted_orders.sql",
+		])
+			await db.exec(
+				await readFile(new URL("../supabase/" + file, import.meta.url), "utf8"),
+			);
+		const customer = randomUUID(),
+			user = randomUUID(),
+			product = randomUUID(),
+			discount = randomUUID();
+		await db.query(
+			"insert into billing_customers(id,email,environment)values($1,'zero@example.test','sandbox')",
+			[customer],
+		);
+		await db.query(
+			"insert into framer_users(id,email,plugin_slug,auth_token)values($1,'zero@example.test','telegram-commerce','zero-token')",
+			[user],
+		);
+		for (const plugin of ["whatsapp-commerce", "telegram-commerce"]) {
+			await db.query(
+				"insert into billing_orders(environment,polar_order_id,customer_id,plugin_slug,cadence,product_id,status,amount,subtotal_amount,discount_amount,discount_id,refunded_amount,currency,purchased_at,site_id)values('sandbox',$1,$2,$3,'lifetime',$4,'paid',0,4999,4999,$5,0,'usd',now(),'site-a')",
+				[plugin, customer, plugin, product, discount],
+			);
+			const purchase = async (site = "site-a", app = plugin) =>
+				(
+					await db.query("select billing_site_has_purchase($1,$2,$3) as paid", [
+						customer,
+						site,
+						app,
+					])
+				).rows[0].paid;
+			const checkout = () =>
+				db.query(
+					"insert into billing_checkouts(user_id,customer_id,environment,plugin_slug,cadence,product_id,request_key,site_id)values($1,$2,'sandbox',$3,'lifetime',$4,$5,'site-a')",
+					[user, customer, plugin, product, randomUUID()],
+				);
+			assert.equal(await purchase(), true);
+			assert.equal(await purchase("site-b"), false);
+			assert.equal(await purchase("site-a", "frame-drop"), false);
+			await assert.rejects(checkout, /already has a Pro purchase/);
+			if (plugin === "whatsapp-commerce")
+				assert.equal(
+					(
+						await db.query(
+							"select billing_site_has_purchase($1,'site-a') as paid",
+							[customer],
+						)
+					).rows[0].paid,
+					true,
+				);
+			for (const change of [
+				"status='pending'",
+				"status='refunded'",
+				"status='partially_refunded'",
+				"refunded_amount=1",
+				"subtotal_amount=0,discount_amount=0",
+				"discount_amount=4998",
+				"discount_amount=5000",
+				"discount_id=null",
+				"amount=4999,refunded_amount=4999",
+			]) {
+				await db.query(
+					"update billing_orders set " + change + " where polar_order_id=$1",
+					[plugin],
+				);
+				assert.equal(await purchase(), false, change);
+				await checkout();
+				await db.exec("update billing_checkouts set status='succeeded'");
+				await db.query(
+					"update billing_orders set status='paid',amount=0,subtotal_amount=4999,discount_amount=4999,discount_id=$2,refunded_amount=0 where polar_order_id=$1",
+					[plugin, discount],
+				);
+			}
+			await db.query(
+				"update billing_orders set status='partially_refunded',amount=4999,refunded_amount=1 where polar_order_id=$1",
+				[plugin],
+			);
+			assert.equal(await purchase(), true);
+			await assert.rejects(checkout, /already has a Pro purchase/);
+		}
+		for (const role of ["anon", "authenticated", "service_role"]) {
+			const { rows } = await db.query(
+				`select has_function_privilege('${role}','billing_order_is_paid(billing_orders)','EXECUTE') as allowed`,
+			);
+			assert.equal(rows[0].allowed, role === "service_role");
+		}
+	} finally {
+		await db.close();
+	}
+});
+
 test("commerce SQL isolates plugins sharing a customer and site, preserves upgrades and RPC permissions", async () => {
 	const db = await setup();
 	try {

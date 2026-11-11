@@ -2,6 +2,20 @@
 
 Checked on 2026-11-04 using the configured Polar organizations and Supabase project. No provider secrets or customer records are included here.
 
+## Fully discounted Lifetime purchases (2026-11-12)
+
+A paid Lifetime order with a 100% coupon has a zero total. The old positive-net-payment check rejected it even when the provider confirmed payment and the original checkout was bound to the correct site.
+
+Deploy this correction in this order:
+
+1. Apply `supabase/billing_discounted_orders.sql` in Supabase after `billing_discounts.sql`, `billing_telegram_sites.sql`, and `billing_environments.sql`. It is repeatable and preserves existing site assignments. Do not reapply those older migrations afterward: they restore the old payment predicates.
+2. Deploy the updated Qubtic server and install the rebuilt production Telegram Commerce plugin.
+3. On the original purchased Framer site, sign in to the purchasing account and select **Refresh billing**. This reconciles the provider state and rebuilds the entitlement; do not purchase again.
+
+The server accepts zero-total orders only when paid, unrefunded, and fully discounted from a positive subtotal with a provider discount ID. Existing benefit, ownership, environment, and saved site-binding checks still apply. The plugin uses the server's `has_lifetime` plus `is_pro` flags rather than inferring access from a zero-total order.
+
+This correction has not been applied to the live database or deployment automatically. The remaining sections describe the earlier November 4 repair; their no-new-migration statement does not apply to this correction.
+
 ## What was repaired
 
 - Telegram's production products, benefits, billing intervals, prices, and token read permissions validated against Polar. Supabase had no production catalog records. The existing catalog RPC synchronized its three production plans.
