@@ -218,6 +218,8 @@ function harness(plugin = "whatsapp-commerce") {
 				prices: [
 					{
 						product_id: id,
+						recurring_interval:
+							id === product ? null : id === monthlyProduct ? "month" : "year",
 						source: "catalog",
 						amount_type: "fixed",
 						price_amount: 4900,

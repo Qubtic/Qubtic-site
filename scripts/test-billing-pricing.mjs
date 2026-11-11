@@ -230,6 +230,30 @@ test("discount duration describes first invoice, all invoices or calendar months
 	}
 });
 
+test("Polar one-time prices with an explicit null interval quote full and discounted Lifetime prices", async () => {
+	const p = product();
+	Object.assign(p, {
+		is_recurring: false,
+		recurring_interval: null,
+		recurring_interval_count: null,
+	});
+	p.prices[0].recurring_interval = null;
+	const sdk = setup(p).sdk;
+	const plan = { ...row, cadence: "lifetime" };
+	const full = await quotePlan(sdk, plan, undefined, "org");
+	assert.equal(full.available, true);
+	assert.equal(full.amount_due, 999);
+	assert.equal(full.discount_amount, 0);
+	const discounted = await quotePlan(sdk, plan, config, "org");
+	assert.equal(discounted.amount_due, 749);
+	assert.equal(discounted.discount_amount, 250);
+	p.prices[0].recurring_interval = "year";
+	await assert.rejects(
+		() => quotePlan(sdk, plan, config, "org"),
+		/price does not match/,
+	);
+});
+
 test("tax uncertainty never invents tax or claims a checkout total", async () => {
 	for (const tax_behavior of [null, "inclusive", "exclusive"]) {
 		const p = product();

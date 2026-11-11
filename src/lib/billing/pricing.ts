@@ -80,7 +80,9 @@ export async function quotePlan(
 		price.product_id !== row.product_id ||
 		price.source !== "catalog" ||
 		("recurring_interval" in price &&
-			(row.cadence === "lifetime" || price.recurring_interval !== interval))
+			(row.cadence === "lifetime"
+				? price.recurring_interval != null
+				: price.recurring_interval !== interval))
 	)
 		throw new Error(
 			"Polar price does not match the catalog product or plan cadence.",
