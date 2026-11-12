@@ -453,6 +453,10 @@ function harness(plugin = "whatsapp-commerce") {
 		yearlyProduct,
 		benefit,
 		discountId,
+        setLifetimeOnlyCatalog: () => {
+            tables.billing_catalog = tables.billing_catalog.filter(row => row.cadence === 'lifetime');
+            desiredCatalog.splice(0, desiredCatalog.length, ...structuredClone(tables.billing_catalog));
+        },
 		setPaid: (v) => (paid = v),
 		setDbError: (v) => (databaseError = v),
 		setApiError: (v) => (apiError = v),
@@ -1754,4 +1758,14 @@ test("sandbox FrameDrop pricing is public while status and checkout still requir
   assert.equal(result.subscriptions, undefined);
   assert.equal((await h.request("status", undefined, "")).status, 401);
   assert.equal((await h.request("checkout", { cadence: "lifetime", request_id: randomUUID() }, "")).status, 401);
+});
+
+
+test('FrameDrop Lifetime-only catalog creates checkout without recurring products', async () => {
+ const h = harness('frame-drop'); h.setLifetimeOnlyCatalog();
+ const result = await h.request('checkout',{cadence:'lifetime',request_id:randomUUID(),replace_previous:true});
+ assert.equal(result.status,200,JSON.stringify(result.data));
+ assert.match(result.data.url,/sandbox/);
+ const unsupported=await h.request('checkout',{cadence:'monthly',request_id:randomUUID()});
+ assert.equal(unsupported.status,400);
 });

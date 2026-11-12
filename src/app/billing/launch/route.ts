@@ -3,7 +3,7 @@ export function GET() {
   return new Response(`<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Opening secure checkout | Qubtic</title><meta name="robots" content="noindex, nofollow">
-<link rel="stylesheet" href="/billing-launch.css?v=4"><script src="/billing-launch.js?v=4" defer></script></head>
+<link rel="stylesheet" href="/billing-launch.css?v=4"><script src="/billing-launch.js?v=5" defer></script></head>
 <body><main class="billing-launch"><section class="billing-launch__content" aria-labelledby="billing-launch-title">
 <span id="launch-spinner" class="billing-launch__spinner" aria-hidden="true"></span>
 <h1 id="billing-launch-title">Opening Polar checkout</h1>

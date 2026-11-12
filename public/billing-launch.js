@@ -50,6 +50,7 @@
   }
   function receive(event) {
     if (!opener || event.source !== opener || event.data?.channel !== channel) return;
+    if (event.data.type === 'qubtic-billing-error') { fail('Checkout could not be created. Return to the plugin for details.'); return; }
     if (event.data.type === 'qubtic-billing-checkout' && typeof event.data.url === 'string') navigateTo(event.data.url);
   }
   if (!['sandbox', 'production'].includes(selected) || !/^[0-9a-f-]{36}$/i.test(channel)) {

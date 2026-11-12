@@ -78,3 +78,13 @@ test('rejects unsafe redirects and messages from unrelated windows', async () =>
   assert.equal(bad.navigations.length, 0);
   assert.match(bad.element('launch-status').textContent, /invalid destination/);
 });
+
+
+test('a bound checkout creation error stops the launcher spinner with recovery', async () => {
+ const h=harness();
+ const receive=h.listeners.get('message');
+ receive({source:h.opener,data:{channel:h.window.location.hash.slice(1),type:'qubtic-billing-error'}});
+ assert.equal(h.element('launch-spinner').hidden,true);
+ assert.equal(h.element('launch-recovery').hidden,false);
+ assert.match(h.element('launch-status').textContent,/could not be created/);
+});

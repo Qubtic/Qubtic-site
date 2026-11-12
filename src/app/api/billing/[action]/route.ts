@@ -544,9 +544,13 @@ async function handle(request: Request, { params }: Context) {
 
 			const rows = entries.filter((item) => item.plugin_slug === user.plugin);
 			const checkoutOrder =
-				user.plugin === "telegram-commerce"
-					? ["monthly", "yearly", "lifetime"]
-					: ["yearly", "monthly", "lifetime"];
+				user.plugin === "frame-drop"
+                    ? ["lifetime"]
+                    : user.plugin === "telegram-commerce"
+                        ? ["monthly", "yearly", "lifetime"]
+                        : ["yearly", "monthly", "lifetime"];
+            if (user.plugin === "frame-drop" && body.cadence && body.cadence !== "lifetime")
+                throw new BillingError("FrameDrop offers Lifetime checkout only.", 400);
 			const selectable = checkoutOrder.map((cadence) =>
 				rows.find((item) => item.cadence === cadence),
 			);
