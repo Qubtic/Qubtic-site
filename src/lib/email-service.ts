@@ -1,3 +1,4 @@
+import { purchaseNotificationRows } from './billing/purchase-notifications';
 import { loadManagedMail } from './plugin-control';
 import nodemailer from "nodemailer";
 import fs from "fs";
@@ -103,6 +104,9 @@ export async function getMailTransporter() {
 		host,
 		port,
 		secure,
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 10000,
 		auth: {
 			user,
 			pass,
@@ -930,14 +934,20 @@ export async function sendTeamEvent(event: 'signup' | 'signin' | 'purchase', plu
  const {error}=await supabase.from('plugin_team_events').upsert({id:event+':'+eventId,event,plugin,email,recipient:mail.teamEmail},{onConflict:'id',ignoreDuplicates:true});
  if(error)throw new Error('Unable to queue team alert.');
 }
+/** Queue both recipients atomically; repeated provider events preserve delivered rows. */
+export async function queueFrameDropPurchase(input: Parameters<typeof purchaseNotificationRows>[0]) {
+ const {supabase}=await import('./supabase');
+ const {error}=await supabase.from('plugin_team_events').upsert(purchaseNotificationRows(input),{onConflict:'id',ignoreDuplicates:true});
+ if(error)throw new Error('Unable to queue purchase confirmations.');
+}
 export async function flushTeamEvents() {
  const {supabase}=await import('./supabase');
  const {data,error}=await supabase.rpc('claim_plugin_team_events');
  if(error)throw new Error('Team notification queue unavailable.');
- for(const item of (data||[]) as {id:string;event:'signup'|'signin'|'purchase'|'manual';plugin:string;email:string;recipient?:string;subject?:string;body?:string}[]) {
+ for(const item of (data||[]) as {id:string;event:'signup'|'signin'|'purchase'|'purchase_receipt'|'manual';plugin:string;email:string;recipient?:string;subject?:string;body?:string}[]) {
   try {
    const mail=await loadManagedMail();
-   if(item.event==='manual'||mail[item.event]) { const transport=await getMailTransporter();await transport.sendMail({from:await getSender(item.plugin),to:item.event==='manual'?item.email:item.recipient||mail.teamEmail,subject:item.event==='manual'?item.subject:`Qubtic: ${item.event} · ${getPluginMetadata(item.plugin).name}`,text:item.event==='manual'?item.body:`Event: ${item.event}\nPlugin: ${item.plugin}\nAccount: ${item.email}\nReference: ${item.id}`}); }
+   if(item.event==='manual'||item.event==='purchase_receipt'||mail[item.event]) { const transport=await getMailTransporter();await transport.sendMail({from:await getSender(item.plugin),to:item.event==='manual'?item.email:item.recipient||mail.teamEmail,subject:item.subject||`Qubtic: ${item.event} · ${getPluginMetadata(item.plugin).name}`,text:item.body||`Event: ${item.event}\nPlugin: ${item.plugin}\nAccount: ${item.email}\nReference: ${item.id}`}); }
    await supabase.from('plugin_team_events').update({delivered_at:new Date().toISOString()}).eq('id',item.id);
   } catch { /* Lease expires for a bounded retry; credentials and provider payloads stay private. */ }
  }

@@ -1,5 +1,5 @@
-import { sendTeamEvent } from '../email-service';
-import { loadManagedBilling } from '../plugin-control';
+import { sendTeamEvent, queueFrameDropPurchase, flushTeamEvents } from '../email-service';
+import { loadManagedMail, loadManagedBilling } from '../plugin-control';
 import { configuredCatalog, catalogMatches, resolveBillingConfig, parseBillingEnvironment, type BillingEnvironment } from "./config.mjs";
 import { processUpgradeRefunds } from "./upgrade-refunds";
 import "server-only";
@@ -632,11 +632,9 @@ export async function webhook(request: Request) {
 		);
 	check(error);
 	await processEvent(eventId);
-    if(event.type==='order.paid') {
-      const data=JSON.parse(raw).data;
-      const {data:binding}=await db.from('billing_checkouts').select('plugin_slug').eq('environment',env).eq('polar_checkout_id',data.checkout_id).maybeSingle();
-      if(binding && data.customer?.email)await sendTeamEvent('purchase',binding.plugin_slug,data.customer.email,env+':'+eventId);
-    }
+    // The outbox survives SMTP errors; the notification worker retries leased messages.
+    if(event.type==='order.paid') { try { await flushTeamEvents(); } catch { /* Scheduled worker retries. */ } }
+
 }
 export async function processEvent(eventId: string) {
 	const db = database();
@@ -725,6 +723,21 @@ export async function processEvent(eventId: string) {
 			}
 		}
 	}
+  if (type === 'order.paid') {
+    const paid = event.payload.data as { id?: string; checkout_id?: string; customer_id?: string; total_amount?: number; currency?: string; customer?: { email?: string; id?: string } };
+    const { data: binding, error: bindingError } = await db.from('billing_checkouts').select('plugin_slug,customer_id').eq('environment',environment()).eq('polar_checkout_id',paid.checkout_id || '').maybeSingle();
+    check(bindingError);
+    if (binding?.plugin_slug === 'frame-drop') {
+      const { data: account, error: accountError } = await db.from('billing_customers').select('email,polar_customer_id').eq('environment',environment()).eq('id',binding.customer_id).maybeSingle();
+      check(accountError);
+      if (!account?.email || account.polar_customer_id !== (paid.customer_id || paid.customer?.id) || !paid.id) throw new BillingError('Purchase notification account mismatch.');
+      const mail = await loadManagedMail();
+      await queueFrameDropPurchase({orderId:paid.id,environment:environment(),email:account.email,teamEmail:mail.teamEmail || '',amount:paid.total_amount,currency:paid.currency});
+    } else if (binding && paid.customer?.email) {
+      await sendTeamEvent('purchase',binding.plugin_slug,paid.customer.email,environment()+':'+(paid.id || eventId));
+    }
+  }
+
 	const { error: done } = await db
 		.from("billing_webhook_events")
 		.update({

@@ -541,6 +541,7 @@ test("SMTP delivery uses ENV without requiring database configuration or its enc
 			SMTP_FROM_EMAIL: "sender@example.test",
 		});
 		const mail = load("src/lib/email-service.ts", {
+            "./billing/purchase-notifications": load("src/lib/billing/purchase-notifications.ts"),
 			"./plugin-control": {
 				loadManagedMail: async () => {
 					throw Error("Must not read DB for transport/sender");
