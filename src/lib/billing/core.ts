@@ -560,6 +560,17 @@ export async function synchronize(customerId: string) {
 	);
 	check(applyError);
 	if (applied === false) return;
+  // Reconciliation is also a recovery path when a paid webhook is delayed or disabled.
+  const frameDropProducts = new Set(entries.filter(entry => entry.plugin_slug === 'frame-drop').map(entry => entry.product_id));
+  for (const order of orders) {
+    const binding = (checkouts || []).find(checkout => checkout.polar_checkout_id === order.checkout_id && checkout.plugin_slug === 'frame-drop');
+    if (binding && order.product_id && frameDropProducts.has(order.product_id) && paidOrder({ status: order.status, amount: order.total_amount, refunded_amount: order.refunded_amount, subtotal_amount: order.subtotal_amount, discount_amount: order.discount_amount, discount_id: order.discount_id }) && order.customer_id === state.id) {
+      const mail = await loadManagedMail();
+      await queueFrameDropPurchase({ orderId: order.id, environment: environment(), email: customer.email, teamEmail: mail.teamEmail || '', amount: order.total_amount, currency: order.currency });
+    }
+  }
+  try { await flushTeamEvents(); } catch { /* A queued confirmation does not block verified access. */ }
+
 	await processUpgradeRefunds({
 		db,
 		sdk,

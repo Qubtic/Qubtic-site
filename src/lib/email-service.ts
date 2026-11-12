@@ -886,6 +886,8 @@ export async function sendNewUserTeamNotification(
  const identity=user.id||user.email;
  const reference=event==='signup'?String(user.created_at||user.createdAt||identity):new Date().toISOString();
  await sendTeamEvent(event,user.plugin_slug||pluginSlug,user.email,identity+':'+reference);
+ // Await a bounded delivery attempt before the serverless auth request completes.
+ try { await flushTeamEvents(); } catch { /* Durable outbox is retried by the notification worker. */ }
  return {messageId:'queued'};
 }
 
@@ -947,7 +949,7 @@ export async function flushTeamEvents() {
  for(const item of (data||[]) as {id:string;event:'signup'|'signin'|'purchase'|'purchase_receipt'|'manual';plugin:string;email:string;recipient?:string;subject?:string;body?:string}[]) {
   try {
    const mail=await loadManagedMail();
-   if(item.event==='manual'||item.event==='purchase_receipt'||mail[item.event]) { const transport=await getMailTransporter();await transport.sendMail({from:await getSender(item.plugin),to:item.event==='manual'?item.email:item.recipient||mail.teamEmail,subject:item.subject||`Qubtic: ${item.event} · ${getPluginMetadata(item.plugin).name}`,text:item.body||`Event: ${item.event}\nPlugin: ${item.plugin}\nAccount: ${item.email}\nReference: ${item.id}`}); }
+   if(item.event==='manual'||item.event==='purchase_receipt'||mail[item.event]) { const transport=await getMailTransporter();await trackedMail(transport,item.plugin,item.event,{from:await getSender(item.plugin),to:item.event==='manual'?item.email:item.recipient||mail.teamEmail,subject:item.subject||`Qubtic: ${item.event} · ${getPluginMetadata(item.plugin).name}`,text:item.body||`Event: ${item.event}\nPlugin: ${item.plugin}\nAccount: ${item.email}\nReference: ${item.id}`}); }
    await supabase.from('plugin_team_events').update({delivered_at:new Date().toISOString()}).eq('id',item.id);
   } catch { /* Lease expires for a bounded retry; credentials and provider payloads stay private. */ }
  }
@@ -955,7 +957,7 @@ export async function flushTeamEvents() {
 
 async function recordMailDelivery(email:string,plugin:string,event:string,status:string){
  const {supabase}=await import('./supabase');
- await supabase.from('plugin_mail_log').insert({email,plugin,event,status});
+ try { await supabase.from('plugin_mail_log').insert({email,plugin,event,status}); } catch { /* Delivery logging must never cause duplicate SMTP delivery. */ }
 }
 
 async function trackedMail(transport: Awaited<ReturnType<typeof getMailTransporter>>,plugin:string,event:string,message:{from:string;to:string;subject:string;text:string;html?:string;attachments?:ReturnType<typeof getPluginEmailAttachments>}) {
