@@ -105,6 +105,7 @@ export async function POST(request: Request) {
           id: user.id,
           email: user.email,
           name: user.name,
+          avatar_url: typeof user.metadata?.avatar_url === "string" && user.metadata.avatar_url.startsWith("https://") ? user.metadata.avatar_url : undefined,
           plan: user.plan,
           company_name: user.company_name,
           website_url: user.website_url,

@@ -222,3 +222,19 @@ test('Email Commerce alias reuses the existing account and pairing identity', as
  assert.equal(new URL(pair.verification_uri).pathname, '/auth/whatsapp-commerce');
  assert.equal(h.tables.framer_users.length, before);
 });
+
+
+test('FrameDrop durable pairing carries Google avatar and survives duplicate confirmations', async () => {
+ const previous = process.env.NODE_ENV; process.env.NODE_ENV = 'production';
+ try {
+  const h=harness();
+  const {user}=await h.auth.createOrUpdateFramerUser({email:'frame-avatar@example.com',name:'Frame Designer',pluginSlug:'frame-drop',metadata:{email_verified:true,avatar_url:'https://lh3.googleusercontent.com/test-avatar'}});
+  const pair=await h.auth.initiatePairingSession({pluginSlug:'frame-drop'});
+  assert.equal((await h.auth.confirmPairingSession(pair.user_code,user)).success,true);
+  const resolved=await h.auth.resolvePairingSession(pair.device_code);
+  assert.equal(resolved.status,'success');
+  assert.equal(resolved.user.avatar_url,'https://lh3.googleusercontent.com/test-avatar');
+  assert.equal((await h.auth.confirmPairingSession(pair.user_code,user)).success,true);
+  assert.equal((await h.auth.resolvePairingSession(pair.device_code)).auth_token,resolved.auth_token);
+ } finally { if(previous===undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV=previous; }
+});

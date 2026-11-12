@@ -330,7 +330,25 @@ export default function QubticFramerAuthPortal({
 				// ignore
 			}
 
-			const syncTimer = setTimeout(() => {
+			const syncTimer = setTimeout(async () => {
+        // Browser signup success is separate from the plugin's confirmed device authorization.
+        if (pairingCode) {
+          try {
+            const response = await fetch('/api/framer-auth/pair/confirm', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${googleToken}` },
+              body: JSON.stringify({ user_code: pairingCode.trim().toUpperCase() }),
+              signal: AbortSignal.timeout(15000),
+            });
+            const pairing = await response.json();
+            if (!response.ok || !pairing.success) throw new Error('Pairing confirmation failed.');
+            setPairingStatus('confirmed');
+          } catch {
+            setPairingStatus('failed');
+            setErrorMessage('Your account is signed in, but the plugin connection could not be completed. Return to FrameDrop and reconnect.');
+            return;
+          }
+        }
 				const sessionCode =
 					pairingCode ||
 					(isCommerce ? "WC-" : plugin.slug === "key-vault" ? "KV-" : "FD-") +

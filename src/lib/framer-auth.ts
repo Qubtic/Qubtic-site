@@ -39,8 +39,17 @@ function isCommercePlugin(slug?: string): boolean {
   return slug === 'whatsapp-commerce' || slug === 'telegram-commerce';
 }
 
+function usesVerifiedPairing(slug?: string): boolean {
+  return isCommercePlugin(slug) || slug === 'frame-drop';
+}
+
+function pairingAvatar(user: { metadata?: Record<string, unknown>; avatar_url?: string }): string | undefined {
+  const avatar = user.metadata?.avatar_url || user.avatar_url;
+  return typeof avatar === 'string' && /^https:\/\//i.test(avatar) ? avatar : undefined;
+}
+
 function requiresCommercePersistence(slug?: string): boolean {
-  return process.env.NODE_ENV === 'production' && isCommercePlugin(slug);
+  return process.env.NODE_ENV === 'production' && usesVerifiedPairing(slug);
 }
 
 /**
@@ -77,6 +86,7 @@ export interface FramerPairingSessionRecord {
     id: string;
     email: string;
     name?: string;
+    avatar_url?: string;
     company_name?: string;
     website_url?: string;
     plan: string;
@@ -823,11 +833,11 @@ export async function initiatePairingSession(params?: {
     };
     const { error: sbErr } = await supabase.from('framer_pairing_sessions').insert(supabasePayload);
     if (sbErr) {
-      if (isCommercePlugin(pluginSlug) && process.env.NODE_ENV === 'production') throw new Error('Pairing database unavailable.');
+      if (requiresCommercePersistence(pluginSlug)) throw new Error('Pairing database unavailable.');
       console.warn('Supabase framer_pairing_sessions insert error:', sbErr);
     }
   } catch (sbEx) {
-    if (isCommercePlugin(pluginSlug) && process.env.NODE_ENV === 'production') throw new Error('Pairing database unavailable.');
+    if (requiresCommercePersistence(pluginSlug)) throw new Error('Pairing database unavailable.');
     console.warn('Supabase framer_pairing_sessions insert exception:', sbEx);
   }
 
@@ -859,6 +869,8 @@ export async function confirmPairingSession(
     id: string;
     email: string;
     name?: string;
+    metadata?: Record<string, unknown>;
+    avatar_url?: string;
     company_name?: string;
     website_url?: string;
     plan?: string;
@@ -926,13 +938,13 @@ export async function confirmPairingSession(
   session = { ...session };
 
   // Plugin identity is part of the authorization, not just a display label.
-  if (isCommercePlugin(session.plugin_slug) || isCommercePlugin(user?.plugin_slug)) {
+  if (usesVerifiedPairing(session.plugin_slug) || usesVerifiedPairing(user?.plugin_slug)) {
     if (!user || user.plugin_slug !== session.plugin_slug || user.status !== 'active' || !user.auth_token) {
       return { success: false, status: 403, error: 'Sign in to the matching plugin account before connecting.' };
     }
   }
 
-  if (isCommercePlugin(session.plugin_slug)) {
+  if (usesVerifiedPairing(session.plugin_slug)) {
     const verified = user?.auth_token ? await verifyFramerSessionToken(user.auth_token, session.plugin_slug) : null;
     if (!verified || verified.id !== user?.id) {
       return { success: false, status: 403, error: 'Sign in to the matching plugin account before connecting.' };
@@ -955,7 +967,7 @@ export async function confirmPairingSession(
     // The plugin can consume a connection before the portal's duplicate confirmation arrives.
     // Acknowledge only the same still-current account/session within the existing retry window.
     const consumedAge = customNow - new Date(session.updated_at).getTime();
-    if (isCommercePlugin(session.plugin_slug) && user && session.user_data?.id === user.id &&
+    if (usesVerifiedPairing(session.plugin_slug) && user && session.user_data?.id === user.id &&
         session.auth_token === user.auth_token && consumedAge >= 0 && consumedAge < 120000) {
       return { success: true, message: 'Plugin paired successfully' };
     }
@@ -978,6 +990,7 @@ export async function confirmPairingSession(
         id: user.id,
         email: user.email,
         name: user.name,
+        avatar_url: pairingAvatar(user),
         company_name: user.company_name,
         website_url: user.website_url,
         plan: user.plan === 'pro' && !user.is_early_bird ? 'pro' : 'free',
@@ -1016,7 +1029,7 @@ export async function confirmPairingSession(
   }
 
   // Commerce reuses a live account token; never restore a stale token after rotation.
-  if (!isCommercePlugin(session.plugin_slug) && (user?.id || user?.email)) {
+  if (!usesVerifiedPairing(session.plugin_slug) && (user?.id || user?.email)) {
     try {
       let uQuery = supabase.from('framer_users').update({
         auth_token: session.auth_token,
@@ -1115,7 +1128,7 @@ export async function resolvePairingSession(
         return { success: false, status: 503, error: 'Pairing database unavailable.' };
       }
     }
-    return { success: true, status: 'success', auth_token: account.auth_token, user: { id: account.id, email: account.email, name: account.name, company_name: account.company_name, website_url: account.website_url, plan: account.plan, status: account.status, is_early_bird: false } };
+    return { success: true, status: 'success', auth_token: account.auth_token, user: { id: account.id, email: account.email, name: account.name, avatar_url: pairingAvatar(account), company_name: account.company_name, website_url: account.website_url, plan: account.plan, status: account.status, is_early_bird: false } };
   }
 
   // Rate limiting check
