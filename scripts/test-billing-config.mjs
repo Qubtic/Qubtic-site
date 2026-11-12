@@ -193,3 +193,11 @@ test("Email Commerce uses current keys while preserving existing paid-site ident
  assert.throws(() => configuredCatalog(partial), /POLAR_EMAIL_COMMERCE_YEARLY_PRODUCT_ID/);
  assert.throws(() => configuredCatalog({ ...legacy, ...renamed, POLAR_EMAIL_COMMERCE_MONTHLY_PRODUCT_ID: randomUUID() }), /Conflicting Email Commerce/);
 });
+
+
+test("managed FrameDrop accepts one Lifetime product without weakening commerce catalogs", () => {
+ const row = {plugin_slug:'frame-drop',cadence:'lifetime',product_id:randomUUID(),benefit_id:randomUUID()};
+ assert.equal(configuredCatalog({POLAR_ENVIRONMENT:'sandbox',POLAR_EXTRA_CATALOG_JSON:JSON.stringify([row])}).length,1);
+ for(const slug of ['telegram-commerce','whatsapp-commerce']) assert.throws(()=>configuredCatalog({POLAR_ENVIRONMENT:'sandbox',POLAR_EXTRA_CATALOG_JSON:JSON.stringify([{...row,plugin_slug:slug}])}),/Configure monthly/);
+ assert.throws(()=>configuredCatalog({POLAR_ENVIRONMENT:'sandbox',POLAR_EXTRA_CATALOG_JSON:JSON.stringify([{...row,cadence:'monthly'}])}),/Configure monthly/);
+});

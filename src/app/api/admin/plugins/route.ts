@@ -133,8 +133,11 @@ export async function POST(request: Request) {
                 }[];
             }) => {
                 if (!Array.isArray(p.plans))
-                    throw new Error('Each enabled plugin needs three plans.');
-                return p.plans.map(plan => ({ plugin_slug: p.slug, cadence: plan.cadence, product_id: plan.productId, benefit_id: plan.benefitId }));
+                    throw new Error('Each enabled plugin needs a valid plan list.');
+                // FrameDrop offers Lifetime only; blank recurring fields are not products.
+                const offered = p.slug === 'frame-drop' ? p.plans.filter(plan => plan.productId?.trim()) : p.plans;
+                if (!offered.length) throw new Error(`Configure at least one product for ${p.slug}.`);
+                return offered.map(plan => ({ plugin_slug: p.slug, cadence: plan.cadence, product_id: plan.productId, benefit_id: plan.benefitId }));
             });
             catalog = configuredCatalog({ POLAR_ENVIRONMENT: environment, POLAR_EXTRA_CATALOG_JSON: JSON.stringify(rows) });
             if (settings.enabled) {
@@ -161,8 +164,12 @@ export async function POST(request: Request) {
             settings = mailSettings(settings);
         }
         const { error } = await supabase.rpc('publish_plugin_control', { p_id: id, p_settings: settings, p_secrets: id === 'mail' ? '' : encryptSecrets(secrets, process.env.PLUGIN_CONFIG_ENCRYPTION_KEY, id), p_revision: revision, p_actor: session.id, p_catalog: catalog } as never);
-        if (error)
+        if (error) {
+            // A historical product binding is immutable, even after a product is renamed in Polar.
+            if (error.code === 'P0001' && error.message === 'A historical product cannot change plugin or cadence')
+                throw new Error('This Polar product is already bound to another plugin or billing cadence. Create a new product with its own Pro benefit; renaming a product does not change its billing ownership. No changes were saved.');
             throw new Error(error.code === 'P0001' ? 'Configuration changed. Reload before saving.' : 'Unable to publish configuration. No changes were saved.');
+        }
         const { data: auditRow } = await supabase.from('plugin_control_audit').select('id,undo_until').eq('config_id', id).eq('revision', revision + 1).eq('actor', session.id).maybeSingle();
         return Response.json({ success: true, undo: auditRow ? { id: String(auditRow.id), undoUntil: auditRow.undo_until, action: 'undo' } : null }, { headers });
     }

@@ -137,9 +137,12 @@ export function configuredCatalog(env) {
 		benefits.set(row.benefit_id, row.plugin_slug);
 		plugins.set(row.plugin_slug, row.benefit_id);
 	}
-	for (const slug of plugins.keys())
-		if (rows.filter((row) => row.plugin_slug === slug).length !== 3)
+	for (const slug of plugins.keys()) {
+		const offered = rows.filter(row => row.plugin_slug === slug);
+		const lifetimeOnly = slug === 'frame-drop' && offered.length === 1 && offered[0].cadence === 'lifetime';
+		if (!lifetimeOnly && offered.length !== 3)
 			throw new Error(`Configure monthly, yearly, and lifetime for ${slug}.`);
+	}
 	return rows;
 }
 export function configurationProblems(env) {
