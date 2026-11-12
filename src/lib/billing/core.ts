@@ -207,7 +207,7 @@ export function safePolarUrl(value: string) {
 		throw new BillingError("Invalid checkout destination.");
 	return url.href;
 }
-const siteBillingPlugins = ["whatsapp-commerce", "telegram-commerce"];
+const siteBillingPlugins = ["whatsapp-commerce", "telegram-commerce", "frame-drop"];
 export async function paidAccess(
 	userId: string,
 	plugin: string,

@@ -1483,15 +1483,15 @@ test("canonical Lifetime status and duplicate checkout recognize fully discounte
 			h.calls.some((c) => c.method === "checkout"),
 			false,
 		);
-		if (plugin !== "frame-drop") {
+		if (["frame-drop","whatsapp-commerce","telegram-commerce"].includes(plugin)) {
 			assert.equal(
 				(await h.request("status", undefined, "token", "site-b")).data
 					.has_lifetime,
 				false,
 			);
 			assert.equal(
-				(await h.request("status", undefined, "token", "")).data.has_lifetime,
-				false,
+				(await h.request("status", undefined, "token", "")).status,
+				400,
 			);
 		}
 		order.plugin_slug = "another-plugin";
@@ -1768,4 +1768,14 @@ test('FrameDrop Lifetime-only catalog creates checkout without recurring product
  assert.match(result.data.url,/sandbox/);
  const unsupported=await h.request('checkout',{cadence:'monthly',request_id:randomUUID()});
  assert.equal(unsupported.status,400);
+});
+
+test('Frame Drop same account cannot reuse a purchased site license on another project',async()=>{
+ const h=harness('frame-drop');h.setLifetimeOnlyCatalog();h.setPaid(true);
+ assert.equal((await h.request('status',undefined,'token','site-a')).data.is_pro,true);
+ assert.equal((await h.request('status',undefined,'token','site-b')).data.is_pro,false);
+ assert.equal((await h.request('status',undefined,'token','')).status,400);
+ const checkout=await h.request('checkout',{cadence:'lifetime',request_id:randomUUID(),replace_previous:true},'token','site-b');
+ assert.equal(checkout.status,200,JSON.stringify(checkout.data));
+ assert.ok(h.tables.billing_checkouts.some(row=>row.site_id==='site-b'&&row.plugin_slug==='frame-drop'));
 });

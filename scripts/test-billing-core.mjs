@@ -361,3 +361,16 @@ test("stale snapshots and unassigned historical subscriptions never trigger upgr
 	await h.core.synchronize("customer");
 	assert.deepEqual(h.revoked, []);
 });
+
+test('Frame Drop normalized grants retain exact checkout site assignment',()=>{
+ const h=harness();
+ h.entries.push({plugin_slug:'frame-drop',cadence:'lifetime',product_id:'frame-drop-lifetime',benefit_id:'frame-drop',environment:'sandbox',enabled:true});
+ h.state.granted_benefits.push({benefit_id:'frame-drop'});
+ h.purchase('frame-drop','site-a');
+ const snapshot=h.snapshot();
+ assert.equal(snapshot.siteGrants.filter(g=>g.plugin_slug==='frame-drop').length,1);
+ assert.equal(snapshot.siteGrants.find(g=>g.plugin_slug==='frame-drop').site_id,'site-a');
+ assert.equal(snapshot.orders.find(o=>o.plugin_slug==='frame-drop').site_id,'site-a');
+ h.checkouts.length=0;
+ assert.equal(h.snapshot().siteGrants.filter(g=>g.plugin_slug==='frame-drop').length,0);
+});

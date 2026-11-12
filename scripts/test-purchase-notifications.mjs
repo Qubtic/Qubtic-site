@@ -67,3 +67,14 @@ test('outbox suppresses duplicate queued orders and retries only failed SMTP mes
     if(previousPass===undefined)delete process.env.SMTP_PASS;else process.env.SMTP_PASS=previousPass;
   }
 });
+
+
+test('signup delivery uses the existing formatted team email with saved dashboard details', async () => {
+ const sent=[]; let row;
+ const profile={id:'saved-user',email:'new@example.test',name:'New Designer',plugin_slug:'frame-drop',plan:'free',created_at:new Date().toISOString(),metadata:{email_verified:true,auth_provider:'google'}};
+ const query={select(){return this;},eq(){return this;},async maybeSingle(){return {data:profile,error:null};}};
+ const db={from(table){if(table==='framer_users')return query;return {upsert:async item=>{row=item;return {error:null};},update:()=>({eq:async()=>({error:null})}),insert:async()=>({error:null})};},rpc:async()=>({data:row?[row]:[],error:null})};
+ const email=load('../src/lib/email-service.ts',{'./billing/purchase-notifications':templates,'./plugin-control':{loadManagedMail:async()=>({signup:true,teamEmail:'team@example.test'})},'./supabase':{supabase:db},'./logoAssets':{FRAMEDROP_ICON_BASE64:'aGVsbG8='},'./plugins-registry':{getPluginMetadata:()=>({name:'Frame Drop',slug:'frame-drop'})},'./managed-plugins':{serverPluginMetadata:async()=>({name:'Frame Drop'})},nodemailer:{createTransport:()=>({sendMail:async message=>{sent.push(message);return {messageId:'mock'};}})}});
+ const oldUser=process.env.SMTP_USER,oldPass=process.env.SMTP_PASS;process.env.SMTP_USER='test';process.env.SMTP_PASS='test';
+ try {await email.sendNewUserTeamNotification(profile,undefined,'frame-drop');assert.equal(sent.length,1);assert.match(sent[0].html,/MEMBER PROFILE/);assert.match(sent[0].html,/New Designer/);assert.match(sent[0].html,/Google signup/);assert.equal(sent[0].to,'team@example.test');assert.ok(sent[0].attachments.length);}finally{if(oldUser===undefined)delete process.env.SMTP_USER;else process.env.SMTP_USER=oldUser;if(oldPass===undefined)delete process.env.SMTP_PASS;else process.env.SMTP_PASS=oldPass;}
+});

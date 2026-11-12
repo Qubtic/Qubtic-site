@@ -84,7 +84,7 @@ async function fixture(plugin = "frame-drop", cadence = "monthly") {
 			cadence === "yearly" ? "2027-10-01T00:00:00Z" : "2026-11-01T00:00:00Z";
 	const purchase =
 		cadence === "yearly" ? "2027-04-01T12:00:00Z" : "2026-10-16T12:00:00Z";
-	const site = plugin.endsWith("-commerce") ? "site-a" : null;
+	const site = plugin.endsWith("-commerce") || plugin === "frame-drop" ? "site-a" : null;
 	await pg.query(
 		"INSERT INTO framer_users(id,email,plugin_slug,auth_token) VALUES($1,$2,$3,$4)",
 		[user, user + "@test.invalid", plugin, randomUUID()],
@@ -930,17 +930,18 @@ test("financial review of ambiguous invoices does not prevent confirmed Lifetime
 			h.context.orders = [h.lifetime];
 		},
 	];
-	for (const change of changes) {
+	for (const [index, change] of changes.entries()) {
 		const h = await fixture();
 		change(h);
 		const report = await h.run();
 		const row = (await h.rows())[0];
 		assert.equal(row.phase, "manual_review");
-		assert.equal(row.renewal_status, "renewal_stopped");
-		assert.ok(row.renewal_stopped_at);
+		// Without the original invoice, the subscription's site cannot be proven.
+		assert.equal(row.renewal_status, index === changes.length - 1 ? "pending" : "renewal_stopped");
+		assert.equal(Boolean(row.renewal_stopped_at), index !== changes.length - 1);
 		assert.equal(report.manualReview.length, 1);
 		assert.equal(count(h, "create"), 0);
-		assert.equal(count(h, "cancel"), 1);
+		assert.equal(count(h, "cancel"), index === changes.length - 1 ? 0 : 1);
 	}
 });
 

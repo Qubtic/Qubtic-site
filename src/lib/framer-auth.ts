@@ -284,7 +284,7 @@ export async function createOrUpdateFramerUser(params: {
           syncUserLocally(userWithAttrs);
 
           if (wasPending) {
-            await sendNewUserTeamNotification(userWithAttrs, params.metadata, pluginSlug).catch((err) => {
+            await sendNewUserTeamNotification(userWithAttrs, { ...params.metadata, authMode: 'signup' }, pluginSlug).catch((err) => {
               console.warn('[Team Alert] Error sending team notification:', err);
             });
             return { user: userWithAttrs, isNew: true, token };
@@ -340,7 +340,7 @@ export async function createOrUpdateFramerUser(params: {
           syncUserLocally(userWithAttrs);
 
           // Asynchronously notify Qubtic team of new member registration
-          await sendNewUserTeamNotification(userWithAttrs, params.metadata, pluginSlug).catch((err) => {
+          await sendNewUserTeamNotification(userWithAttrs, { ...params.metadata, authMode: 'signup' }, pluginSlug).catch((err) => {
             console.warn('[Team Alert] Error sending team notification:', err);
           });
 
@@ -402,7 +402,7 @@ export async function createOrUpdateFramerUser(params: {
     writeLocalUsers(localList);
 
     if (wasPending) {
-      await sendNewUserTeamNotification(existing, params.metadata, pluginSlug).catch((err) => {
+      await sendNewUserTeamNotification(existing, { ...params.metadata, authMode: 'signup' }, pluginSlug).catch((err) => {
         console.warn('[Team Alert] Error sending team notification:', err);
       });
       return { user: existing, isNew: true, token };
@@ -446,7 +446,7 @@ export async function createOrUpdateFramerUser(params: {
     writeLocalUsers(localList);
 
     // Asynchronously notify Qubtic team of new member registration
-    await sendNewUserTeamNotification(newRecord, params.metadata, pluginSlug).catch((err) => {
+    await sendNewUserTeamNotification(newRecord, { ...params.metadata, authMode: 'signup' }, pluginSlug).catch((err) => {
       console.warn('[Team Alert] Error sending team notification:', err);
     });
 

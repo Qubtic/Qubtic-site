@@ -212,10 +212,11 @@ async function handle(request: Request, { params }: Context) {
 		const customerId = await identity(user.id);
 		const siteScoped =
 			user.plugin === "whatsapp-commerce" ||
-			user.plugin === "telegram-commerce";
+			user.plugin === "telegram-commerce" || user.plugin === "frame-drop";
 		const site = siteScoped
 			? siteId(request.headers.get("x-framer-site-id"))
 			: null;
+		if(siteScoped && !site) throw new BillingError("Open the plugin in a Framer project to verify site access.",400);
 		if (action === "status" && request.method === "GET") {
 			const orderQuery = db
 				.from("billing_orders")
@@ -529,7 +530,7 @@ async function handle(request: Request, { params }: Context) {
 					{
 						p_customer: customerId,
 						p_site: site,
-						...(user.plugin === "telegram-commerce"
+						...(["telegram-commerce","frame-drop"].includes(user.plugin)
 							? { p_plugin: user.plugin }
 							: {}),
 					},

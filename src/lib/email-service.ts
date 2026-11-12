@@ -949,7 +949,21 @@ export async function flushTeamEvents() {
  for(const item of (data||[]) as {id:string;event:'signup'|'signin'|'purchase'|'purchase_receipt'|'manual';plugin:string;email:string;recipient?:string;subject?:string;body?:string}[]) {
   try {
    const mail=await loadManagedMail();
-   if(item.event==='manual'||item.event==='purchase_receipt'||mail[item.event]) { const transport=await getMailTransporter();await trackedMail(transport,item.plugin,item.event,{from:await getSender(item.plugin),to:item.event==='manual'?item.email:item.recipient||mail.teamEmail,subject:item.subject||`Qubtic: ${item.event} · ${getPluginMetadata(item.plugin).name}`,text:item.body||`Event: ${item.event}\nPlugin: ${item.plugin}\nAccount: ${item.email}\nReference: ${item.id}`}); }
+   if(item.event==='manual'||item.event==='purchase_receipt'||mail[item.event]) {
+     const transport=await getMailTransporter();
+     let html: string | undefined;
+     let attachments: ReturnType<typeof getPluginEmailAttachments> | undefined;
+     if (item.event === 'signup') {
+       // Render the existing team template using the persisted dashboard identity, never a browser payload.
+       const { data: profile, error: profileError } = await supabase.from('framer_users')
+         .select('id,email,name,company_name,website_url,plugin_slug,plugin_name,plan,created_at,metadata')
+         .eq('email',item.email).eq('plugin_slug',item.plugin).maybeSingle();
+       if (profileError || !profile || profile.metadata?.email_verified !== true) throw new Error('Verified signup profile is unavailable.');
+       html = generateNewUserTeamNotificationEmailHtml(profile, { authMode: profile.metadata?.auth_provider === 'google' ? 'Google signup' : 'Verified signup' }, item.plugin);
+       attachments = getPluginEmailAttachments(item.plugin);
+     }
+     await trackedMail(transport,item.plugin,item.event,{from:await getSender(item.plugin),to:item.event==='manual'?item.email:item.recipient||mail.teamEmail,subject:item.subject||`Qubtic: ${item.event} · ${getPluginMetadata(item.plugin).name}`,text:item.body||`Event: ${item.event}\nPlugin: ${item.plugin}\nAccount: ${item.email}\nReference: ${item.id}`,html,attachments});
+   }
    await supabase.from('plugin_team_events').update({delivered_at:new Date().toISOString()}).eq('id',item.id);
   } catch { /* Lease expires for a bounded retry; credentials and provider payloads stay private. */ }
  }

@@ -133,7 +133,7 @@ const money = (n: unknown): n is number =>
 	typeof n === "number" && Number.isSafeInteger(n) && n >= 0;
 const time = (s: string | null | undefined) => (s ? Date.parse(s) : NaN);
 const commerce = (p: string) =>
-	p === "whatsapp-commerce" || p === "telegram-commerce";
+	p === "whatsapp-commerce" || p === "telegram-commerce" || p === "frame-drop";
 function owned(row: Owner, c: UpgradeRefundContext) {
 	return (
 		row.customer_id === c.state.id &&
