@@ -145,11 +145,7 @@ async function handle(request: Request, { params }: Context) {
 			!request.headers.has("authorization");
 		let plugin: string;
 		if (publicCatalog) {
-			if (env !== "production")
-				throw new BillingError(
-					"Sign in to an approved developer account for sandbox billing.",
-					403,
-				);
+			// Prices are public in both environments; purchases and account data still require actor().
 			const ip = (request.headers.get("x-forwarded-for") || "unknown")
 				.split(",")[0]
 				.trim();

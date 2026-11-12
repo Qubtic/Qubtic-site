@@ -1740,3 +1740,18 @@ test("Telegram status and cancellation stay within their site and cannot use Wha
 	);
 	assert.equal(await h.core.paidAccess("user", "telegram-commerce"), false);
 });
+
+
+test("sandbox FrameDrop pricing is public while status and checkout still require sign-in", async () => {
+  const h = harness("frame-drop");
+  const response = await h.route.GET(new Request("https://example.test/api/billing/catalog?plugin=frame-drop", {
+    headers: { "X-Billing-Environment": "sandbox" },
+  }), { params: Promise.resolve({ action: "catalog" }) });
+  assert.equal(response.status, 200);
+  const result = await response.json();
+  assert.ok(result.plans.some(plan => plan.cadence === "lifetime" && plan.available && plan.price_amount === 4900));
+  assert.equal(result.orders, undefined);
+  assert.equal(result.subscriptions, undefined);
+  assert.equal((await h.request("status", undefined, "")).status, 401);
+  assert.equal((await h.request("checkout", { cadence: "lifetime", request_id: randomUUID() }, "")).status, 401);
+});
