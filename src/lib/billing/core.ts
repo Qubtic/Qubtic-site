@@ -48,6 +48,10 @@ export function environment(): BillingEnvironment {
 export function withBillingEnvironment<T>(selected: BillingEnvironment, callback: () => T): T {
     return billingContext.run(resolveBillingConfig(process.env, selected), callback);
 }
+/** Public storefront dispatch must load the same published settings as plugin billing. */
+export async function withManagedBillingEnvironment<T>(selected: BillingEnvironment, callback: () => Promise<T>): Promise<T> {
+    return billingContext.run(await loadManagedBilling(selected), callback);
+}
 export async function billingRequest(request: Request, callback: () => Promise<Response>): Promise<Response> {
     // Browser preflights contain header names, not the billing selector or account token.
     // Answer before loading configuration so a disabled environment cannot block CORS.

@@ -135,7 +135,7 @@ export async function POST(request: Request) {
                 if (!Array.isArray(p.plans))
                     throw new Error('Each enabled plugin needs a valid plan list.');
                 // FrameDrop offers Lifetime only; blank recurring fields are not products.
-                const offered = p.slug === 'frame-drop' ? p.plans.filter(plan => plan.productId?.trim()) : p.plans;
+                const offered = ['frame-drop', 'whatsapp-commerce'].includes(p.slug) ? p.plans.filter(plan => plan.cadence === 'lifetime' && plan.productId?.trim()) : p.plans;
                 if (!offered.length) throw new Error(`Configure at least one product for ${p.slug}.`);
                 return offered.map(plan => ({ plugin_slug: p.slug, cadence: plan.cadence, product_id: plan.productId, benefit_id: plan.benefitId }));
             });

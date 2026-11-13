@@ -76,12 +76,14 @@ export function configuredCatalog(env) {
 		const prefix = active[0] || plugin.prefix;
 		const keys = suffixes.map((suffix) => `${prefix}_${suffix}`);
 		if (!keys.some((key) => env[key]?.trim())) continue;
-		const missing = keys.filter((key) => !env[key]?.trim());
+		const lifetimeOnlyConfig = ['frame-drop', 'whatsapp-commerce'].includes(plugin.slug) && !env[`${prefix}_MONTHLY_PRODUCT_ID`]?.trim() && !env[`${prefix}_YEARLY_PRODUCT_ID`]?.trim();
+		const requiredKeys = lifetimeOnlyConfig ? [`${prefix}_LIFETIME_PRODUCT_ID`, `${prefix}_PRO_BENEFIT_ID`] : keys;
+		const missing = requiredKeys.filter((key) => !env[key]?.trim());
 		if (missing.length)
 			throw new Error(
 				`Complete this plugin configuration: ${missing.join(", ")}.`,
 			);
-		for (const cadence of CADENCES)
+		for (const cadence of (lifetimeOnlyConfig ? ['lifetime'] : CADENCES))
 			rows.push({
 				plugin_slug: plugin.slug,
 				cadence,
@@ -139,7 +141,7 @@ export function configuredCatalog(env) {
 	}
 	for (const slug of plugins.keys()) {
 		const offered = rows.filter(row => row.plugin_slug === slug);
-		const lifetimeOnly = slug === 'frame-drop' && offered.length === 1 && offered[0].cadence === 'lifetime';
+		const lifetimeOnly = ['frame-drop', 'whatsapp-commerce'].includes(slug) && offered.length === 1 && offered[0].cadence === 'lifetime';
 		if (!lifetimeOnly && offered.length !== 3)
 			throw new Error(`Configure monthly, yearly, and lifetime for ${slug}.`);
 	}

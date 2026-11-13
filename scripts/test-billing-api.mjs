@@ -959,7 +959,7 @@ test("single account-linked checkout contains only the selected product and reco
 	const h = harness();
 	const listing = await h.request("catalog");
 	assert.equal(listing.status, 200);
-	assert.equal(listing.data.plans.length, 3);
+	assert.equal(listing.data.plans.length, 1);
 	const response = await h.request("checkout", {
 		request_id: randomUUID(),
 		product_id: "attacker",
@@ -1292,7 +1292,7 @@ test("cancel action updates recurring cancellation and leaves Pro active until p
 });
 
 test("monthly subscriber upgrading to yearly gets automatically calculated proration discount and upgrade checkout", async () => {
-	const h = harness();
+	const h = harness("telegram-commerce");
 	const now = Date.now();
 	// Monthly period: started 5 days ago, ends in 25 days (total 30 days)
 	const start = new Date(now - 5 * 86400000).toISOString();
@@ -1301,7 +1301,7 @@ test("monthly subscriber upgrading to yearly gets automatically calculated prora
 		polar_subscription_id: "sub_month",
 		environment: "sandbox",
 		customer_id: h.customer,
-		plugin_slug: "whatsapp-commerce",
+		plugin_slug: "telegram-commerce",
 		site_id: "site-a",
 		cadence: "monthly",
 		status: "active",
@@ -1312,7 +1312,7 @@ test("monthly subscriber upgrading to yearly gets automatically calculated prora
 		environment: "sandbox",
 		polar_order_id: "order_month",
 		customer_id: h.customer,
-		plugin_slug: "whatsapp-commerce",
+		plugin_slug: "telegram-commerce",
 		cadence: "monthly",
 		product_id: h.monthlyProduct,
 		status: "paid",
@@ -1778,4 +1778,15 @@ test('Frame Drop same account cannot reuse a purchased site license on another p
  const checkout=await h.request('checkout',{cadence:'lifetime',request_id:randomUUID(),replace_previous:true},'token','site-b');
  assert.equal(checkout.status,200,JSON.stringify(checkout.data));
  assert.ok(h.tables.billing_checkouts.some(row=>row.site_id==='site-b'&&row.plugin_slug==='frame-drop'));
+});
+
+test('Email Commerce Lifetime-only checkout uses one product and rejects recurring purchases', async () => {
+ const h = harness('whatsapp-commerce'); h.setLifetimeOnlyCatalog();
+ const listing = await h.request('catalog');
+ assert.deepEqual(listing.data.plans.map(plan => plan.cadence), ['lifetime']);
+ const result = await h.request('checkout', {cadence:'lifetime', request_id:randomUUID(), replace_previous:true});
+ assert.equal(result.status, 200, JSON.stringify(result.data));
+ assert.match(result.data.url, /sandbox/);
+ const unsupported = await h.request('checkout', {cadence:'monthly', request_id:randomUUID()});
+ assert.equal(unsupported.status, 400);
 });

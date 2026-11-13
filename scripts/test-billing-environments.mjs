@@ -202,3 +202,15 @@ test('explicit webhook and cron paths bind routing and preserve webhook bytes', 
     params: Promise.resolve({ environment: 'typo' }),
   })).status, 400);
 });
+
+
+test('storefront dispatch loads published environment settings rather than stale raw ENV catalogs', async () => {
+  const selected = [];
+  const { core } = harness(async environment => {
+    selected.push(environment);
+    return { POLAR_ENVIRONMENT: environment, POLAR_ACCESS_TOKEN: `published-${environment}`, POLAR_ORGANIZATION_ID: `organization-${environment}`, managed: 'true' };
+  });
+  const result = await core.withManagedBillingEnvironment('sandbox', async () => ({ token: core.billingConfig().POLAR_ACCESS_TOKEN, environment: core.environment(), managed: core.billingConfig().managed }));
+  assert.deepEqual(result, { token: 'published-sandbox', environment: 'sandbox', managed: 'true' });
+  assert.deepEqual(selected, ['sandbox']);
+});

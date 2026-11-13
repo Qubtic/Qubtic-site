@@ -180,7 +180,7 @@ async function handle(request: Request, { params }: Context) {
 		}
 		async function catalogReply(plugin: string) {
 			const rows = (await catalog()).filter(
-				(row) => row.plugin_slug === plugin,
+				(row) => row.plugin_slug === plugin && (plugin !== "whatsapp-commerce" || row.cadence === "lifetime"),
 			);
 			const sdk = polar();
 			const plans = await Promise.all(
@@ -545,13 +545,13 @@ async function handle(request: Request, { params }: Context) {
 
 			const rows = entries.filter((item) => item.plugin_slug === user.plugin);
 			const checkoutOrder =
-				user.plugin === "frame-drop"
+				["frame-drop", "whatsapp-commerce"].includes(user.plugin)
                     ? ["lifetime"]
                     : user.plugin === "telegram-commerce"
                         ? ["monthly", "yearly", "lifetime"]
                         : ["yearly", "monthly", "lifetime"];
-            if (user.plugin === "frame-drop" && body.cadence && body.cadence !== "lifetime")
-                throw new BillingError("FrameDrop offers Lifetime checkout only.", 400);
+            if (["frame-drop", "whatsapp-commerce"].includes(user.plugin) && body.cadence && body.cadence !== "lifetime")
+                throw new BillingError("This plugin offers Lifetime checkout only.", 400);
 			const selectable = checkoutOrder.map((cadence) =>
 				rows.find((item) => item.cadence === cadence),
 			);

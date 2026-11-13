@@ -198,6 +198,17 @@ test("Email Commerce uses current keys while preserving existing paid-site ident
 test("managed FrameDrop accepts one Lifetime product without weakening commerce catalogs", () => {
  const row = {plugin_slug:'frame-drop',cadence:'lifetime',product_id:randomUUID(),benefit_id:randomUUID()};
  assert.equal(configuredCatalog({POLAR_ENVIRONMENT:'sandbox',POLAR_EXTRA_CATALOG_JSON:JSON.stringify([row])}).length,1);
- for(const slug of ['telegram-commerce','whatsapp-commerce']) assert.throws(()=>configuredCatalog({POLAR_ENVIRONMENT:'sandbox',POLAR_EXTRA_CATALOG_JSON:JSON.stringify([{...row,plugin_slug:slug}])}),/Configure monthly/);
+ for(const slug of ['telegram-commerce']) assert.throws(()=>configuredCatalog({POLAR_ENVIRONMENT:'sandbox',POLAR_EXTRA_CATALOG_JSON:JSON.stringify([{...row,plugin_slug:slug}])}),/Configure monthly/);
  assert.throws(()=>configuredCatalog({POLAR_ENVIRONMENT:'sandbox',POLAR_EXTRA_CATALOG_JSON:JSON.stringify([{...row,cadence:'monthly'}])}),/Configure monthly/);
+});
+
+test('Email Commerce accepts Lifetime-only configuration in sandbox and production', () => {
+ for (const environment of ['sandbox', 'production']) {
+  const env = { POLAR_ENVIRONMENT: environment, POLAR_EMAIL_COMMERCE_LIFETIME_PRODUCT_ID: randomUUID(), POLAR_EMAIL_COMMERCE_PRO_BENEFIT_ID: randomUUID() };
+  const plans = configuredCatalog(env);
+  assert.equal(plans.length, 1);
+  assert.equal(plans[0].cadence, 'lifetime');
+  assert.equal(plans[0].plugin_slug, 'whatsapp-commerce');
+  assert.equal(plans[0].environment, environment);
+ }
 });

@@ -1,215 +1,28 @@
-import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
-
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
-}
-
-export async function POST(request: Request) {
+import { ensureEmailCommerceAccess } from '@/lib/email-commerce/access';
+import { actor, billingRequest, limit } from '@/lib/billing/core';
+import { mailAddress, smtpTransport } from '@/lib/email-commerce/smtp';
+const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Framer-Site-Id, X-Billing-Environment', 'Cache-Control': 'no-store' };
+export function OPTIONS() { return new Response(null, { status: 204, headers }); }
+export function POST(request: Request) { return billingRequest(request, async () => {
   try {
-    const body = await request.json();
-    const { settings, isSampleOrder } = body;
-
-    const merchantEmail = (settings?.merchantEmail || '').trim();
-    if (!merchantEmail) {
-      return NextResponse.json(
-        {
-          success: false,
-          code: 'MERCHANT_EMAIL_REQUIRED',
-          message: 'Merchant Order Recipient Email is required to send test email.',
-        },
-        { status: 400, headers: corsHeaders }
-      );
-    }
-
-    const host = (settings?.smtpHost || '').trim();
-    const port = Number(settings?.smtpPort) || 587;
-    const secure = settings?.smtpSecure ?? (port === 465);
-    const rawUser = (settings?.smtpUser || '').trim().replace(/^["']|["']$/g, '');
-    const user = rawUser;
-    const rawPass = (settings?.smtpPass || '').trim().replace(/^["']|["']$/g, '');
-    const pass = rawPass;
-
-    if (!host || !user || !pass) {
-      return NextResponse.json(
-        {
-          success: false,
-          code: 'SMTP_CONFIG_REQUIRED',
-          message: 'SMTP credentials required: Please enter your SMTP host, username, and password.',
-        },
-        { status: 400, headers: corsHeaders }
-      );
-    }
-
-    const testRecipients: string[] = [merchantEmail];
-
-    const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure,
-      auth: { user, pass },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
-
-    const storeName = settings?.business || 'Email Commerce';
-    const currency = settings?.currency || 'USD';
-    const fromSenderName = settings?.fromName || storeName;
-    let fromSenderEmail = '';
-    if (settings?.fromEmail && settings.fromEmail.includes('@')) {
-      fromSenderEmail = settings.fromEmail.trim();
-    } else if (user && user.includes('@')) {
-      fromSenderEmail = user;
-    } else {
-      fromSenderEmail = merchantEmail;
-    }
-    const formattedFrom = `"${fromSenderName}" <${fromSenderEmail}>`;
-
-    const sampleOrderNum = Math.floor(100000 + Math.random() * 900000);
-
-    const subject = isSampleOrder
-      ? `[Sample Order #${sampleOrderNum}] Test Order from Jane Doe ($68.00 ${currency})`
-      : `[Test Email] Email Commerce SMTP Connection Verified`;
-
-    const html = isSampleOrder
-      ? `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #0f172a;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden;">
-            <tr>
-              <td style="padding: 24px; background: #0f172a; color: #ffffff;">
-                <h1 style="margin: 0; font-size: 20px; font-weight: 700;">${storeName}</h1>
-                <p style="margin: 4px 0 0; font-size: 13px; color: #94a3b8;">Automated Sample Order &bull; #${sampleOrderNum}</p>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 24px;">
-                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px 16px; margin-bottom: 20px;">
-                  <p style="margin: 0; font-size: 14px; color: #166534; font-weight: 600;">
-                    &#10003; Automated SMTP Delivery Successful!
-                  </p>
-                  <p style="margin: 4px 0 0; font-size: 13px; color: #15803d;">
-                    This is an automated test order dispatched directly to your merchant mailbox via ${host}:${port}.
-                  </p>
-                </div>
-
-                <h3 style="margin: 0 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #475569;">Customer & Lead Info</h3>
-                <table width="100%" style="font-size: 13px; color: #334155; margin-bottom: 16px;">
-                  <tr><td style="padding: 4px 0; width: 140px; font-weight: 600;">Customer Name:</td><td>Jane Doe</td></tr>
-                  <tr><td style="padding: 4px 0; font-weight: 600;">Email:</td><td><a href="mailto:buyer@example.com" style="color: #2563eb;">buyer@example.com</a></td></tr>
-                  <tr><td style="padding: 4px 0; font-weight: 600;">Phone / WhatsApp:</td><td>+1 (555) 019-2834</td></tr>
-                  <tr><td style="padding: 4px 0; font-weight: 600;">Contact Channel:</td><td><span style="display:inline-block; padding:2px 8px; background:#dcfce7; color:#15803d; border-radius:4px; font-weight:600;">🟢 WhatsApp / Call</span></td></tr>
-                  <tr><td style="padding: 4px 0; font-weight: 600;">Fulfillment:</td><td><span style="display:inline-block; padding:2px 8px; background:#f1f5f9; color:#334155; border-radius:4px; font-weight:600;">📦 Physical Delivery</span></td></tr>
-                  <tr><td style="padding: 4px 0; font-weight: 600;">Payment System:</td><td><strong>Cash on Delivery (COD)</strong></td></tr>
-                  <tr><td style="padding: 4px 0; font-weight: 600;">Address:</td><td>742 Evergreen Terrace, Springfield</td></tr>
-                </table>
-
-                <h3 style="margin: 20px 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #475569;">Sample Order Items</h3>
-                <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; width: 100%;">
-                  <thead>
-                    <tr style="background: #f1f5f9; text-align: left;">
-                      <th style="padding: 8px 12px; font-size: 12px; color: #475569;">Item</th>
-                      <th style="padding: 8px 12px; font-size: 12px; color: #475569; text-align: center;">Qty</th>
-                      <th style="padding: 8px 12px; font-size: 12px; color: #475569; text-align: right;">Price</th>
-                      <th style="padding: 8px 12px; font-size: 12px; color: #475569; text-align: right;">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #1e293b;">
-                        <strong>Amber Dusk</strong><br/>
-                        <span style="font-size: 12px; color: #64748b;">SKU: DEMO-PERF-001 &bull; 50ml Eau de Parfum</span>
-                      </td>
-                      <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; text-align: center; color: #1e293b;">
-                        1
-                      </td>
-                      <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; text-align: right; color: #1e293b;">
-                        $68.00
-                      </td>
-                      <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; text-align: right; font-weight: 600; color: #0f172a;">
-                        $68.00
-                      </td>
-                    </tr>
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colspan="3" style="padding: 14px 12px; font-size: 14px; font-weight: 700; text-align: right; color: #0f172a;">Subtotal:</td>
-                      <td style="padding: 14px 12px; font-size: 15px; font-weight: 700; text-align: right; color: #0f172a;">$68.00 ${currency}</td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; text-align: center;">
-                Sent automatically via Email Commerce &bull; Qubtic SMTP Gateway
-              </td>
-            </tr>
-          </table>
-        </div>
-      `
-      : `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #0f172a;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden;">
-            <tr>
-              <td style="padding: 24px; background: #0f172a; color: #ffffff;">
-                <h1 style="margin: 0; font-size: 20px; font-weight: 700;">Email Commerce &bull; SMTP Test</h1>
-                <p style="margin: 4px 0 0; font-size: 13px; color: #94a3b8;">Automated connection test</p>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 24px;">
-                <p style="font-size: 15px; color: #16a34a; font-weight: 600; margin-top: 0;">
-                  &#10003; Your SMTP settings are working perfectly!
-                </p>
-                <p style="font-size: 14px; line-height: 1.6; color: #334155;">
-                  This test email confirms that your outgoing mail server is properly connected and authorized to dispatch live storefront orders automatically.
-                </p>
-                <table width="100%" style="font-size: 13px; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-top: 16px;">
-                  <tr><td style="font-weight: 600; padding: 4px 0;">SMTP Host:</td><td>${host}:${port}</td></tr>
-                  <tr><td style="font-weight: 600; padding: 4px 0;">Username:</td><td>${user || '(default)'}</td></tr>
-                  <tr><td style="font-weight: 600; padding: 4px 0;">Merchant Recipient:</td><td>${merchantEmail}</td></tr>
-                  <tr><td style="font-weight: 600; padding: 4px 0;">Store Name:</td><td>${storeName}</td></tr>
-                </table>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; text-align: center;">
-                Sent via Email Commerce &bull; Qubtic
-              </td>
-            </tr>
-          </table>
-        </div>
-      `;
-
-    await transporter.sendMail({
-      from: formattedFrom,
-      to: testRecipients.join(', '),
-      subject,
-      html,
-    });
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: `✓ Test email sent successfully to ${merchantEmail}! Please check your inbox.`,
-      },
-      { headers: corsHeaders }
-    );
-  } catch (error: any) {
-    console.error('Error in test-smtp:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        message: error?.message || 'Failed to send test email through SMTP server.',
-      },
-      { status: 500, headers: corsHeaders }
-    );
-  }
-}
+    const user = await actor(request);
+    const site = request.headers.get('x-framer-site-id');
+    if (user.plugin !== 'whatsapp-commerce' || !site || !await ensureEmailCommerceAccess(user.id, site)) return Response.json({ success: false, message: 'Email Commerce Pro is required for this site.' }, { status: 403, headers });
+    await limit(`email-test:${user.id}`, 3, 60);
+    const raw = await request.text();
+    if (raw.length > 20000) throw new Error('SMTP configuration is too large.');
+    const { settings, isSampleOrder } = JSON.parse(raw);
+    const to = mailAddress(settings.merchantEmail);
+    const from = mailAddress(settings.fromEmail || settings.smtpUser || to);
+    const transport = await smtpTransport(settings);
+    try {
+      await transport.verify();
+      // Verify SMTP authentication first. Only the explicit test-email action dispatches mail.
+      if (isSampleOrder) {
+        const result = await transport.sendMail({ from, to, subject: 'Email Commerce — SMTP test', text: 'Your Email Commerce SMTP connection accepted this test email. No order or payment was created.' });
+        if (!result.accepted?.length) throw new Error('The SMTP server did not accept the test email.');
+      }
+      return Response.json({ success: true, message: isSampleOrder ? 'Test email accepted by your SMTP server. Check the merchant inbox.' : 'SMTP authentication and TLS connection verified. No email was sent.' }, { headers });
+    } finally { transport.close(); }
+  } catch { return Response.json({ success: false, message: 'SMTP verification failed. Check the hostname, port, credentials and sender address.' }, { status: 400, headers }); }
+}); }
