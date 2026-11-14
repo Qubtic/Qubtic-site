@@ -34,7 +34,7 @@ Guest prices now load through the public catalog; buying still requires Qubtic s
 
 Order delivery now uses atomic, durable claims in the private Supabase Storage bucket `email-commerce-orders` (JSON only, 16 KiB maximum). Claims store hashes, order references and delivery outcomes, not customer contact details or SMTP credentials. Keep the bucket private, without public policies, and do not delete claims while retries could occur. A second instance reads the existing result and never resends SMTP. Pending or uncertain delivery requires contacting the seller; it is not automatically retried. Customer receipt failure does not resend the merchant order. This replaces the earlier per-instance retry protection described above.
 
-Before dispatch, a false access check triggers a bounded provider reconciliation through the published billing environment, then checks access again. A revoked or refunded license remains denied. `vercel.json` now schedules each environment's reconciliation and team-notification retry every five minutes. Configure Vercel `CRON_SECRET` (the endpoint also accepts `BILLING_CRON_SECRET`) and use a hosting plan that supports this frequency.
+Before dispatch, a false access check triggers a bounded provider reconciliation through the published billing environment, then checks access again. A revoked or refunded license remains denied. `vercel.json` intentionally declares no cron jobs so Hobby deployments are accepted. Frequent billing reconciliation and team-notification retries must be configured using an authenticated external scheduler on Hobby. `vercel.cron.example.json` is an opt-in five-minute schedule for Vercel plans that support it; do not copy it into a Hobby deployment. Configure `CRON_SECRET` or `BILLING_CRON_SECRET` for worker authentication.
 
 Release checklist:
 
@@ -46,3 +46,17 @@ Release checklist:
 6. Rebuild and republish installed storefront components. Complete authorized real signup/team inbox, sandbox payment/plugin activation, and merchant SMTP delivery checks.
 
 The hosted repair and deployment were not performed when automatic approval review required explicit authorization and no Vercel login was available. Local test success does not certify a deployed release.
+
+## Vercel Hobby deployment fix
+
+The deployment error about `*/5 * * * *` is a cron-frequency restriction, not a daily deployment limit. The default `vercel.json` contains no scheduled jobs, so it does not request unsupported Hobby cron execution. Commit and push this change to create a fresh deployment; redeploying the older source retains its rejected schedule.
+
+On Hobby, configure an external scheduler to call these endpoints every five minutes with `Authorization: Bearer <CRON_SECRET>` (or the configured BILLING_CRON_SECRET):
+
+- GET https://www.qubtic.tech/api/billing/reconcile/production
+- GET https://www.qubtic.tech/api/billing/reconcile/sandbox
+- GET https://www.qubtic.tech/api/plugin-notifications
+
+The handlers already accept GET; billing reconciliation also supports POST. Keep the bearer secret in the scheduler's private settings, never in a URL. Monitor non-2xx responses. No external scheduler is provisioned by this source change. Do not substitute daily billing reconciliation: verification leases expire after one hour, and notification retries would be delayed. Webhooks, plugin refresh and bounded storefront access reconciliation continue to operate independently.
+
+If the project moves to a Vercel plan supporting frequent cron jobs, merge the reviewed `crons` array from `vercel.cron.example.json` into `vercel.json` and configure CRON_SECRET for Vercel's worker requests.

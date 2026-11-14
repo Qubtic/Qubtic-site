@@ -1,7 +1,1 @@
-{
-  "crons": [
-    { "path": "/api/billing/reconcile/production", "schedule": "*/5 * * * *" },
-    { "path": "/api/billing/reconcile/sandbox", "schedule": "2-59/5 * * * *" },
-    { "path": "/api/plugin-notifications", "schedule": "*/5 * * * *" }
-  ]
-}
+{}

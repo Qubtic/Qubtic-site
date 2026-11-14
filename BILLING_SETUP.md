@@ -34,3 +34,7 @@ Database views `frame_drop_plugin_payments`, `whatsapp_commerce_plugin_payments`
 Run the local tests/builds, then use Polar sandbox for all three cadences and all plugins. Verify paid activation, delayed/duplicate/reordered webhooks, wrong-product/account requests, canceled checkout, scheduled cancellation, failed renewal, partial/full refunds, lifetime plus canceled recurring access, blocked popups, sign-out/account switching, and database/Polar outages. Confirm actual order history/invoices and cron monitoring. Local tests mock Polar network and SMTP; they do not certify live payment delivery or production readiness.
 
 Payment cards stay on Polar. Local generated Framer components and bundled client code remain inspectable/copyable; a client-side paywall is not DRM. Sensitive paid backend services must independently authorize every request. No production purchase, deployment, remote database migration, or live email delivery is performed by this implementation task
+
+## Hosting plan and scheduler
+
+The default `vercel.json` has no cron schedules so it can deploy on Vercel Hobby. Hobby's daily-only cron frequency cannot maintain the one-hour verification lease. Use an authenticated external scheduler for frequent calls to `/api/billing/reconcile/production`, `/api/billing/reconcile/sandbox` and `/api/plugin-notifications`. See EMAIL_COMMERCE_BILLING.md for the exact endpoints. `vercel.cron.example.json` is only for plans supporting frequent cron execution; it is not the default deploy configuration.
